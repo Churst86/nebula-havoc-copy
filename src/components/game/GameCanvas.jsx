@@ -278,7 +278,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   }
 
   // ── Drawing ──────────────────────────────────────────────────
-  function drawPlayer(ctx, p, wingmen, shieldHp, enemies) {
+  function drawPlayer(ctx, p, wingmen, shieldHp, enemies, invincibleTimer, keys) {
     wingmen.forEach(w => {
       let angle = -Math.PI / 2;
       let bestDist = Infinity;
@@ -296,6 +296,35 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       ctx.stroke();
       ctx.restore();
     });
+
+    // Flash when invincible — skip drawing every other 6 frames
+    if (invincibleTimer > 0 && Math.floor(invincibleTimer / 6) % 2 === 0) return;
+
+    // Afterburner — show when moving
+    const moving = keys['ArrowLeft'] || keys['a'] || keys['A'] ||
+                   keys['ArrowRight'] || keys['d'] || keys['D'] ||
+                   keys['ArrowUp'] || keys['w'] || keys['W'] ||
+                   keys['ArrowDown'] || keys['s'] || keys['S'];
+    if (moving) {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      const flickerLen = 8 + Math.random() * 10;
+      // Left nozzle
+      const grad1 = ctx.createLinearGradient(-5, 12, -5, 12 + flickerLen);
+      grad1.addColorStop(0, 'rgba(0,240,255,0.9)');
+      grad1.addColorStop(0.4, 'rgba(255,140,0,0.7)');
+      grad1.addColorStop(1, 'rgba(255,60,0,0)');
+      ctx.fillStyle = grad1;
+      ctx.beginPath(); ctx.ellipse(-5, 12 + flickerLen / 2, 3, flickerLen / 2, 0, 0, Math.PI * 2); ctx.fill();
+      // Right nozzle
+      const grad2 = ctx.createLinearGradient(5, 12, 5, 12 + flickerLen);
+      grad2.addColorStop(0, 'rgba(0,240,255,0.9)');
+      grad2.addColorStop(0.4, 'rgba(255,140,0,0.7)');
+      grad2.addColorStop(1, 'rgba(255,60,0,0)');
+      ctx.fillStyle = grad2;
+      ctx.beginPath(); ctx.ellipse(5, 12 + flickerLen / 2, 3, flickerLen / 2, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
 
     ctx.save();
     ctx.translate(p.x, p.y);
