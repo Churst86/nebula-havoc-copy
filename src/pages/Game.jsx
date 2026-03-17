@@ -15,6 +15,7 @@ export default function Game() {
     setScore(0);
     setLives(3);
     setWave(1);
+    setActivePowerup(null);
     setGameState('playing');
   }, []);
 
