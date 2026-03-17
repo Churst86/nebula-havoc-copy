@@ -7,6 +7,7 @@ const POWERUP_COLORS = {
   raygun:  '#44ffaa',
   wingman: '#44aaff',
   bounce:  '#aaff00',
+  speed:   '#ff8800',
 };
 const POWERUP_LABELS = {
   spread:  'SPREAD',
@@ -14,6 +15,7 @@ const POWERUP_LABELS = {
   raygun:  'RAY GUN',
   wingman: 'WINGMAN',
   bounce:  'BOUNCE',
+  speed:   'SPEED',
 };
 
 // activePowerup is now { spread: 2, laser: 1, shieldHp: 2, ... }
