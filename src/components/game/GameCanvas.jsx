@@ -798,9 +798,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           if (b.hit) return;
           if (b.x >= cell.x && b.x <= cell.x + BLOCK_SIZE && b.y >= cell.y && b.y <= cell.y + BLOCK_SIZE) {
             if (block.invulnerable) {
-              // Bullets always stop on invulnerable blocks (no piercing)
+              // Bullets always stop on invulnerable blocks — block never takes damage
               b.hit = true;
               spawnExplosion(s, b.x, b.y, '#aaaacc', 3);
+              return; // skip hp logic
             } else {
               block.hp--;
               if (!piercingTypes.includes(b.type)) b.hit = true;
