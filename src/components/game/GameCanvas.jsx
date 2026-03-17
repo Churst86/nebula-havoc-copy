@@ -357,6 +357,15 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         ctx.beginPath(); ctx.arc(Math.cos(a) * 26, Math.sin(a) * 26, 3, 0, Math.PI * 2); ctx.fill();
       }
     }
+
+    // Star invincibility rainbow aura
+    if (starInvincibleTimer > 0) {
+      const hue = (Date.now() * 0.3) % 360;
+      ctx.shadowColor = `hsl(${hue},100%,65%)`; ctx.shadowBlur = 30;
+      ctx.strokeStyle = `hsla(${hue},100%,65%,0.8)`;
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(0, 0, 30, 0, Math.PI * 2); ctx.stroke();
+    }
     ctx.restore();
   }
 
