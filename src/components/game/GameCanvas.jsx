@@ -696,8 +696,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
             s.bullets.push({ x: w.x, y: w.y - 10, vx: 0, vy: -7, type: 'wingman' });
           }
         });
-        const shotspeedBonus = (s.powerups.shotspeed || 0) * 6;
-        s.wingmanFireTimer = Math.max(12, 45 - shotspeedBonus);
+        const rapidfireBonus = (s.powerups.rapidfire || 0) === 1 ? 10 : (s.powerups.rapidfire || 0) * 8;
+        s.wingmanFireTimer = Math.max(12, 45 - rapidfireBonus);
       }
     }
 
