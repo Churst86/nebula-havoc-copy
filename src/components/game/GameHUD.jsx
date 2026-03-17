@@ -21,7 +21,7 @@ const POWERUP_LABELS = {
   rapidfire: 'RAPID FIRE',
 };
 
-export default function GameHUD({ score, lives, maxLives, wave, activePowerup, continuesLeft }) {
+export default function GameHUD({ score, lives, maxLives, wave, activePowerup, continuesLeft, isPaused, onPauseToggle }) {
   const powerups = activePowerup || {};
   const shieldHp = powerups.shieldHp || 0;
   const starInvincible = powerups.starInvincible || false;
