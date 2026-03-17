@@ -59,8 +59,11 @@ function initState() {
     lockedPowerups: [],
     shieldHp: 0,
     running: false,
+    starInvincibleTimer: 0,   // frames of star invincibility
     dropperSpawnTimer: 0,     // timer to spawn dropper mid-wave
     gunDroppedThisWave: [],   // gun powerup types already dropped this wave
+    auxDroppedThisWave: [],   // auxiliary upgrade types already dropped this wave
+    starDroppedThisWave: false, // star only drops once per wave
   };
 }
 
