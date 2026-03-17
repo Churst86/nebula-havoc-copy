@@ -75,6 +75,10 @@ export default function Game() {
     setGameState('gameover');
   }, []);
 
+  const handlePauseToggle = useCallback(() => {
+    setIsPaused(p => !p);
+  }, []);
+
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black select-none" tabIndex={-1}>
       <GameCanvas
