@@ -18,8 +18,7 @@ const POWERUP_LABELS = {
   speed:   'SPEED',
 };
 
-// activePowerup is now { spread: 2, laser: 1, shieldHp: 2, ... }
-export default function GameHUD({ score, lives, wave, activePowerup }) {
+export default function GameHUD({ score, lives, maxLives, wave, activePowerup }) {
   const powerups = activePowerup || {};
   const shieldHp = powerups.shieldHp || 0;
   const activePowerupKeys = Object.keys(POWERUP_LABELS).filter(k => (powerups[k] || 0) > 0);
