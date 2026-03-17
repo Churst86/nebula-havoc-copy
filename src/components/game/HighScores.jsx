@@ -53,6 +53,17 @@ export default function HighScores({ score, wave, onRestart, isNewScore }) {
     setSaved(true);
   };
 
+  useEffect(() => {
+    if (!saved) return;
+    const timer = setInterval(() => {
+      setTimeLeft(t => {
+        if (t <= 1) { onRestart(); return 0; }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [saved, onRestart]);
+
   const newScoreIndex = saved ? scores.findIndex(s => s.score === score && s.name === letters.join('').padEnd(3,'_').slice(0,3)) : -1;
 
   return (
