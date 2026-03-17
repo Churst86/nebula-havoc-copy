@@ -3,7 +3,7 @@ import MobileControls from './MobileControls';
 import { sounds } from '../../hooks/useSound.js';
 
 // Power-up types (no timer — permanent until replaced/stacked)
-const POWERUP_TYPES = ['spread', 'laser', 'raygun', 'wingman', 'shield'];
+const POWERUP_TYPES = ['spread', 'laser', 'raygun', 'wingman', 'shield', 'bounce'];
 
 function randomBetween(a, b) { return a + Math.random() * (b - a); }
 
