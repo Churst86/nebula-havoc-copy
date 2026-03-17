@@ -203,7 +203,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
 
   function getFireRate(pw) {
     const speedBonus = (pw.shotspeed || 0) * 6;
-    if ((pw.laser || 0) > 0) return 999; // laser handled separately via beam
+    if ((pw.laser || 0) > 0) return 999; // unused — laser handled via beam
     if ((pw.raygun || 0) > 0) return Math.max(14, 50 - (pw.raygun || 0) * 4 - speedBonus);
     if ((pw.spread || 0) > 0 && (pw.raygun || 0) === 0 && (pw.bounce || 0) === 0) return Math.max(12, 50 - speedBonus);
     if ((pw.bounce || 0) > 0) return Math.max(10, 35 - speedBonus);
