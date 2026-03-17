@@ -1214,7 +1214,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     if (s.invincibleTimer > 0) s.invincibleTimer--;
 
     // Particles
-    s.particles.forEach(pt => { pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.04; pt.alpha -= 0.025; });
+    s.particles.forEach(pt => {
+      if (pt.shockwave) {
+        pt.shockwaveR += 4;
+        pt.alpha -= 0.04;
+      } else {
+        pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.04; pt.alpha -= 0.025;
+      }
+    });
     s.particles = s.particles.filter(pt => pt.alpha > 0);
 
     // ── Draw ─────────────────────────────────────────────────
