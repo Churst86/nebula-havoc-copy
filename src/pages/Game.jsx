@@ -60,8 +60,9 @@ export default function Game() {
   }, []);
 
   const handleContinue = useCallback(() => {
+    scoreRef.current = Math.max(0, scoreRef.current - 5000);
+    setScore(scoreRef.current);
     setGameState('resuming');
-    // After one frame the canvas picks up 'resuming' and switches to 'playing'
     setTimeout(() => setGameState('playing'), 50);
   }, []);
 
