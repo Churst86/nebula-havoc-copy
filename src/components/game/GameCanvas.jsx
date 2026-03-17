@@ -540,9 +540,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       if (s.spreadReloadTimer <= 0) s.spreadShotsLeft = SPREAD_SHOTS_PER_RELOAD;
     }
 
-    // Auto fire
-    s.fireTimer--;
-    if (s.fireTimer <= 0) { playerFire(s); s.fireTimer = getFireRate(s.powerups); }
+    // Auto fire (laser doesn't use bullet system — skip when laser equipped)
+    if ((s.powerups.laser || 0) === 0) {
+      s.fireTimer--;
+      if (s.fireTimer <= 0) { playerFire(s); s.fireTimer = getFireRate(s.powerups); }
+    }
 
     // Spread timer
     if ((s.powerups.spread || 0) > 0) {
