@@ -64,7 +64,6 @@ export default function Game() {
     scoreRef.current = Math.max(0, scoreRef.current - 5000);
     setScore(scoreRef.current);
     setGameState('resuming');
-    setTimeout(() => setGameState('playing'), 50);
   }, []);
 
   const handleContinueUsed = useCallback(() => {
