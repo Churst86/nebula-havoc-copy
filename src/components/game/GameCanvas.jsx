@@ -604,10 +604,12 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           s.shieldHp = Math.min(3, s.shieldHp + 3);
           sounds.shield();
         } else {
+          // Enforce 2-powerup lock: only accept if already in locked list or can add a slot
+          const isLocked = s.lockedPowerups.includes(item.type);
+          const canAdd = s.lockedPowerups.length < 2;
+          if (!isLocked && !canAdd) return true; // reject — slots full with different types
+          if (!isLocked) s.lockedPowerups.push(item.type);
           s.powerups[item.type] = Math.min((s.powerups[item.type] || 0) + 1, 3);
-          if (item.type === 'wingman') {
-            // wingmen array will resize next frame
-          }
           sounds.powerup();
         }
         onPowerupChange({ ...s.powerups, shieldHp: s.shieldHp });
