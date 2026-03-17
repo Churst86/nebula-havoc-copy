@@ -786,7 +786,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     s.piledCells = s.piledCells.filter(c => c.y < H);
 
     // ── Bullet vs enemy ───────────────────────────────────────
-    const piercingTypes = ['laser', 'raygun', 'spread'];
+    const piercingTypes = ['spread'];
     s.bullets.forEach(b => {
       if (b.hit) return;
       s.enemies.forEach(e => {
