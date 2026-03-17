@@ -211,19 +211,21 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     if ((pw.raygun || 0) > 0) return Math.max(8, 40 - (pw.raygun || 0) * 4 - speedBonus);
     if ((pw.spread || 0) > 0 && (pw.raygun || 0) === 0 && (pw.bounce || 0) === 0) return Math.max(12, 50 - speedBonus);
     if ((pw.bounce || 0) > 0) return Math.max(12, 55 - speedBonus);
-    return Math.max(12, 55 - speedBonus);
+    return Math.max(10, 35 - speedBonus);
   }
 
   // ── Tetris block helpers ─────────────────────────────────────
   function spawnBlock(W) {
     const shapeIdx = Math.floor(Math.random() * TETRIS_SHAPES.length);
     const shape = TETRIS_SHAPES[shapeIdx];
-    const color = BLOCK_COLORS[Math.floor(Math.random() * BLOCK_COLORS.length)];
+    // 8% chance of invulnerable steel block
+    const isInvulnerable = Math.random() < 0.08;
+    const color = isInvulnerable ? '#aaaacc' : BLOCK_COLORS[Math.floor(Math.random() * BLOCK_COLORS.length)];
     const cols = shape.map(c => c[0]);
     const maxCol = Math.max(...cols);
     const startX = randomBetween(BLOCK_SIZE, W - (maxCol + 1) * BLOCK_SIZE);
-    const hp = 3;
-    return { shape, color, x: startX, y: -BLOCK_SIZE * 2, vy: 0.6 + Math.random() * 0.4, hp, maxHp: hp, settled: false };
+    const hp = isInvulnerable ? Infinity : 3;
+    return { shape, color, x: startX, y: -BLOCK_SIZE * 2, vy: 0.6 + Math.random() * 0.4, hp, maxHp: 3, settled: false, invulnerable: isInvulnerable };
   }
 
   function getBlockCells(block) {
