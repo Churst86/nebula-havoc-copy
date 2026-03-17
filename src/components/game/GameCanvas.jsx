@@ -138,6 +138,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     // Reset per-wave dropper state — dropper will appear mid-wave
     s.dropperSpawnTimer = randomBetween(200, 400); // ~3-6 seconds in
     s.gunDroppedThisWave = [];
+    s.auxDroppedThisWave = [];
+    s.starDroppedThisWave = false;
   }
 
   function spawnDropper(W, s) {
