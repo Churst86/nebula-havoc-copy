@@ -104,7 +104,26 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     s.enemies = enemies;
   }
 
-  // ── Fire logic (stacked tiers) ───────────────────────────────
+  // ── Fire logic ───────────────────────────────────────────────
+  // Laser charge constants
+  const LASER_CHARGE_FRAMES = 60;   // frames to fully charge
+  const LASER_BURST_SHOTS   = 8;    // how many rapid shots in one burst
+  const LASER_COOLDOWN_FRAMES = 90; // frames of cooldown after burst
+
+  function fireLaserBurstShot(s, shotIndex) {
+    const p = s.player;
+    const laserTier = s.powerups.laser || 1;
+    const count = laserTier + 1;
+    const spacing = 18 + laserTier * 6;
+    for (let i = 0; i < count; i++) {
+      const offset = (i - (count - 1) / 2) * spacing;
+      const angle = offset * 0.008;
+      // Slight spread on burst shots for dramatic feel
+      const spread = (shotIndex / LASER_BURST_SHOTS) * 0.3 - 0.15;
+      s.bullets.push({ x: p.x + offset, y: p.y - 18, vx: angle + spread, vy: -20, type: 'laser', fat: laserTier });
+    }
+  }
+
   function playerFire(s) {
     const p = s.player;
     const pw = s.powerups;
@@ -112,9 +131,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     const spreadTier = pw.spread || 0;
     const laserTier  = pw.laser  || 0;
     const raygunTier = pw.raygun || 0;
+    const bounceTier = pw.bounce || 0;
 
+    // Laser is handled separately via charge/burst system (not here)
     if (spreadTier > 0) {
-      // Tier 1: 5 bullets ±20°, Tier 2: 7 bullets ±45°, Tier 3: 9 bullets ±80° (nearly sideways)
       const [spread, count] = spreadTier === 1 ? [40, 5] : spreadTier === 2 ? [90, 7] : [160, 9];
       for (let i = 0; i < count; i++) {
         const angle = -spread / 2 + (spread / (count - 1)) * i;
@@ -123,67 +143,50 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       }
     }
 
-    if (laserTier > 0) {
-      // Fatter, more spread out beams — tier 1: 2 beams, tier 2: 3 beams, tier 3: 4 beams
-      // Fire in a burst: rapid-fire pairs with a short charge window
-      const count = laserTier + 1;
-      const spacing = 18 + laserTier * 6; // wider separation per tier
-      for (let i = 0; i < count; i++) {
-        const offset = (i - (count - 1) / 2) * spacing;
-        // Slight inward angle for inner beams to converge
-        const angle = offset * 0.008;
-        s.bullets.push({ x: p.x + offset, y: p.y - 18, vx: angle, vy: -20, type: 'laser', fat: laserTier });
-      }
-      // Burst: shoot extra beams staggered slightly offset
-      if (laserTier >= 2) {
-        for (let i = 0; i < count; i++) {
-          const offset = (i - (count - 1) / 2) * spacing;
-          s.bullets.push({ x: p.x + offset + 6, y: p.y - 14, vx: offset * 0.008 + 0.5, vy: -19, type: 'laser', fat: laserTier });
-          s.bullets.push({ x: p.x + offset - 6, y: p.y - 14, vx: offset * 0.008 - 0.5, vy: -19, type: 'laser', fat: laserTier });
-        }
-      }
-    }
-
     if (raygunTier > 0) {
-      // Spiral shot: each fire step rotates the spiral angle
-      s.spiralAngle = (s.spiralAngle || 0);
-      const arms = raygunTier + 1; // tier1: 2 arms, tier2: 3, tier3: 4
+      const arms = raygunTier + 1;
       const speed = 9;
       for (let i = 0; i < arms; i++) {
         const a = s.spiralAngle + (i / arms) * Math.PI * 2;
-        s.bullets.push({
-          x: p.x, y: p.y - 10,
-          vx: Math.sin(a) * speed * 0.55,
-          vy: -Math.cos(a) * speed,
-          type: 'raygun',
-        });
+        s.bullets.push({ x: p.x, y: p.y - 10, vx: Math.sin(a) * speed * 0.55, vy: -Math.cos(a) * speed, type: 'raygun' });
       }
-      s.spiralAngle += 0.35; // rotate each burst
+      s.spiralAngle += 0.35;
     }
 
-    // Bounce shot
-    const bounceTier = pw.bounce || 0;
     if (bounceTier > 0) {
-      const bounces = bounceTier; // tier 1 = 1 bounce, tier 2 = 2, tier 3 = 3
+      const bounces = bounceTier;
       s.bullets.push({ x: p.x - 8, y: p.y - 14, vx: -4, vy: -9, type: 'bounce', bouncesLeft: bounces });
       s.bullets.push({ x: p.x + 8, y: p.y - 14, vx:  4, vy: -9, type: 'bounce', bouncesLeft: bounces });
     }
 
-    // Default shot if no offensive powerup
     if (spreadTier === 0 && laserTier === 0 && raygunTier === 0 && bounceTier === 0) {
       s.bullets.push({ x: p.x, y: p.y - 18, vx: 0, vy: -12, type: 'normal' });
     }
 
-    // Wingmen fire
+    // Wingmen fire — aim at nearest enemy with weak slow shots
     if ((pw.wingman || 0) > 0) {
       s.wingmen.forEach(w => {
-        s.bullets.push({ x: w.x, y: w.y - 10, vx: 0, vy: -12, type: 'normal' });
+        // Find nearest enemy
+        let target = null, bestDist = Infinity;
+        s.enemies.forEach(e => {
+          const d = Math.hypot(e.x - w.x, e.y - w.y);
+          if (d < bestDist) { bestDist = d; target = e; }
+        });
+        if (target) {
+          const dx = target.x - w.x, dy = target.y - w.y;
+          const len = Math.sqrt(dx * dx + dy * dy) || 1;
+          const spd = 7; // slower than player
+          s.bullets.push({ x: w.x, y: w.y - 10, vx: (dx / len) * spd, vy: (dy / len) * spd, type: 'wingman' });
+        } else {
+          s.bullets.push({ x: w.x, y: w.y - 10, vx: 0, vy: -7, type: 'wingman' });
+        }
       });
     }
   }
 
   function getFireRate(pw) {
-    if ((pw.laser || 0) > 0) return Math.max(6, 12 - (pw.laser || 0) * 2); // slower rate for charge-burst feel
+    // Laser fire rate doesn't apply here (handled by charge system), return slow base for non-laser
+    if ((pw.laser || 0) > 0) return 999; // laser fires via charge burst only
     if ((pw.raygun || 0) > 0) return Math.max(5, 10 - (pw.raygun || 0) * 2);
     if ((pw.spread || 0) > 0) return Math.max(5, 8 - (pw.spread || 0));
     return 8;
