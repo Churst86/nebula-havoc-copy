@@ -31,18 +31,22 @@ function initState() {
     stars: [],
     score: 0,
     lives: 3,
+    maxLives: 3,
     wave: 1,
     waveTimer: 0,
     fireTimer: 0,
     spiralAngle: 0,
     // Laser charge-burst state
-    laserCharge: 0,       // counts up each frame while laser is active
-    laserCooldown: 0,     // frames remaining in cooldown after a burst
+    laserCharge: 0,
+    laserCooldown: 0,
     laserBursting: false,
     laserBurstShots: 0,
-    // Power-up system: max 2 types. lockedPowerups = the 2 chosen types (excludes shield)
+    // Spread shotgun state
+    spreadShotsLeft: SPREAD_SHOTS_PER_RELOAD,
+    spreadReloadTimer: 0,
+    // Power-up system: max 2 offensive types locked
     powerups: {},
-    lockedPowerups: [],   // up to 2 non-shield powerup keys
+    lockedPowerups: [],   // up to 2 non-shield/non-speed powerup keys
     shieldHp: 0,
     running: false,
   };
