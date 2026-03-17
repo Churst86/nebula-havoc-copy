@@ -77,7 +77,7 @@ const DROPPER_LABELS = {
   shield: '🛡', bounce: 'B', speed: '▶', shotspeed: '⚡',
 };
 
-export default function GameCanvas({ gameState, setGameState, onScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange }) {
+export default function GameCanvas({ gameState, setGameState, onScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, continuesLeft, onContinueUsed }) {
   const canvasRef = useRef(null);
   const keysRef = useRef({});
   const stateRef = useRef(initState());
@@ -928,6 +928,16 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       s.stars = initStars(W, H);
       s.running = true;
       spawnWave(W, s);
+      lastTimeRef.current = performance.now();
+      animRef.current = requestAnimationFrame(loop);
+    } else if (gameState === 'resuming') {
+      // Continue: restore lives and keep all state
+      const s = stateRef.current;
+      s.lives = 3;
+      s.player = s.player || { x: canvas.width / 2, y: canvas.height - 80 };
+      s.running = true;
+      onLivesChange(3);
+      if (onContinueUsed) onContinueUsed();
       lastTimeRef.current = performance.now();
       animRef.current = requestAnimationFrame(loop);
     } else {
