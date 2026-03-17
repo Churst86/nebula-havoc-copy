@@ -143,16 +143,18 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   }
 
   function spawnDropper(W, s) {
-    // Build the drop pool — gun types only if not already dropped this wave
+    // Guns: only if not already dropped this wave (one per gun type)
     const availableGuns = OFFENSIVE_POWERUPS.filter(g => !s.gunDroppedThisWave.includes(g));
-    // Upgrades (speed, shotspeed, wingman, shield) can always spawn
-    const upgradePool = ['speed', 'shotspeed', 'wingman', 'shield'];
-    // If 2 offensive already locked, only offer locked types or upgrades
     const gunPool = s.lockedPowerups.length >= 2
       ? s.lockedPowerups.filter(g => !s.gunDroppedThisWave.includes(g))
       : availableGuns;
-    const dropPool = [...gunPool, ...upgradePool];
-    if (dropPool.length === 0) return; // nothing to drop
+    // Aux upgrades: only if not already dropped this wave
+    const auxPool = AUXILIARY_UPGRADES.filter(a => !s.auxDroppedThisWave.includes(a));
+    // Star: once per wave
+    const starPool = s.starDroppedThisWave ? [] : ['star'];
+
+    const dropPool = [...gunPool, ...auxPool, ...starPool];
+    if (dropPool.length === 0) return;
 
     const dropType = dropPool[Math.floor(Math.random() * dropPool.length)];
     const dc = DROPPER_COLORS[dropType] || '#ffd700';
