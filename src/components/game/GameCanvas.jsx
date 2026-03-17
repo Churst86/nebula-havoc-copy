@@ -940,7 +940,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
               spawnExplosion(s, b.x, b.y, '#aaaacc', 3);
               return;
             } else {
-              block.hp--;
+              // Raygun deals 2 damage to blocks; others deal 1
+              block.hp -= b.type === 'raygun' ? 2 : 1;
               if (!piercingTypes.includes(b.type)) b.hit = true;
               if (block.hp <= 0) {
                 block.dead = true;
