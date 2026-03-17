@@ -985,11 +985,17 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     s.bullets = s.bullets.filter(b => !b.hit);
     s.enemies = s.enemies.filter(e => !e.dead);
 
+    // Star invincibility countdown
+    if (s.starInvincibleTimer > 0) s.starInvincibleTimer--;
+
     // Player picks up powerup
     s.powerupItems = s.powerupItems.filter(item => {
       const dx = item.x - p.x, dy = item.y - p.y;
       if (Math.sqrt(dx * dx + dy * dy) < 22) {
-        if (item.type === 'shield') {
+        if (item.type === 'star') {
+          s.starInvincibleTimer = STAR_INVINCIBLE_FRAMES;
+          sounds.powerup();
+        } else if (item.type === 'shield') {
           s.shieldHp++;
           sounds.shield();
         } else if (item.type === 'speed') {
@@ -1009,7 +1015,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           s.powerups[item.type] = Math.min((s.powerups[item.type] || 0) + 1, 3);
           sounds.powerup();
         }
-        onPowerupChange({ ...s.powerups, shieldHp: s.shieldHp });
+        onPowerupChange({ ...s.powerups, shieldHp: s.shieldHp, starInvincible: s.starInvincibleTimer > 0 });
         return false;
       }
       return true;
