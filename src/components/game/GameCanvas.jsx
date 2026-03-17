@@ -116,19 +116,41 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     }
 
     if (laserTier > 0) {
+      // Fatter, more spread out beams — tier 1: 2 beams, tier 2: 3 beams, tier 3: 4 beams
+      // Fire in a burst: rapid-fire pairs with a short charge window
       const count = laserTier + 1;
+      const spacing = 18 + laserTier * 6; // wider separation per tier
       for (let i = 0; i < count; i++) {
-        const offset = (i - (count - 1) / 2) * 10;
-        s.bullets.push({ x: p.x + offset, y: p.y - 18, vx: 0, vy: -18, type: 'laser' });
+        const offset = (i - (count - 1) / 2) * spacing;
+        // Slight inward angle for inner beams to converge
+        const angle = offset * 0.008;
+        s.bullets.push({ x: p.x + offset, y: p.y - 18, vx: angle, vy: -20, type: 'laser', fat: laserTier });
+      }
+      // Burst: shoot extra beams staggered slightly offset
+      if (laserTier >= 2) {
+        for (let i = 0; i < count; i++) {
+          const offset = (i - (count - 1) / 2) * spacing;
+          s.bullets.push({ x: p.x + offset + 6, y: p.y - 14, vx: offset * 0.008 + 0.5, vy: -19, type: 'laser', fat: laserTier });
+          s.bullets.push({ x: p.x + offset - 6, y: p.y - 14, vx: offset * 0.008 - 0.5, vy: -19, type: 'laser', fat: laserTier });
+        }
       }
     }
 
     if (raygunTier > 0) {
-      const count = raygunTier + 1;
-      for (let i = 0; i < count; i++) {
-        const offset = (i - (count - 1) / 2) * 16;
-        s.bullets.push({ x: p.x + offset, y: p.y - 12, vx: 0, vy: -8, type: 'raygun' });
+      // Spiral shot: each fire step rotates the spiral angle
+      s.spiralAngle = (s.spiralAngle || 0);
+      const arms = raygunTier + 1; // tier1: 2 arms, tier2: 3, tier3: 4
+      const speed = 9;
+      for (let i = 0; i < arms; i++) {
+        const a = s.spiralAngle + (i / arms) * Math.PI * 2;
+        s.bullets.push({
+          x: p.x, y: p.y - 10,
+          vx: Math.sin(a) * speed * 0.55,
+          vy: -Math.cos(a) * speed,
+          type: 'raygun',
+        });
       }
+      s.spiralAngle += 0.35; // rotate each burst
     }
 
     // Bounce shot
