@@ -159,19 +159,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   }
 
   // ── Fire logic ───────────────────────────────────────────────
-  function fireLaserBurstShot(s, shotIndex) {
-    const p = s.player;
-    const laserTier = s.powerups.laser || 1;
-    const count = laserTier + 1;
-    const spacing = 18 + laserTier * 6;
-    for (let i = 0; i < count; i++) {
-      const offset = (i - (count - 1) / 2) * spacing;
-      const angle = offset * 0.008;
-      const spread = (shotIndex / LASER_BURST_SHOTS) * 0.3 - 0.15;
-      s.bullets.push({ x: p.x + offset, y: p.y - 18, vx: angle + spread, vy: -20, type: 'laser', fat: laserTier });
-    }
-  }
-
   function fireSpreadShot(s) {
     const p = s.player;
     const spreadTier = s.powerups.spread || 0;
