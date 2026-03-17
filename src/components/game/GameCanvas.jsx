@@ -507,7 +507,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     s.powerupItems = s.powerupItems.filter(item => item.y < H + 30);
 
     // Bullet vs enemy
-    const piercingTypes = ['laser', 'raygun'];
+    const piercingTypes = ['laser', 'raygun', 'spread'];
     s.bullets.forEach(b => {
       if (b.hit) return;
       s.enemies.forEach(e => {
