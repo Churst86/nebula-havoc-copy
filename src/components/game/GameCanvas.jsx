@@ -661,7 +661,33 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     s.enemies.forEach(e => drawEnemy(ctx, e));
     s.bullets.forEach(b => drawBullet(ctx, b, false));
     s.enemyBullets.forEach(b => drawBullet(ctx, b, true));
-    drawPlayer(ctx, p, s.wingmen, s.shieldHp);
+    drawPlayer(ctx, p, s.wingmen, s.shieldHp, s.enemies);
+
+    // Laser charge indicator — pulsing arc above player
+    if ((s.powerups.laser || 0) > 0) {
+      const pct = s.laserCooldown > 0 ? 0 : Math.min(s.laserCharge / LASER_CHARGE_FRAMES, 1);
+      if (s.laserCooldown > 0) {
+        // Cooldown: grey arc
+        ctx.save();
+        ctx.strokeStyle = 'rgba(180,180,180,0.3)';
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - s.laserCooldown / LASER_COOLDOWN_FRAMES));
+        ctx.stroke();
+        ctx.restore();
+      } else if (!s.laserBursting) {
+        // Charging: pink arc growing
+        const pulseAlpha = 0.5 + 0.5 * Math.sin(Date.now() * 0.01);
+        ctx.save();
+        ctx.strokeStyle = `rgba(255,68,255,${0.4 + pct * 0.6})`;
+        ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 8 + pct * 16;
+        ctx.lineWidth = 2 + pct * 3;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 28 + pct * 6, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct);
+        ctx.stroke();
+        ctx.restore();
+      }
 
     animRef.current = requestAnimationFrame(loop);
   }, [onScoreChange, onLivesChange, onWaveChange, onPowerupChange, setGameState]);
