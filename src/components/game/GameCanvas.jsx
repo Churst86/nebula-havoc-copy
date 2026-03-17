@@ -807,6 +807,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
             if (e.type === 'dropper') {
               sounds.killDropper();
               s.powerupItems.push({ x: e.x, y: e.y, type: e.dropType, angle: 0 });
+              // Track gun powerups dropped this wave so they don't spawn again
+              if (OFFENSIVE_POWERUPS.includes(e.dropType)) {
+                s.gunDroppedThisWave = [...(s.gunDroppedThisWave || []), e.dropType];
+              }
             }
             if (e.type === 'boss') {
               sounds.stopBossMusic();
