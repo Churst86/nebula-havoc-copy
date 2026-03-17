@@ -22,6 +22,7 @@ function initState() {
     wave: 1,
     waveTimer: 0,
     fireTimer: 0,
+    spiralAngle: 0,  // for raygun spiral tracking
     // Stacking power-ups: { spread: 2, laser: 1, ... }
     powerups: {},
     shieldHp: 0,   // 0 = no shield, 1-3 = active
