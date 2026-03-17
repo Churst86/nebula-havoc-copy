@@ -165,12 +165,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     if (spreadTier === 0) return;
     if (s.spreadReloadTimer > 0) return;
     if (s.spreadShotsLeft <= 0) return;
-    const [spreadDeg, count] = spreadTier === 1 ? [50, 7] : spreadTier === 2 ? [100, 9] : [150, 11];
-    for (let i = 0; i < count; i++) {
-      const angle = -spreadDeg / 2 + (spreadDeg / (count - 1)) * i;
-      const rad = (angle * Math.PI) / 180;
-      s.bullets.push({ x: p.x, y: p.y - 18, vx: Math.sin(rad) * 5, vy: -Math.cos(rad) * 7, type: 'spread' });
-    }
+    // Fire a single fast bullet straight up — it explodes into spread on hit
+    const pelletCount = spreadTier === 1 ? 7 : spreadTier === 2 ? 9 : 11;
+    const spreadDeg = spreadTier === 1 ? 50 : spreadTier === 2 ? 100 : 150;
+    s.bullets.push({ x: p.x, y: p.y - 18, vx: 0, vy: -10, type: 'spread', spreadTier, pelletCount, spreadDeg, armed: false });
     s.spreadShotsLeft--;
     if (s.spreadShotsLeft <= 0) s.spreadReloadTimer = SPREAD_RELOAD_FRAMES;
   }
