@@ -28,7 +28,6 @@ export default function HighScores({ score, wave, onRestart, isNewScore }) {
   const [name, setName] = useState('');
   const [saved, setSaved] = useState(false);
   const [scores, setScores] = useState(getHighScores());
-  const [timeLeft, setTimeLeft] = useState(5);
   const inputs = [useRef(), useRef(), useRef()];
   const [letters, setLetters] = useState(['', '', '']);
 
