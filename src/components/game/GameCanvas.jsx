@@ -673,8 +673,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       if (s.spreadFireTimer <= 0) {
         fireSpreadShot(s);
         const spreadTier = s.powerups.spread || 0;
-        const shotspeedBonus = (s.powerups.shotspeed || 0) * 6;
-        s.spreadFireTimer = Math.max(12, 55 - spreadTier * 4 - shotspeedBonus);
+        const rapidfireBonus = (s.powerups.rapidfire || 0) === 1 ? 10 : (s.powerups.rapidfire || 0) * 8;
+        s.spreadFireTimer = Math.max(12, 55 - spreadTier * 4 - rapidfireBonus);
       }
     }
 
