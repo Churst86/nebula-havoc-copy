@@ -606,7 +606,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
 
     return () => {
       window.removeEventListener('resize', resize);
-      sounds.stopBossMusic();
+      sounds.stopAllMusic();
       stateRef.current.running = false;
       if (animRef.current) cancelAnimationFrame(animRef.current);
     };
