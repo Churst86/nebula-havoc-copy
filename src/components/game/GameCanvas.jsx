@@ -110,11 +110,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   }
 
   // ── Fire logic ───────────────────────────────────────────────
-  // Laser charge constants
-  const LASER_CHARGE_FRAMES = 60;   // frames to fully charge
-  const LASER_BURST_SHOTS   = 8;    // how many rapid shots in one burst
-  const LASER_COOLDOWN_FRAMES = 90; // frames of cooldown after burst
-
   function fireLaserBurstShot(s, shotIndex) {
     const p = s.player;
     const laserTier = s.powerups.laser || 1;
