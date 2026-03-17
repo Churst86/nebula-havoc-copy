@@ -226,7 +226,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   }
 
   function getFireRate(pw) {
-    const speedBonus = (pw.shotspeed || 0) * 6;
+    const speedBonus = (pw.rapidfire || 0) === 1 ? 10 : (pw.rapidfire || 0) * 8;
     if ((pw.raygun || 0) > 0) return Math.max(14, 50 - (pw.raygun || 0) * 4 - speedBonus);
     if ((pw.spread || 0) > 0 && (pw.raygun || 0) === 0 && (pw.bounce || 0) === 0) return Math.max(12, 50 - speedBonus);
     if ((pw.bounce || 0) > 0) return Math.max(10, 35 - speedBonus);
