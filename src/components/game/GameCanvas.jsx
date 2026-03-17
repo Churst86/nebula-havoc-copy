@@ -55,8 +55,8 @@ function initState() {
 
 // Offensive powerup types that count toward the 2-lock system
 const OFFENSIVE_POWERUPS = ['spread', 'laser', 'raygun', 'wingman', 'bounce'];
-// Special powerups that bypass the 2-lock (speed, shield)
-const SPECIAL_POWERUPS = ['speed', 'shield'];
+// Special powerups that bypass the 2-lock (speed, shield, shotspeed)
+const SPECIAL_POWERUPS = ['speed', 'shield', 'shotspeed'];
 
 export default function GameCanvas({ gameState, setGameState, onScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange }) {
   const canvasRef = useRef(null);
