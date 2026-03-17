@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Trophy, RotateCcw } from 'lucide-react';
+import { Trophy, RotateCcw, Home } from 'lucide-react';
 
 const LS_KEY = 'voidstorm_highscores';
 const MAX_SCORES = 10;
