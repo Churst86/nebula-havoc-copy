@@ -983,17 +983,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
               spawnExplosion(s, e.x, e.y, '#ffdd00', 20);
               // Draw shockwave ring via a particle with special flag
               s.particles.push({ x: e.x, y: e.y, vx: 0, vy: 0, r: 10, alpha: 1, color: '#ff8800', shockwave: true, shockwaveR: 10 });
-              // Damage nearby enemies
+              // Damage nearby enemies — mark, don't mutate yet
               s.enemies.forEach(ne => {
                 if (ne === e || ne.dead) return;
                 if (Math.hypot(ne.x - e.x, ne.y - e.y) < BOMB_RADIUS) {
                   ne.hp -= 2;
                   spawnExplosion(s, ne.x, ne.y, '#ff8800', 8);
-                  if (ne.hp <= 0) {
-                    ne.dead = true;
-                    s.score += ne.type === 'boss' ? 5000 : ne.type === 'dropper' ? 500 : ne.type === 'elite' ? 300 : ne.type === 'bomb' ? 200 : 100;
-                    onScoreChange(s.score);
-                  }
+                  if (ne.hp <= 0) ne.dead = true;
                 }
               });
               // Damage player if nearby (unless invincible)
