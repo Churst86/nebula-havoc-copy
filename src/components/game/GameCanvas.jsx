@@ -508,11 +508,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
 
     // Spread shotgun fires on its own slower timer alongside other weapons
     if ((s.powerups.spread || 0) > 0) {
-      if (!s.spreadFireTimer) s.spreadFireTimer = 0;
+      if (s.spreadFireTimer === undefined || s.spreadFireTimer === null) s.spreadFireTimer = 10;
       s.spreadFireTimer--;
       if (s.spreadFireTimer <= 0) {
         fireSpreadShot(s);
-        // If reloading, we still tick but won't fire; next shot fires immediately when reload done
         const spreadTier = s.powerups.spread || 0;
         s.spreadFireTimer = Math.max(18, 30 - spreadTier * 4);
       }
