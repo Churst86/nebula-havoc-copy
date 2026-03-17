@@ -966,13 +966,39 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           b.hit = true;
           if (e.hp <= 0) {
             e.dead = true;
-            const pts = e.type === 'boss' ? 5000 : e.type === 'dropper' ? 500 : e.type === 'elite' ? 300 : 100;
+            // Bomb AoE explosion on death
+            if (e.type === 'bomb') {
+              const BOMB_RADIUS = 80;
+              spawnExplosion(s, e.x, e.y, '#ff8800', 35);
+              spawnExplosion(s, e.x, e.y, '#ffdd00', 20);
+              // Draw shockwave ring via a particle with special flag
+              s.particles.push({ x: e.x, y: e.y, vx: 0, vy: 0, r: 10, alpha: 1, color: '#ff8800', shockwave: true, shockwaveR: 10 });
+              // Damage nearby enemies
+              s.enemies.forEach(ne => {
+                if (ne === e || ne.dead) return;
+                if (Math.hypot(ne.x - e.x, ne.y - e.y) < BOMB_RADIUS) {
+                  ne.hp -= 2;
+                  spawnExplosion(s, ne.x, ne.y, '#ff8800', 8);
+                  if (ne.hp <= 0) {
+                    ne.dead = true;
+                    s.score += ne.type === 'boss' ? 5000 : ne.type === 'dropper' ? 500 : ne.type === 'elite' ? 300 : ne.type === 'bomb' ? 200 : 100;
+                    onScoreChange(s.score);
+                  }
+                }
+              });
+              // Damage player if nearby (unless invincible)
+              if (Math.hypot(p.x - e.x, p.y - e.y) < BOMB_RADIUS) {
+                takeDamage(s);
+                spawnExplosion(s, p.x, p.y, '#ff8800', 12);
+              }
+            }
+            const pts = e.type === 'boss' ? 5000 : e.type === 'dropper' ? 500 : e.type === 'elite' ? 300 : e.type === 'bomb' ? 200 : 100;
             s.score += pts;
             onScoreChange(s.score);
             sounds.kill();
             spawnExplosion(s, e.x, e.y,
-              e.type === 'boss' ? '#ff0066' : e.type === 'dropper' ? (e.color || '#ffd700') : e.type === 'elite' ? '#ff44ff' : '#ff4444',
-              e.type === 'boss' ? 40 : 14
+              e.type === 'boss' ? '#ff0066' : e.type === 'dropper' ? (e.color || '#ffd700') : e.type === 'elite' ? '#ff44ff' : e.type === 'bomb' ? '#ff8800' : '#ff4444',
+              e.type === 'boss' ? 40 : e.type === 'bomb' ? 30 : 14
             );
             if (e.type === 'dropper') {
               sounds.killDropper();
