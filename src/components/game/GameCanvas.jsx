@@ -112,25 +112,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       sounds.startWaveMusic(wave);
     }
 
-    // Determine what powerup this dropper carries at spawn time
-    const dropPool = s.lockedPowerups.length >= 2
-      ? [...s.lockedPowerups, 'shield', 'speed', 'shotspeed', 'wingman']
-      : [...OFFENSIVE_POWERUPS, 'speed', 'shotspeed', 'wingman'];
-    const dropType = dropPool[Math.floor(Math.random() * dropPool.length)];
-    const dc = DROPPER_COLORS[dropType] || '#ffd700';
-
-    enemies.push({
-      type: 'dropper',
-      dropType,
-      x: randomBetween(80, W - 80), y: randomBetween(60, 200),
-      w: 22, h: 22,
-      hp: 5, maxHp: 5,
-      // Random wandering velocity
-      vx: randomBetween(-1.2, 1.2), vy: randomBetween(-0.8, 0.8),
-      dirTimer: randomBetween(60, 120),
-      color: dc,
-    });
-
     for (let i = 0; i < count; i++) {
       const isElite = wave > 3 && Math.random() < 0.25;
       enemies.push({
@@ -145,6 +126,36 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       });
     }
     s.enemies = enemies;
+
+    // Reset per-wave dropper state — dropper will appear mid-wave
+    s.dropperSpawnTimer = randomBetween(200, 400); // ~3-6 seconds in
+    s.gunDroppedThisWave = [];
+  }
+
+  function spawnDropper(W, s) {
+    // Build the drop pool — gun types only if not already dropped this wave
+    const availableGuns = OFFENSIVE_POWERUPS.filter(g => !s.gunDroppedThisWave.includes(g));
+    // Upgrades (speed, shotspeed, wingman, shield) can always spawn
+    const upgradePool = ['speed', 'shotspeed', 'wingman', 'shield'];
+    // If 2 offensive already locked, only offer locked types or upgrades
+    const gunPool = s.lockedPowerups.length >= 2
+      ? s.lockedPowerups.filter(g => !s.gunDroppedThisWave.includes(g))
+      : availableGuns;
+    const dropPool = [...gunPool, ...upgradePool];
+    if (dropPool.length === 0) return; // nothing to drop
+
+    const dropType = dropPool[Math.floor(Math.random() * dropPool.length)];
+    const dc = DROPPER_COLORS[dropType] || '#ffd700';
+    s.enemies.push({
+      type: 'dropper',
+      dropType,
+      x: randomBetween(80, W - 80), y: randomBetween(60, 200),
+      w: 22, h: 22,
+      hp: 1, maxHp: 1,
+      vx: randomBetween(-1.2, 1.2), vy: randomBetween(-0.8, 0.8),
+      dirTimer: randomBetween(60, 120),
+      color: dc,
+    });
   }
 
   // ── Fire logic ───────────────────────────────────────────────
