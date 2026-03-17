@@ -45,6 +45,7 @@ function initState() {
     spreadShotsLeft: SPREAD_SHOTS_PER_RELOAD,
     spreadReloadTimer: 0,
     spreadFireTimer: 10,
+    wingmanFireTimer: 0,
     // Power-up system: max 2 offensive types locked
     powerups: {},
     lockedPowerups: [],   // up to 2 non-shield/non-speed powerup keys
