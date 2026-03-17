@@ -88,6 +88,13 @@ export default function HighScores({ score, wave, onRestart, isNewScore }) {
           <span className="text-muted-foreground text-sm">· Wave {wave}</span>
         </div>
 
+        {/* Auto-return timer */}
+        {saved && (
+          <p className="text-sm text-muted-foreground">
+            Returning to title in {timeLeft}s...
+          </p>
+        )}
+
         {/* Name entry */}
         {isNewScore && !saved && (
           <div className="space-y-3">
