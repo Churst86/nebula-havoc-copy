@@ -384,7 +384,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     onLivesChange(s.lives);
     sounds.playerHit();
     if (s.lives <= 0) {
-      sounds.stopBossMusic();
+      sounds.stopAllMusic();
       s.running = false;
       setGameState('gameover');
     }
