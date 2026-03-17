@@ -583,7 +583,17 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
             );
             if (e.type === 'dropper') {
               sounds.killDropper();
-              s.powerupItems.push({ x: e.x, y: e.y, type: e.drop, angle: 0 });
+              // If 2 powerups are locked, only drop one of those 2 (or shield)
+              let dropType;
+              if (s.lockedPowerups.length >= 2) {
+                // Occasionally drop shield too
+                const pool = [...s.lockedPowerups, 'shield'];
+                dropType = pool[Math.floor(Math.random() * pool.length)];
+              } else {
+                // Still picking powerups — drop any offensive type
+                dropType = OFFENSIVE_POWERUPS[Math.floor(Math.random() * OFFENSIVE_POWERUPS.length)];
+              }
+              s.powerupItems.push({ x: e.x, y: e.y, type: dropType, angle: 0 });
             }
             if (e.type === 'boss') {
               sounds.stopBossMusic();
