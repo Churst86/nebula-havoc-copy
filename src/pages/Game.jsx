@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import GameCanvas from '../components/game/GameCanvas';
+import GameCanvas from '../components/game/GameCanvas.jsx';
 import GameHUD from '../components/game/GameHUD';
 import GameOver from '../components/game/GameOver';
 import StartScreen from '../components/game/StartScreen';
