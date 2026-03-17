@@ -193,10 +193,18 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   }
 
   // ── Drawing ──────────────────────────────────────────────────
-  function drawPlayer(ctx, p, wingmen, shieldHp) {
+  function drawPlayer(ctx, p, wingmen, shieldHp, enemies) {
     wingmen.forEach(w => {
+      // Rotate wingman to face nearest enemy
+      let angle = -Math.PI / 2; // default: point up
+      let bestDist = Infinity;
+      (enemies || []).forEach(e => {
+        const d = Math.hypot(e.x - w.x, e.y - w.y);
+        if (d < bestDist) { bestDist = d; angle = Math.atan2(e.y - w.y, e.x - w.x) + Math.PI / 2; }
+      });
       ctx.save();
       ctx.translate(w.x, w.y);
+      ctx.rotate(angle);
       ctx.shadowColor = '#44aaff'; ctx.shadowBlur = 10;
       ctx.strokeStyle = '#44aaff'; ctx.lineWidth = 1.5;
       ctx.beginPath();
