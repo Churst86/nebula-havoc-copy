@@ -26,9 +26,19 @@ export default function GameHUD({ score, lives, wave, activePowerup }) {
           </span>
         </div>
 
-        {/* Wave */}
-        <div className="text-sm font-bold uppercase tracking-[0.3em] text-muted-foreground">
-          Wave {wave}
+        {/* Wave + Powerup */}
+        <div className="flex flex-col items-center gap-1">
+          <div className="text-sm font-bold uppercase tracking-[0.3em] text-muted-foreground">
+            Wave {wave}
+          </div>
+          {activePowerup && (
+            <div
+              className="text-xs font-bold px-2 py-0.5 rounded-full animate-pulse"
+              style={{ color: POWERUP_COLORS[activePowerup], border: `1px solid ${POWERUP_COLORS[activePowerup]}`, background: `${POWERUP_COLORS[activePowerup]}22` }}
+            >
+              ⚡ {POWERUP_LABELS[activePowerup]}
+            </div>
+          )}
         </div>
 
         {/* Lives */}
