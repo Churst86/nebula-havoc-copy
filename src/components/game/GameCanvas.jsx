@@ -236,18 +236,36 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   }
 
   function drawBlock(ctx, block) {
-    const alpha = block.hp / block.maxHp;
+    const alpha = block.invulnerable ? 1 : (block.hp / block.maxHp);
     ctx.save();
     block.shape.forEach(([col, row]) => {
       const bx = block.x + col * BLOCK_SIZE;
       const by = block.y + row * BLOCK_SIZE;
-      ctx.shadowColor = block.color;
-      ctx.shadowBlur = 8;
-      ctx.fillStyle = block.color + Math.round(alpha * 0xcc).toString(16).padStart(2, '0');
-      ctx.fillRect(bx + 1, by + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
-      ctx.strokeStyle = block.color;
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(bx + 1, by + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+      if (block.invulnerable) {
+        // Steel look: grey gradient with cross-hatch lines
+        ctx.shadowColor = '#8888bb'; ctx.shadowBlur = 6;
+        ctx.fillStyle = '#555577';
+        ctx.fillRect(bx + 1, by + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+        ctx.strokeStyle = '#9999bb'; ctx.lineWidth = 1.5;
+        ctx.strokeRect(bx + 1, by + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+        // Diagonal hatch
+        ctx.strokeStyle = 'rgba(180,180,220,0.25)'; ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(bx + 1, by + 1); ctx.lineTo(bx + BLOCK_SIZE - 1, by + BLOCK_SIZE - 1);
+        ctx.moveTo(bx + BLOCK_SIZE / 2, by + 1); ctx.lineTo(bx + BLOCK_SIZE - 1, by + BLOCK_SIZE / 2);
+        ctx.stroke();
+        // ∞ symbol
+        ctx.fillStyle = 'rgba(200,200,255,0.6)';
+        ctx.font = `bold ${Math.round(BLOCK_SIZE * 0.55)}px monospace`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('∞', bx + BLOCK_SIZE / 2, by + BLOCK_SIZE / 2);
+      } else {
+        ctx.shadowColor = block.color; ctx.shadowBlur = 8;
+        ctx.fillStyle = block.color + Math.round(alpha * 0xcc).toString(16).padStart(2, '0');
+        ctx.fillRect(bx + 1, by + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+        ctx.strokeStyle = block.color; ctx.lineWidth = 1.5;
+        ctx.strokeRect(bx + 1, by + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+      }
     });
     ctx.restore();
   }
