@@ -823,14 +823,27 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     // Clean up piled cells that are off screen bottom (shouldn't happen but safety)
     s.piledCells = s.piledCells.filter(c => c.y < H);
 
+    // Helper: explode a spread bullet into pellets
+    function explodeSpread(b, newBullets) {
+      if (b.type !== 'spread') return;
+      const { pelletCount = 7, spreadDeg = 50 } = b;
+      for (let i = 0; i < pelletCount; i++) {
+        const angle = -spreadDeg / 2 + (spreadDeg / (pelletCount - 1)) * i;
+        const rad = (angle * Math.PI) / 180;
+        newBullets.push({ x: b.x, y: b.y, vx: Math.sin(rad) * 5, vy: -Math.cos(rad) * 6, type: 'spreadPellet' });
+      }
+    }
+
     // ── Bullet vs enemy ───────────────────────────────────────
-    const piercingTypes = ['spread'];
+    const piercingTypes = [];
+    const newSpreadPellets = [];
     s.bullets.forEach(b => {
       if (b.hit) return;
       s.enemies.forEach(e => {
         if (e.dead) return;
         const dx = b.x - e.x, dy = b.y - e.y;
         if (Math.abs(dx) < e.w && Math.abs(dy) < e.h) {
+          if (b.type === 'spread') { explodeSpread(b, newSpreadPellets); b.hit = true; return; }
           e.hp--;
           sounds.hit();
           if (!piercingTypes.includes(b.type)) b.hit = true;
