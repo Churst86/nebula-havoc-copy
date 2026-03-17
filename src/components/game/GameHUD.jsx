@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Zap, Shield } from 'lucide-react';
+import { Heart, Zap, Shield, RefreshCw } from 'lucide-react';
 
 const POWERUP_COLORS = {
   spread:    '#ffdd00',
@@ -20,7 +20,7 @@ const POWERUP_LABELS = {
   shotspeed: 'FIRE RATE',
 };
 
-export default function GameHUD({ score, lives, maxLives, wave, activePowerup }) {
+export default function GameHUD({ score, lives, maxLives, wave, activePowerup, continuesLeft }) {
   const powerups = activePowerup || {};
   const shieldHp = powerups.shieldHp || 0;
   const activePowerupKeys = Object.keys(POWERUP_LABELS).filter(k => (powerups[k] || 0) > 0);
@@ -66,15 +66,24 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup })
           </div>
         </div>
 
-        {/* Lives */}
-        <div className="flex items-center gap-1.5 flex-wrap justify-end max-w-32">
-          {Array.from({ length: maxLives || 3 }).map((_, i) => (
-            <Heart key={i}
-              className={`w-5 h-5 transition-all duration-300 ${
-                i < lives ? 'text-red-500 fill-red-500 scale-100' : 'text-gray-700 fill-gray-700 scale-75 opacity-40'
-              }`}
-            />
-          ))}
+        {/* Lives + Continues */}
+        <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center gap-1.5 flex-wrap justify-end max-w-32">
+            {Array.from({ length: maxLives || 3 }).map((_, i) => (
+              <Heart key={i}
+                className={`w-5 h-5 transition-all duration-300 ${
+                  i < lives ? 'text-red-500 fill-red-500 scale-100' : 'text-gray-700 fill-gray-700 scale-75 opacity-40'
+                }`}
+              />
+            ))}
+          </div>
+          {continuesLeft > 0 && (
+            <div className="flex items-center gap-1 text-xs font-bold"
+              style={{ color: '#00f0ff' }}>
+              <RefreshCw className="w-3 h-3" />
+              <span>{continuesLeft}×</span>
+            </div>
+          )}
         </div>
       </div>
     </div>
