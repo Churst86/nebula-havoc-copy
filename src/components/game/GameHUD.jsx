@@ -6,7 +6,7 @@ const POWERUP_COLORS = {
   laser:   '#ff44ff',
   raygun:  '#44ffaa',
   wingman: '#44aaff',
-  bounce:  '#ff9900',
+  bounce:  '#aaff00',
 };
 const POWERUP_LABELS = {
   spread:  'SPREAD',
