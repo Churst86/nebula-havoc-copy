@@ -642,11 +642,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
               let dropType;
               if (s.lockedPowerups.length >= 2) {
                 // Locked: drop one of the 2 locked types, or a special
-                const pool = [...s.lockedPowerups, 'shield', 'speed', 'shotspeed', 'shotspeed'];
+                const pool = [...s.lockedPowerups, 'shield', 'speed', 'shotspeed', 'wingman'];
                 dropType = pool[Math.floor(Math.random() * pool.length)];
               } else {
                 // Still picking: drop any offensive type or a special
-                const pool = [...OFFENSIVE_POWERUPS, 'speed', 'shotspeed'];
+                const pool = [...OFFENSIVE_POWERUPS, 'speed', 'shotspeed', 'wingman'];
                 dropType = pool[Math.floor(Math.random() * pool.length)];
               }
               s.powerupItems.push({ x: e.x, y: e.y, type: dropType, angle: 0 });
