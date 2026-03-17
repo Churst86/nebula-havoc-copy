@@ -227,7 +227,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     const cols = shape.map(c => c[0]);
     const maxCol = Math.max(...cols);
     const startX = randomBetween(BLOCK_SIZE, W - (maxCol + 1) * BLOCK_SIZE);
-    const hp = 3;
+    // HP scales with number of cells: 2 cells=1hp, 3 cells=2hp, 4 cells=3hp
+    const cellCount = shape.length;
+    const hp = cellCount <= 2 ? 1 : cellCount === 3 ? 2 : 3;
     return { shape, color, x: startX, y: -BLOCK_SIZE * 2, vy: 0.6 + Math.random() * 0.4, hp, maxHp: hp, settled: false, invulnerable: isInvulnerable };
   }
 
