@@ -419,6 +419,29 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       ctx.font = 'bold 12px monospace';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(DROPPER_LABELS[e.dropType] || '★', 0, 1);
+    } else if (e.type === 'bomb') {
+      const mad = e.hp < e.maxHp; // hit once = mad
+      const pulse = 0.7 + Math.sin(Date.now() * (mad ? 0.018 : 0.008)) * 0.3;
+      const bombColor = mad ? `rgba(255,${Math.floor(80 + pulse * 80)},0,1)` : '#ff8800';
+      ctx.shadowColor = bombColor; ctx.shadowBlur = 16 + pulse * 10;
+      // Body — circle
+      ctx.fillStyle = mad ? `rgba(255,${Math.floor(60 + pulse * 60)},0,0.85)` : 'rgba(255,136,0,0.85)';
+      ctx.beginPath(); ctx.arc(0, 0, 16, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = bombColor; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, 16, 0, Math.PI * 2); ctx.stroke();
+      // Fuse on top
+      ctx.strokeStyle = '#ffdd00'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(2, -16); ctx.quadraticCurveTo(10, -26, 6, -32); ctx.stroke();
+      // Fuse spark
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(6, -32, 2.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffff00';
+      ctx.beginPath(); ctx.arc(6, -32, 1.5, 0, Math.PI * 2); ctx.fill();
+      // Face
+      ctx.fillStyle = mad ? '#fff' : '#330000';
+      ctx.font = `bold ${mad ? 14 : 12}px sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(mad ? '>_<' : '^_^', 0, 2);
     } else if (e.type === 'elite') {
       ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14;
       ctx.strokeStyle = '#ff44ff'; ctx.lineWidth = 2;
