@@ -91,6 +91,7 @@ export default function Game() {
         onPowerupChange={setActivePowerup}
         continuesLeft={continuesLeft}
         onContinueUsed={handleContinueUsed}
+        isPaused={isPaused}
       />
 
       {(gameState === 'playing' || gameState === 'resuming') && (
