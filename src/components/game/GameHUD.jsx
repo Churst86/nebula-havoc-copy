@@ -23,6 +23,7 @@ const POWERUP_LABELS = {
 export default function GameHUD({ score, lives, maxLives, wave, activePowerup, continuesLeft }) {
   const powerups = activePowerup || {};
   const shieldHp = powerups.shieldHp || 0;
+  const starInvincible = powerups.starInvincible || false;
   const activePowerupKeys = Object.keys(POWERUP_LABELS).filter(k => (powerups[k] || 0) > 0);
 
   return (
