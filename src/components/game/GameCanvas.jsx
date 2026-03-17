@@ -80,11 +80,11 @@ const STAR_INVINCIBLE_FRAMES = 600; // 10 seconds at 60fps
 const DROPPER_COLORS = {
   spread: '#ffdd00', laser: '#ff44ff', raygun: '#44ffaa',
   wingman: '#44aaff', shield: '#00ccff', bounce: '#aaff00',
-  speed: '#ff8800', shotspeed: '#ff4488', star: '#ffffff',
+  speed: '#ff8800', rapidfire: '#ff4488', star: '#ffffff',
 };
 const DROPPER_LABELS = {
   spread: 'S', laser: 'L', raygun: 'R', wingman: 'W',
-  shield: '🛡', bounce: 'B', speed: '▶', shotspeed: '⚡', star: '★',
+  shield: '🛡', bounce: 'B', speed: '▶', rapidfire: '⚡', star: '★',
 };
 
 export default function GameCanvas({ gameState, setGameState, onScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, continuesLeft, onContinueUsed }) {
