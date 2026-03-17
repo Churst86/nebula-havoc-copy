@@ -27,6 +27,7 @@ export default function Game() {
         onScoreChange={setScore}
         onLivesChange={setLives}
         onWaveChange={setWave}
+        onPowerupChange={setActivePowerup}
       />
 
       {gameState === 'playing' && (
