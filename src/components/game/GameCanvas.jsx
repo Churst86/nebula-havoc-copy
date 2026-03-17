@@ -2,10 +2,10 @@ import React, { useRef, useEffect, useCallback } from 'react';
 import MobileControls from './MobileControls';
 import { sounds } from '../../hooks/useSound.js';
 
-// Laser charge/burst constants
-const LASER_CHARGE_FRAMES = 60;
-const LASER_BURST_SHOTS = 8;
-const LASER_COOLDOWN_FRAMES = 90;
+// Laser beam constants
+const LASER_CHARGE_FRAMES = 60;      // frames to charge before firing
+const LASER_BEAM_FRAMES = 180;       // frames beam stays active (~3 sec)
+const LASER_COOLDOWN_FRAMES = 150;   // frames of cooldown after beam ends
 
 // Spread shotgun constants
 const SPREAD_SHOTS_PER_RELOAD = 2;
