@@ -59,7 +59,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         type: 'boss',
         x: W / 2, y: -60,
         w: 45, h: 45,
-        hp: 30 + wave * 5, maxHp: 30 + wave * 5,
+        hp: 80 + wave * 12, maxHp: 80 + wave * 12,
         vx: 1.2, vy: 0.3,
         fireTimer: 40,
         phase: 0,
