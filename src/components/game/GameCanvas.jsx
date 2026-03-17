@@ -679,8 +679,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           s.powerups.speed = Math.min((s.powerups.speed || 0) + 1, 5);
           sounds.powerup();
         } else if (item.type === 'shotspeed') {
-          // Shot speed does NOT count toward 2-lock
           s.powerups.shotspeed = Math.min((s.powerups.shotspeed || 0) + 1, 5);
+          sounds.powerup();
+        } else if (item.type === 'wingman') {
+          // Wingman does NOT count toward 2-lock
+          s.powerups.wingman = Math.min((s.powerups.wingman || 0) + 1, 3);
           sounds.powerup();
         } else {
           // Enforce 2-powerup lock: only accept if already in locked list or can add a slot
