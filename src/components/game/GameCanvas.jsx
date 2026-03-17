@@ -65,7 +65,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       });
       sounds.startBossMusic();
     } else {
-      sounds.stopBossMusic();
+      sounds.startWaveMusic(wave);
     }
 
     // Dropper (powerup carrier)
