@@ -466,11 +466,37 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       });
     }
 
-    // Auto fire
+    // Auto fire (non-laser weapons)
     s.fireTimer--;
     if (s.fireTimer <= 0) {
       playerFire(s);
       s.fireTimer = getFireRate(s.powerups);
+    }
+
+    // ── Laser charge / burst / cooldown ──────────────────────
+    if ((s.powerups.laser || 0) > 0) {
+      if (s.laserCooldown > 0) {
+        s.laserCooldown--;
+      } else if (s.laserBursting) {
+        // Fire one burst shot per frame during burst
+        if (s.laserBurstShots > 0) {
+          fireLaserBurstShot(s, LASER_BURST_SHOTS - s.laserBurstShots);
+          s.laserBurstShots--;
+        } else {
+          s.laserBursting = false;
+          s.laserCharge = 0;
+          s.laserCooldown = LASER_COOLDOWN_FRAMES;
+        }
+      } else {
+        s.laserCharge++;
+        if (s.laserCharge >= LASER_CHARGE_FRAMES) {
+          s.laserBursting = true;
+          s.laserBurstShots = LASER_BURST_SHOTS + (s.powerups.laser - 1) * 4;
+          sounds.powerup(); // charge-complete sound cue
+        }
+      }
+    } else {
+      s.laserCharge = 0; s.laserCooldown = 0; s.laserBursting = false; s.laserBurstShots = 0;
     }
 
     // Boss movement (phase-based)
