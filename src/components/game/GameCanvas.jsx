@@ -310,10 +310,19 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
 
   function drawBullet(ctx, b, isEnemy) {
     ctx.save();
-    if (b.type === 'bounce') {
-      ctx.shadowColor = '#ff9900'; ctx.shadowBlur = 10;
-      ctx.fillStyle = '#ff9900';
-      ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI * 2); ctx.fill();
+    if (b.type === 'wingman') {
+      // Soft blue-white small orb — weak but distinct from player/enemy
+      ctx.shadowColor = '#aaddff'; ctx.shadowBlur = 8;
+      ctx.fillStyle = '#aaddff';
+      ctx.beginPath(); ctx.arc(b.x, b.y, 3, 0, Math.PI * 2); ctx.fill();
+    } else if (b.type === 'bounce') {
+      // Vivid lime-green — clearly distinct from orange enemy shots
+      ctx.shadowColor = '#aaff00'; ctx.shadowBlur = 12;
+      ctx.fillStyle = '#aaff00';
+      ctx.beginPath(); ctx.arc(b.x, b.y, 5, 0, Math.PI * 2); ctx.fill();
+      // Small inner white core
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(b.x, b.y, 2, 0, Math.PI * 2); ctx.fill();
     } else if (b.type === 'laser') {
       const w = 3 + (b.fat || 1) * 2; // fatter per tier
       ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14 + (b.fat || 1) * 4;
