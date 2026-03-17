@@ -678,7 +678,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         ctx.restore();
       } else if (!s.laserBursting) {
         // Charging: pink arc growing
-        const pulseAlpha = 0.5 + 0.5 * Math.sin(Date.now() * 0.01);
         ctx.save();
         ctx.strokeStyle = `rgba(255,68,255,${0.4 + pct * 0.6})`;
         ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 8 + pct * 16;
@@ -688,6 +687,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         ctx.stroke();
         ctx.restore();
       }
+    }
 
     animRef.current = requestAnimationFrame(loop);
   }, [onScoreChange, onLivesChange, onWaveChange, onPowerupChange, setGameState]);
