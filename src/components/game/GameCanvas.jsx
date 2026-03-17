@@ -1137,29 +1137,35 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     s.enemies = s.enemies.filter(e => {
       const dx = e.x - p.x, dy = e.y - p.y;
       if (Math.abs(dx) < 18 && Math.abs(dy) < 18) {
-        e.dead = true;
         if (e.type === 'bomb') {
-          const BOMB_RADIUS = 80;
-          spawnExplosion(s, e.x, e.y, '#ff8800', 35);
-          spawnExplosion(s, e.x, e.y, '#ffdd00', 20);
-          s.particles.push({ x: e.x, y: e.y, vx: 0, vy: 0, r: 10, alpha: 1, color: '#ff8800', shockwave: true, shockwaveR: 10 });
-          s.enemies.forEach(ne => {
-            if (ne === e || ne.dead) return;
-            if (Math.hypot(ne.x - e.x, ne.y - e.y) < BOMB_RADIUS) {
-              ne.hp -= 2;
-              spawnExplosion(s, ne.x, ne.y, '#ff8800', 8);
-              if (ne.hp <= 0) {
-                ne.dead = true;
-                s.score += ne.type === 'boss' ? 5000 : ne.type === 'dropper' ? 500 : ne.type === 'elite' ? 300 : ne.type === 'bomb' ? 200 : 100;
-                onScoreChange(s.score);
+          if (!e._dmgCooldown || e._dmgCooldown <= 0) {
+            const BOMB_RADIUS = 80;
+            spawnExplosion(s, e.x, e.y, '#ff8800', 35);
+            spawnExplosion(s, e.x, e.y, '#ffdd00', 20);
+            s.particles.push({ x: e.x, y: e.y, vx: 0, vy: 0, r: 10, alpha: 1, color: '#ff8800', shockwave: true, shockwaveR: 10 });
+            s.enemies.forEach(ne => {
+              if (ne === e || ne.dead) return;
+              if (Math.hypot(ne.x - e.x, ne.y - e.y) < BOMB_RADIUS) {
+                ne.hp -= 2;
+                spawnExplosion(s, ne.x, ne.y, '#ff8800', 8);
+                if (ne.hp <= 0) {
+                  ne.dead = true;
+                  s.score += ne.type === 'boss' ? 5000 : ne.type === 'dropper' ? 500 : ne.type === 'elite' ? 300 : ne.type === 'bomb' ? 200 : 100;
+                  onScoreChange(s.score);
+                }
               }
-            }
-          });
-          s.score += 200; onScoreChange(s.score);
+            });
+            s.score += 200; onScoreChange(s.score);
+            takeDamage(s);
+            spawnExplosion(s, p.x, p.y, '#ff8800', 12);
+            e._dmgCooldown = 60;
+          }
+          e.dead = true;
         } else {
+          e.dead = true;
           spawnExplosion(s, e.x, e.y, '#ff4444', 12);
+          takeDamage(s);
         }
-        takeDamage(s);
         return false;
       }
       return true;
