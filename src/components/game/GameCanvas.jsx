@@ -914,17 +914,20 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     s.blocks = s.blocks.filter(b => !b.dead);
 
     // Bullet vs piled cells
+    const newSpreadPelletsFromPiled = [];
     s.bullets.forEach(b => {
       if (b.hit) return;
       s.piledCells = s.piledCells.filter(cell => {
         if (b.x >= cell.x && b.x <= cell.x + BLOCK_SIZE && b.y >= cell.y && b.y <= cell.y + BLOCK_SIZE) {
-          if (!piercingTypes.includes(b.type)) b.hit = true;
+          if (b.type === 'spread') { explodeSpread(b, newSpreadPelletsFromPiled); b.hit = true; }
+          else if (!piercingTypes.includes(b.type)) b.hit = true;
           spawnExplosion(s, cell.x + BLOCK_SIZE / 2, cell.y + BLOCK_SIZE / 2, cell.color, 4);
-          return false; // destroy single piled cell
+          return false;
         }
         return true;
       });
     });
+    s.bullets.push(...newSpreadPelletsFromPiled);
 
     s.bullets = s.bullets.filter(b => !b.hit);
     s.enemies = s.enemies.filter(e => !e.dead);
