@@ -130,8 +130,16 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       }
     }
 
+    // Bounce shot
+    const bounceTier = pw.bounce || 0;
+    if (bounceTier > 0) {
+      const bounces = bounceTier; // tier 1 = 1 bounce, tier 2 = 2, tier 3 = 3
+      s.bullets.push({ x: p.x - 8, y: p.y - 14, vx: -4, vy: -9, type: 'bounce', bouncesLeft: bounces });
+      s.bullets.push({ x: p.x + 8, y: p.y - 14, vx:  4, vy: -9, type: 'bounce', bouncesLeft: bounces });
+    }
+
     // Default shot if no offensive powerup
-    if (spreadTier === 0 && laserTier === 0 && raygunTier === 0) {
+    if (spreadTier === 0 && laserTier === 0 && raygunTier === 0 && bounceTier === 0) {
       s.bullets.push({ x: p.x, y: p.y - 18, vx: 0, vy: -12, type: 'normal' });
     }
 
