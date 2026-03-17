@@ -578,27 +578,60 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       }
     }
 
-    // ── Laser charge / burst / cooldown ──────────────────────
+    // ── Laser continuous beam / charge / cooldown ────────────
     if ((s.powerups.laser || 0) > 0) {
       if (s.laserCooldown > 0) {
+        s.laserBeamActive = false;
         s.laserCooldown--;
-      } else if (s.laserBursting) {
-        if (s.laserBurstShots > 0) {
-          fireLaserBurstShot(s, LASER_BURST_SHOTS - s.laserBurstShots);
-          s.laserBurstShots--;
-        } else {
-          s.laserBursting = false; s.laserCharge = 0; s.laserCooldown = LASER_COOLDOWN_FRAMES;
+      } else if (s.laserBeamActive) {
+        s.laserBeamTimer--;
+        // Beam deals damage each frame to enemies it overlaps
+        const laserTier = s.powerups.laser;
+        const beamW = 6 + laserTier * 4; // width of beam
+        if (s.laserBeamTimer % 4 === 0) { // damage tick every 4 frames
+          s.enemies.forEach(e => {
+            if (e.dead) return;
+            if (Math.abs(e.x - p.x) < beamW + e.w && e.y < p.y) {
+              e.hp -= 1;
+              sounds.hit();
+              spawnExplosion(s, e.x, e.y, '#ff44ff', 3);
+              if (e.hp <= 0) {
+                e.dead = true;
+                const pts = e.type === 'boss' ? 5000 : e.type === 'dropper' ? 500 : e.type === 'elite' ? 300 : 100;
+                s.score += pts;
+                onScoreChange(s.score);
+                sounds.kill();
+                spawnExplosion(s, e.x, e.y, e.type === 'boss' ? '#ff0066' : '#ff44ff', e.type === 'boss' ? 40 : 14);
+                if (e.type === 'dropper') { sounds.killDropper(); s.powerupItems.push({ x: e.x, y: e.y, type: e.dropType, angle: 0 }); }
+                if (e.type === 'boss') { sounds.stopBossMusic(); sounds.waveComplete(); s.maxLives++; s.lives = Math.min(s.lives + 1, s.maxLives); onLivesChange(s.lives); onMaxLivesChange(s.maxLives); }
+              }
+            }
+          });
+          s.enemies = s.enemies.filter(e => !e.dead);
+        }
+        if (s.laserBeamTimer <= 0) {
+          s.laserBeamActive = false;
+          s.laserCharge = 0;
+          s.laserCooldown = LASER_COOLDOWN_FRAMES;
         }
       } else {
         s.laserCharge++;
         if (s.laserCharge >= LASER_CHARGE_FRAMES) {
-          s.laserBursting = true;
-          s.laserBurstShots = LASER_BURST_SHOTS + (s.powerups.laser - 1) * 4;
+          s.laserBeamActive = true;
+          s.laserBeamTimer = LASER_BEAM_FRAMES + (s.powerups.laser - 1) * 60;
           sounds.powerup();
         }
       }
     } else {
-      s.laserCharge = 0; s.laserCooldown = 0; s.laserBursting = false; s.laserBurstShots = 0;
+      s.laserCharge = 0; s.laserCooldown = 0; s.laserBeamActive = false; s.laserBeamTimer = 0;
+    }
+
+    // ── Dropper mid-wave spawn ────────────────────────────────
+    if (s.dropperSpawnTimer > 0) {
+      s.dropperSpawnTimer--;
+      if (s.dropperSpawnTimer <= 0) {
+        spawnDropper(W, s);
+      }
     }
 
     // ── Enemy movement ────────────────────────────────────────
