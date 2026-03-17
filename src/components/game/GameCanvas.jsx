@@ -268,7 +268,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
 
   function drawBullet(ctx, b, isEnemy) {
     ctx.save();
-    if (b.type === 'laser') {
+    if (b.type === 'bounce') {
+      ctx.shadowColor = '#ff9900'; ctx.shadowBlur = 10;
+      ctx.fillStyle = '#ff9900';
+      ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI * 2); ctx.fill();
+    } else if (b.type === 'laser') {
       ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 10;
       ctx.fillStyle = '#ff44ff';
       ctx.fillRect(b.x - 2, b.y - 10, 4, 18);
