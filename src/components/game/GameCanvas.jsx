@@ -486,7 +486,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       onPowerupChange({ ...s.powerups, shieldHp: s.shieldHp });
       return;
     }
+    // Invincibility frames — ignore health damage while active
+    if (s.invincibleTimer > 0) return;
     s.lives--;
+    s.invincibleTimer = 120; // 2 seconds at 60fps
     onLivesChange(s.lives);
     sounds.playerHit();
     if (s.lives <= 0) { sounds.stopAllMusic(); s.running = false; setGameState('continue'); }
