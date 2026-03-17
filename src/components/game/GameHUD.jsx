@@ -75,6 +75,16 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
           </div>
         </div>
 
+        {/* Pause Button */}
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={onPauseToggle}
+          className="absolute top-4 right-4 text-primary hover:bg-primary/10"
+        >
+          {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
+        </Button>
+
         {/* Lives + Continues */}
         <div className="flex flex-col items-end gap-1">
           <div className="flex items-center gap-1.5 flex-wrap justify-end max-w-32">
