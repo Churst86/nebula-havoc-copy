@@ -5,9 +5,10 @@ import GameOver from '../components/game/GameOver';
 import StartScreen from '../components/game/StartScreen';
 
 export default function Game() {
-  const [gameState, setGameState] = useState('start'); // 'start' | 'playing' | 'gameover'
+  const [gameState, setGameState] = useState('start');
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
+  const [maxLives, setMaxLives] = useState(3);
   const [wave, setWave] = useState(1);
   const [activePowerup, setActivePowerup] = useState({});
 
