@@ -599,7 +599,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       lastTimeRef.current = performance.now();
       animRef.current = requestAnimationFrame(loop);
     } else {
-      sounds.stopBossMusic();
+      sounds.stopAllMusic();
       stateRef.current.running = false;
       if (animRef.current) cancelAnimationFrame(animRef.current);
     }
