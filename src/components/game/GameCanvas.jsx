@@ -193,23 +193,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       s.bullets.push({ x: p.x, y: p.y - 18, vx: 0, vy: -7, type: 'normal' });
     }
 
-    // Wingmen fire — aim at nearest enemy with weak slow shots
-    if ((pw.wingman || 0) > 0) {
-      s.wingmen.forEach(w => {
-        let target = null, bestDist = Infinity;
-        s.enemies.forEach(e => {
-          const d = Math.hypot(e.x - w.x, e.y - w.y);
-          if (d < bestDist) { bestDist = d; target = e; }
-        });
-        if (target) {
-          const dx = target.x - w.x, dy = target.y - w.y;
-          const len = Math.sqrt(dx * dx + dy * dy) || 1;
-          s.bullets.push({ x: w.x, y: w.y - 10, vx: (dx / len) * 7, vy: (dy / len) * 7, type: 'wingman' });
-        } else {
-          s.bullets.push({ x: w.x, y: w.y - 10, vx: 0, vy: -7, type: 'wingman' });
-        }
-      });
-    }
   }
 
   function getFireRate(pw) {
