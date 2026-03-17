@@ -15,6 +15,7 @@ export default function Game() {
   const handleStart = useCallback(() => {
     setScore(0);
     setLives(3);
+    setMaxLives(3);
     setWave(1);
     setActivePowerup({});
     setGameState('playing');
