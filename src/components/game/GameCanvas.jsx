@@ -567,9 +567,16 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   function drawParticle(ctx, pt) {
     ctx.save();
     ctx.globalAlpha = pt.alpha;
-    ctx.shadowColor = pt.color; ctx.shadowBlur = 6;
-    ctx.fillStyle = pt.color;
-    ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.r, 0, Math.PI * 2); ctx.fill();
+    if (pt.shockwave) {
+      ctx.shadowColor = pt.color; ctx.shadowBlur = 12;
+      ctx.strokeStyle = pt.color;
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.shockwaveR, 0, Math.PI * 2); ctx.stroke();
+    } else {
+      ctx.shadowColor = pt.color; ctx.shadowBlur = 6;
+      ctx.fillStyle = pt.color;
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.r, 0, Math.PI * 2); ctx.fill();
+    }
     ctx.restore();
   }
 
