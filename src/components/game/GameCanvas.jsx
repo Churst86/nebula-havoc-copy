@@ -182,8 +182,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     const raygunTier = pw.raygun || 0;
     const bounceTier = pw.bounce || 0;
 
-    // Raygun: fires a single large plasma orb straight up (bigger with tier)
-    if (raygunTier > 0) {
+    // Raygun: fires a single large plasma orb straight up (bigger with tier), max 2 on screen
+    if (raygunTier > 0 && s.bullets.filter(b => b.type === 'raygun').length < 2) {
       const size = 6 + raygunTier * 3; // 9, 12, 15
       s.bullets.push({ x: p.x, y: p.y - 14, vx: 0, vy: -11, type: 'raygun', size, orbitAngle: 0 });
     }
