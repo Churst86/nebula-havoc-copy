@@ -82,13 +82,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
 
     // Boss every 5 waves
     if (wave % 5 === 0) {
+      const bossHp = 200 + wave * 25;
       enemies.push({
         type: 'boss',
         x: W / 2, y: -60,
         w: 45, h: 45,
-        hp: 80 + wave * 12, maxHp: 80 + wave * 12,
-        vx: 1.2, vy: 0.3,
-        fireTimer: 40,
+        hp: bossHp, maxHp: bossHp,
+        vx: 1.8, vy: 0.4,
+        fireTimer: 20,
         phase: 0,
       });
       sounds.startBossMusic();
