@@ -422,9 +422,19 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       }
     });
 
-    // Move bullets
+    // Move bullets (bounce off walls)
     s.bullets = s.bullets.filter(b => {
       b.x += b.vx; b.y += b.vy;
+      if (b.type === 'bounce') {
+        if (b.x <= 0 || b.x >= W) {
+          if (b.bouncesLeft > 0) { b.vx *= -1; b.x = Math.max(1, Math.min(W - 1, b.x)); b.bouncesLeft--; }
+          else return false;
+        }
+        if (b.y <= 0) {
+          if (b.bouncesLeft > 0) { b.vy *= -1; b.y = Math.max(1, b.y); b.bouncesLeft--; }
+          else return false;
+        }
+      }
       return b.y > -20 && b.y < H + 20 && b.x > -20 && b.x < W + 20;
     });
 
