@@ -102,6 +102,8 @@ export default function Game() {
           wave={wave}
           activePowerup={activePowerup}
           continuesLeft={continuesLeft}
+          isPaused={isPaused}
+          onPauseToggle={handlePauseToggle}
         />
       )}
 
