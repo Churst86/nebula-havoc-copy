@@ -87,7 +87,7 @@ const DROPPER_LABELS = {
   shield: '🛡', bounce: 'B', speed: '▶', rapidfire: '⚡', star: '★',
 };
 
-export default function GameCanvas({ gameState, setGameState, onScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, continuesLeft, onContinueUsed }) {
+export default function GameCanvas({ gameState, setGameState, onScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, continuesLeft, onContinueUsed, isPaused }) {
   const canvasRef = useRef(null);
   const keysRef = useRef({});
   const stateRef = useRef(initState());
