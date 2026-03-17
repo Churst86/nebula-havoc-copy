@@ -1029,23 +1029,24 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       const beamW = 6 + laserTier * 4;
 
       if (s.laserBeamActive) {
-        // Draw beam from player to top of screen
+        // Draw beam from player to first block (or top of screen)
+        const beamEndY = (s.laserBeamBlockY || 0);
         const beamAlpha = 0.7 + Math.sin(Date.now() * 0.03) * 0.3;
         ctx.save();
         // Outer glow
         ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 30;
         ctx.strokeStyle = `rgba(255,68,255,${beamAlpha * 0.4})`;
         ctx.lineWidth = beamW * 3;
-        ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, 0); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, beamEndY); ctx.stroke();
         // Core beam
         ctx.shadowBlur = 20;
         ctx.strokeStyle = `rgba(255,68,255,${beamAlpha})`;
         ctx.lineWidth = beamW;
-        ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, 0); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, beamEndY); ctx.stroke();
         // Bright center
         ctx.strokeStyle = `rgba(255,200,255,${beamAlpha})`;
         ctx.lineWidth = beamW * 0.3;
-        ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, 0); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, beamEndY); ctx.stroke();
         ctx.restore();
         // Beam timer ring
         const beamPct = s.laserBeamTimer / (LASER_BEAM_FRAMES + (laserTier - 1) * 60);
