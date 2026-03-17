@@ -57,7 +57,7 @@ const OFFENSIVE_POWERUPS = ['spread', 'laser', 'raygun', 'wingman', 'bounce'];
 // Special powerups that bypass the 2-lock (speed, shield)
 const SPECIAL_POWERUPS = ['speed', 'shield'];
 
-export default function GameCanvas({ gameState, setGameState, onScoreChange, onLivesChange, onWaveChange, onPowerupChange }) {
+export default function GameCanvas({ gameState, setGameState, onScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange }) {
   const canvasRef = useRef(null);
   const keysRef = useRef({});
   const stateRef = useRef(initState());
