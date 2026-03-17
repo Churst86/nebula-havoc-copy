@@ -878,7 +878,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       });
     });
 
+    // Add spread pellets spawned from enemy hits
+    s.bullets.push(...newSpreadPellets);
+
     // Bullet vs tetris blocks
+    const newSpreadPelletsFromBlocks = [];
     s.bullets.forEach(b => {
       if (b.hit) return;
       s.blocks.forEach(block => {
@@ -887,11 +891,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         cells.forEach(cell => {
           if (b.hit) return;
           if (b.x >= cell.x && b.x <= cell.x + BLOCK_SIZE && b.y >= cell.y && b.y <= cell.y + BLOCK_SIZE) {
+            if (b.type === 'spread') { explodeSpread(b, newSpreadPelletsFromBlocks); b.hit = true; return; }
             if (block.invulnerable) {
-              // Bullets always stop on invulnerable blocks — block never takes damage
               b.hit = true;
               spawnExplosion(s, b.x, b.y, '#aaaacc', 3);
-              return; // skip hp logic
+              return;
             } else {
               block.hp--;
               if (!piercingTypes.includes(b.type)) b.hit = true;
@@ -906,6 +910,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         });
       });
     });
+    s.bullets.push(...newSpreadPelletsFromBlocks);
     s.blocks = s.blocks.filter(b => !b.dead);
 
     // Bullet vs piled cells
