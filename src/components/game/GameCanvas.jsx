@@ -210,7 +210,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     if ((pw.laser || 0) > 0) return 999;
     if ((pw.raygun || 0) > 0) return Math.max(8, 40 - (pw.raygun || 0) * 4 - speedBonus);
     if ((pw.spread || 0) > 0 && (pw.raygun || 0) === 0 && (pw.bounce || 0) === 0) return Math.max(12, 50 - speedBonus);
-    if ((pw.bounce || 0) > 0) return Math.max(12, 55 - speedBonus);
+    if ((pw.bounce || 0) > 0) return Math.max(10, 35 - speedBonus);
     return Math.max(10, 35 - speedBonus);
   }
 
