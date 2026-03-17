@@ -978,16 +978,45 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     s.enemyBullets.forEach(b => drawBullet(ctx, b, true));
     drawPlayer(ctx, p, s.wingmen, s.shieldHp, s.enemies);
 
-    // Laser charge indicator
+    // Laser charge indicator + continuous beam draw
     if ((s.powerups.laser || 0) > 0) {
-      const pct = s.laserCooldown > 0 ? 0 : Math.min(s.laserCharge / LASER_CHARGE_FRAMES, 1);
-      if (s.laserCooldown > 0) {
+      const laserTier = s.powerups.laser;
+      const beamW = 6 + laserTier * 4;
+
+      if (s.laserBeamActive) {
+        // Draw beam from player to top of screen
+        const beamAlpha = 0.7 + Math.sin(Date.now() * 0.03) * 0.3;
+        ctx.save();
+        // Outer glow
+        ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 30;
+        ctx.strokeStyle = `rgba(255,68,255,${beamAlpha * 0.4})`;
+        ctx.lineWidth = beamW * 3;
+        ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, 0); ctx.stroke();
+        // Core beam
+        ctx.shadowBlur = 20;
+        ctx.strokeStyle = `rgba(255,68,255,${beamAlpha})`;
+        ctx.lineWidth = beamW;
+        ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, 0); ctx.stroke();
+        // Bright center
+        ctx.strokeStyle = `rgba(255,200,255,${beamAlpha})`;
+        ctx.lineWidth = beamW * 0.3;
+        ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, 0); ctx.stroke();
+        ctx.restore();
+        // Beam timer ring
+        const beamPct = s.laserBeamTimer / (LASER_BEAM_FRAMES + (laserTier - 1) * 60);
+        ctx.save();
+        ctx.strokeStyle = `rgba(255,68,255,0.6)`; ctx.lineWidth = 3; ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 32, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * beamPct);
+        ctx.stroke(); ctx.restore();
+      } else if (s.laserCooldown > 0) {
         ctx.save();
         ctx.strokeStyle = 'rgba(180,180,180,0.3)'; ctx.lineWidth = 3; ctx.shadowBlur = 0;
         ctx.beginPath();
         ctx.arc(p.x, p.y, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - s.laserCooldown / LASER_COOLDOWN_FRAMES));
         ctx.stroke(); ctx.restore();
-      } else if (!s.laserBursting) {
+      } else {
+        const pct = Math.min(s.laserCharge / LASER_CHARGE_FRAMES, 1);
         ctx.save();
         ctx.strokeStyle = `rgba(255,68,255,${0.4 + pct * 0.6})`;
         ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 8 + pct * 16; ctx.lineWidth = 2 + pct * 3;
