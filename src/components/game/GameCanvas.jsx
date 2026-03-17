@@ -78,7 +78,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       sounds.startWaveMusic(wave);
     }
 
-    // Dropper (powerup carrier)
+    // Dropper (powerup carrier) — drop pool determined at pickup time, not spawn time
     enemies.push({
       type: 'dropper',
       x: randomBetween(60, W - 60), y: -40,
@@ -86,7 +86,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       hp: 5, maxHp: 5,
       vx: randomBetween(-0.5, 0.5), vy: 0.7,
       fireTimer: randomBetween(120, 180),
-      drop: POWERUP_TYPES[Math.floor(Math.random() * POWERUP_TYPES.length)],
     });
 
     for (let i = 0; i < count; i++) {
