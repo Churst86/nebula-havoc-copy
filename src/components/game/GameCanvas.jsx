@@ -643,6 +643,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
             if (e.type === 'boss') {
               sounds.stopBossMusic();
               sounds.waveComplete();
+              // Grant +1 max life and restore it
+              s.maxLives++;
+              s.lives = Math.min(s.lives + 1, s.maxLives);
+              onLivesChange(s.lives);
             }
           }
         }
