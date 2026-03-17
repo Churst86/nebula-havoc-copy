@@ -401,22 +401,26 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       ctx.fillStyle = '#ff44ff';
       ctx.fillRect(b.x - w, b.y - 12, w * 2, 22);
     } else if (b.type === 'raygun') {
-      // Central beam line
-      ctx.shadowColor = '#44ffaa'; ctx.shadowBlur = 12;
-      ctx.strokeStyle = '#44ffaa';
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(b.x, b.y + 8); ctx.lineTo(b.x, b.y - 8); ctx.stroke();
+      const sz = b.size || 9;
+      // Outer glow
+      ctx.shadowColor = '#44ffaa'; ctx.shadowBlur = sz * 2;
+      ctx.fillStyle = 'rgba(68,255,170,0.25)';
+      ctx.beginPath(); ctx.arc(b.x, b.y, sz + 4, 0, Math.PI * 2); ctx.fill();
+      // Main orb
+      ctx.fillStyle = '#44ffaa';
+      ctx.beginPath(); ctx.arc(b.x, b.y, sz, 0, Math.PI * 2); ctx.fill();
+      // Bright core
       ctx.fillStyle = '#ffffff';
-      ctx.beginPath(); ctx.arc(b.x, b.y, 2.5, 0, Math.PI * 2); ctx.fill();
-      // Orbiting orbs
-      const orbitCount = 3;
+      ctx.beginPath(); ctx.arc(b.x, b.y, sz * 0.4, 0, Math.PI * 2); ctx.fill();
+      // Orbiting orbs (count = tier)
+      const orbitCount = Math.round((sz - 6) / 3) + 2; // 2–4
       for (let oi = 0; oi < orbitCount; oi++) {
         const oa = (b.orbitAngle || 0) + (oi / orbitCount) * Math.PI * 2;
-        const ox = b.x + Math.cos(oa) * 6;
-        const oy = b.y + Math.sin(oa) * 6;
-        ctx.shadowColor = '#44ffaa'; ctx.shadowBlur = 10;
+        const ox = b.x + Math.cos(oa) * (sz + 8);
+        const oy = b.y + Math.sin(oa) * (sz + 8);
+        ctx.shadowColor = '#44ffaa'; ctx.shadowBlur = 8;
         ctx.fillStyle = '#44ffaa';
-        ctx.beginPath(); ctx.arc(ox, oy, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(ox, oy, 3, 0, Math.PI * 2); ctx.fill();
       }
     } else if (isEnemy) {
       const isBoss = b.boss;
