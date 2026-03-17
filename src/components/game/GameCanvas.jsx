@@ -468,7 +468,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     });
 
     const p = s.player;
-    const spd = 4.5;
+    const speedTier = s.powerups.speed || 0;
+    const spd = 4.5 + speedTier * 1.5;
     if (keys['ArrowLeft'] || keys['a'] || keys['A']) p.x = Math.max(16, p.x - spd);
     if (keys['ArrowRight'] || keys['d'] || keys['D']) p.x = Math.min(W - 16, p.x + spd);
     if (keys['ArrowUp'] || keys['w'] || keys['W']) p.y = Math.max(16, p.y - spd);
