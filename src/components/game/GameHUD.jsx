@@ -1,5 +1,6 @@
 import React from 'react';
-import { Heart, Zap, Shield, RefreshCw } from 'lucide-react';
+import { Heart, Zap, Shield, RefreshCw, Pause, Play } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const POWERUP_COLORS = {
   spread:    '#ffdd00',
