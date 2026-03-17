@@ -647,6 +647,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
               s.maxLives++;
               s.lives = Math.min(s.lives + 1, s.maxLives);
               onLivesChange(s.lives);
+              onMaxLivesChange(s.maxLives);
             }
           }
         }
