@@ -16,6 +16,7 @@ export default function Game() {
   const [wave, setWave] = useState(1);
   const [activePowerup, setActivePowerup] = useState({});
   const [continuesLeft, setContinuesLeft] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const scoreRef = useRef(0);
   const waveRef = useRef(1);
 
