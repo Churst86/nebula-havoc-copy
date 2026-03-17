@@ -703,6 +703,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         takeDamage(s);
         return false;
       }
+      // Remove enemies that fly off-screen so waves can progress
+      if (e.y > H + 60) return false;
       return true;
     });
 
