@@ -47,13 +47,179 @@ function playNoise({ duration = 0.1, gain = 0.2, filterFreq = 1000 }) {
   } catch {}
 }
 
-// Boss music oscillator refs
-let bossOscs = [];
-let bossPlaying = false;
+// ── Background music state ───────────────────────────────────────
+let bgTimeouts = [];
+let bgPlaying = false;
+let currentWave = 1;
+let currentIsBoss = false;
+
+function stopAllBg() {
+  bgPlaying = false;
+  bgTimeouts.forEach(t => clearTimeout(t));
+  bgTimeouts = [];
+}
+
+// Wave music: gets faster, more layers, and dissonant as wave increases
+function startWaveMusic(wave) {
+  stopAllBg();
+  bgPlaying = true;
+  currentWave = wave;
+
+  try {
+    const ctx = getCtx();
+
+    // Intensity parameters scale with wave
+    const intensity = Math.min(wave / 10, 1); // 0..1
+    const tempo = Math.max(0.08, 0.22 - intensity * 0.12); // 0.22 → 0.10 s/beat
+    const masterVol = 0.08 + intensity * 0.06;
+
+    const masterGain = ctx.createGain();
+    masterGain.gain.value = masterVol;
+    masterGain.connect(ctx.destination);
+
+    // Root notes cycle, higher waves add more chromatic tension
+    const baseNotes = [55, 55, 65.4, 55, 55, 49, 55, 55];
+    // Add a dissonant upper layer when wave > 5
+    const leadNotes = wave <= 3
+      ? [220, 246.9, 261.6, 220, 196, 220, 246.9, 293.7]
+      : wave <= 6
+      ? [220, 261.6, 311.1, 220, 207.7, 233.1, 311.1, 349.2]
+      : [220, 277.2, 329.6, 220, 185, 220, 277.2, 370];
+
+    // High-intensity waves add a second lead harmony
+    const harmNotes = [329.6, 349.2, 392, 329.6, 311.1, 329.6, 392, 440];
+
+    let step = 0;
+
+    function tick() {
+      if (!bgPlaying) return;
+      const t = ctx.currentTime;
+
+      // Bass drum on beats 1 and 3
+      if (step % 2 === 0) {
+        playNoise({ duration: tempo * 0.6, gain: 0.12 + intensity * 0.1, filterFreq: 80 });
+      }
+
+      // Bass line
+      const bass = ctx.createOscillator();
+      const bassGain = ctx.createGain();
+      bass.type = 'sawtooth';
+      bass.frequency.value = baseNotes[step % baseNotes.length];
+      bassGain.gain.setValueAtTime(0.35 + intensity * 0.15, t);
+      bassGain.gain.exponentialRampToValueAtTime(0.001, t + tempo * 0.85);
+      bass.connect(bassGain); bassGain.connect(masterGain);
+      bass.start(t); bass.stop(t + tempo);
+
+      // Lead melody
+      const lead = ctx.createOscillator();
+      const leadGain = ctx.createGain();
+      lead.type = wave > 4 ? 'square' : 'triangle';
+      lead.frequency.value = leadNotes[step % leadNotes.length];
+      lead.detune.value = intensity * 12; // slight pitch drift adds tension
+      leadGain.gain.setValueAtTime(0.18 + intensity * 0.12, t);
+      leadGain.gain.exponentialRampToValueAtTime(0.001, t + tempo * 0.7);
+      lead.connect(leadGain); leadGain.connect(masterGain);
+      lead.start(t); lead.stop(t + tempo);
+
+      // Harmony layer (wave 6+)
+      if (wave >= 6) {
+        const harm = ctx.createOscillator();
+        const harmGain = ctx.createGain();
+        harm.type = 'sawtooth';
+        harm.frequency.value = harmNotes[step % harmNotes.length];
+        harm.detune.value = -intensity * 8;
+        harmGain.gain.setValueAtTime(0.1 + intensity * 0.08, t);
+        harmGain.gain.exponentialRampToValueAtTime(0.001, t + tempo * 0.6);
+        harm.connect(harmGain); harmGain.connect(masterGain);
+        harm.start(t); harm.stop(t + tempo);
+      }
+
+      // High-hat (wave 4+, faster waves add 16th note hats)
+      if (wave >= 4) {
+        playNoise({ duration: 0.03, gain: 0.04 + intensity * 0.04, filterFreq: 8000 });
+        if (wave >= 8) {
+          // Extra 16th note hat halfway through the beat
+          bgTimeouts.push(setTimeout(() => {
+            if (bgPlaying) playNoise({ duration: 0.02, gain: 0.03, filterFreq: 10000 });
+          }, tempo * 500));
+        }
+      }
+
+      step++;
+      bgTimeouts.push(setTimeout(tick, tempo * 1000));
+    }
+
+    tick();
+  } catch {}
+}
+
+// Boss music: aggressive, fast, dramatic
+function startBossMusic() {
+  stopAllBg();
+  bgPlaying = true;
+  currentIsBoss = true;
+
+  try {
+    const ctx = getCtx();
+    const masterGain = ctx.createGain();
+    masterGain.gain.value = 0.14;
+    masterGain.connect(ctx.destination);
+
+    const bassNotes  = [55, 55, 73.4, 55, 55, 49, 55, 55];
+    const melNotes   = [220, 246.9, 261.6, 220, 196, 220, 246.9, 261.6];
+    const chromatic  = [233.1, 261.6, 277.2, 233.1, 220, 233.1, 277.2, 311.1];
+    const tempo = 0.10; // very fast
+    let step = 0;
+
+    function tick() {
+      if (!bgPlaying) return;
+      const t = ctx.currentTime;
+
+      // Heavy kick on every beat
+      playNoise({ duration: 0.12, gain: 0.25, filterFreq: 80 });
+
+      const bass = ctx.createOscillator();
+      const bassGain = ctx.createGain();
+      bass.type = 'sawtooth';
+      bass.frequency.value = bassNotes[step % bassNotes.length];
+      bassGain.gain.setValueAtTime(0.5, t);
+      bassGain.gain.exponentialRampToValueAtTime(0.001, t + tempo * 0.9);
+      bass.connect(bassGain); bassGain.connect(masterGain);
+      bass.start(t); bass.stop(t + tempo);
+
+      const lead = ctx.createOscillator();
+      const leadGain = ctx.createGain();
+      lead.type = 'square';
+      lead.frequency.value = melNotes[step % melNotes.length];
+      leadGain.gain.setValueAtTime(0.25, t);
+      leadGain.gain.exponentialRampToValueAtTime(0.001, t + tempo * 0.7);
+      lead.connect(leadGain); leadGain.connect(masterGain);
+      lead.start(t); lead.stop(t + tempo);
+
+      // Chromatic dissonance layer
+      const chrom = ctx.createOscillator();
+      const chromGain = ctx.createGain();
+      chrom.type = 'sawtooth';
+      chrom.frequency.value = chromatic[step % chromatic.length];
+      chrom.detune.value = 15;
+      chromGain.gain.setValueAtTime(0.15, t);
+      chromGain.gain.exponentialRampToValueAtTime(0.001, t + tempo * 0.6);
+      chrom.connect(chromGain); chromGain.connect(masterGain);
+      chrom.start(t); chrom.stop(t + tempo);
+
+      // 16th hat
+      playNoise({ duration: 0.02, gain: 0.06, filterFreq: 10000 });
+
+      step++;
+      bgTimeouts.push(setTimeout(tick, tempo * 1000));
+    }
+    tick();
+  } catch {}
+}
 
 export const sounds = {
-  shoot() { playTone({ freq: 880, type: 'square', duration: 0.06, gain: 0.08, freqEnd: 440 }); },
-  hit() { playNoise({ duration: 0.08, gain: 0.15, filterFreq: 800 }); },
+  shoot()        { playTone({ freq: 880, type: 'square', duration: 0.06, gain: 0.08, freqEnd: 440 }); },
+  hit()          { playNoise({ duration: 0.08, gain: 0.15, filterFreq: 800 }); },
   kill() {
     playTone({ freq: 220, type: 'sawtooth', duration: 0.15, gain: 0.2, freqEnd: 80 });
     playNoise({ duration: 0.15, gain: 0.25, filterFreq: 300 });
@@ -68,14 +234,8 @@ export const sounds = {
       setTimeout(() => playTone({ freq: 330 + i * 110, type: 'sine', duration: 0.1, gain: 0.25 }), t * 1000);
     });
   },
-  shield() {
-    playTone({ freq: 200, type: 'sine', duration: 0.3, gain: 0.3, freqEnd: 600 });
-    playTone({ freq: 400, type: 'sine', duration: 0.3, gain: 0.2, freqEnd: 1200, detune: 5 });
-  },
-  shieldHit() {
-    playTone({ freq: 600, type: 'triangle', duration: 0.12, gain: 0.3, freqEnd: 200 });
-    playNoise({ duration: 0.1, gain: 0.1, filterFreq: 2000 });
-  },
+  shield()       { playTone({ freq: 200, type: 'sine', duration: 0.3, gain: 0.3, freqEnd: 600 }); },
+  shieldHit()    { playTone({ freq: 600, type: 'triangle', duration: 0.12, gain: 0.3, freqEnd: 200 }); },
   shieldBreak() {
     playNoise({ duration: 0.4, gain: 0.4, filterFreq: 400 });
     playTone({ freq: 150, type: 'sawtooth', duration: 0.4, gain: 0.3, freqEnd: 50 });
@@ -90,54 +250,9 @@ export const sounds = {
     });
   },
 
-  startBossMusic() {
-    if (bossPlaying) return;
-    bossPlaying = true;
-    try {
-      const ctx = getCtx();
-      const masterGain = ctx.createGain();
-      masterGain.gain.setValueAtTime(0.12, ctx.currentTime);
-      masterGain.connect(ctx.destination);
-
-      const bassNotes = [55, 55, 73.4, 55, 55, 49, 55, 55];
-      const melodyNotes = [220, 246.9, 261.6, 220, 196, 220, 246.9, 261.6];
-      let step = 0;
-      const tempo = 0.22;
-
-      function tick() {
-        if (!bossPlaying) return;
-        const t = ctx.currentTime;
-
-        // Bass
-        const bass = ctx.createOscillator();
-        const bassGain = ctx.createGain();
-        bass.type = 'sawtooth';
-        bass.frequency.value = bassNotes[step % bassNotes.length];
-        bassGain.gain.setValueAtTime(0.4, t);
-        bassGain.gain.exponentialRampToValueAtTime(0.001, t + tempo * 0.9);
-        bass.connect(bassGain); bassGain.connect(masterGain);
-        bass.start(t); bass.stop(t + tempo);
-
-        // Lead melody
-        const lead = ctx.createOscillator();
-        const leadGain = ctx.createGain();
-        lead.type = 'square';
-        lead.frequency.value = melodyNotes[step % melodyNotes.length];
-        leadGain.gain.setValueAtTime(0.2, t);
-        leadGain.gain.exponentialRampToValueAtTime(0.001, t + tempo * 0.7);
-        lead.connect(leadGain); leadGain.connect(masterGain);
-        lead.start(t); lead.stop(t + tempo);
-
-        step++;
-        bossOscs.push(setTimeout(tick, tempo * 1000));
-      }
-      tick();
-    } catch {}
-  },
-
-  stopBossMusic() {
-    bossPlaying = false;
-    bossOscs.forEach(t => clearTimeout(t));
-    bossOscs = [];
-  },
+  // Called by GameCanvas on every wave start
+  startWaveMusic(wave) { startWaveMusic(wave); },
+  startBossMusic()     { startBossMusic(); },
+  stopBossMusic()      { stopAllBg(); },
+  stopAllMusic()       { stopAllBg(); },
 };
