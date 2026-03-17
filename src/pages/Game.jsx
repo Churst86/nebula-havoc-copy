@@ -28,6 +28,7 @@ export default function Game() {
         setGameState={setGameState}
         onScoreChange={setScore}
         onLivesChange={setLives}
+        onMaxLivesChange={setMaxLives}
         onWaveChange={setWave}
         onPowerupChange={setActivePowerup}
       />
