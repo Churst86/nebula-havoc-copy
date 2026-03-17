@@ -105,13 +105,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     const raygunTier = pw.raygun || 0;
 
     if (spreadTier > 0) {
-      const angles = spreadTier === 1 ? [-20, -10, 0, 10, 20]
-                   : spreadTier === 2 ? [-30, -15, 0, 15, 30, -22, 22]
-                   : [-35, -20, -10, 0, 10, 20, 35, -25, 25];
-      angles.forEach(angle => {
+      // Tier 1: 5 bullets ±20°, Tier 2: 7 bullets ±45°, Tier 3: 9 bullets ±80° (nearly sideways)
+      const [spread, count] = spreadTier === 1 ? [40, 5] : spreadTier === 2 ? [90, 7] : [160, 9];
+      for (let i = 0; i < count; i++) {
+        const angle = -spread / 2 + (spread / (count - 1)) * i;
         const rad = (angle * Math.PI) / 180;
-        s.bullets.push({ x: p.x, y: p.y - 18, vx: Math.sin(rad) * 5, vy: -10, type: 'spread' });
-      });
+        s.bullets.push({ x: p.x, y: p.y - 18, vx: Math.sin(rad) * 6, vy: -Math.cos(rad) * 10, type: 'spread' });
+      }
     }
 
     if (laserTier > 0) {
