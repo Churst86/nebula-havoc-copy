@@ -960,7 +960,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     if (combatEnemies.length === 0) {
       s.waveTimer++;
       if (s.waveTimer > 90) {
-        // Remove dropper from previous wave if still alive
         s.enemies = [];
         s.wave++;
         s.waveTimer = 0;
@@ -968,6 +967,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         sounds.waveComplete();
         spawnWave(W, s);
       }
+    } else {
+      s.waveTimer = 0; // reset timer if enemies come back (e.g. dropper spawned mid-wave)
     }
 
     // Particles
