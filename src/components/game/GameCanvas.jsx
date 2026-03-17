@@ -856,7 +856,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           if (b.type === 'spread') { explodeSpread(b, newSpreadPellets); b.hit = true; return; }
           e.hp--;
           sounds.hit();
-          if (!piercingTypes.includes(b.type)) b.hit = true;
+          b.hit = true;
           if (e.hp <= 0) {
             e.dead = true;
             const pts = e.type === 'boss' ? 5000 : e.type === 'dropper' ? 500 : e.type === 'elite' ? 300 : 100;
