@@ -2,20 +2,22 @@ import React from 'react';
 import { Heart, Zap, Shield } from 'lucide-react';
 
 const POWERUP_COLORS = {
-  spread:  '#ffdd00',
-  laser:   '#ff44ff',
-  raygun:  '#44ffaa',
-  wingman: '#44aaff',
-  bounce:  '#aaff00',
-  speed:   '#ff8800',
+  spread:    '#ffdd00',
+  laser:     '#ff44ff',
+  raygun:    '#44ffaa',
+  wingman:   '#44aaff',
+  bounce:    '#aaff00',
+  speed:     '#ff8800',
+  shotspeed: '#ff4488',
 };
 const POWERUP_LABELS = {
-  spread:  'SPREAD',
-  laser:   'LASER',
-  raygun:  'RAY GUN',
-  wingman: 'WINGMAN',
-  bounce:  'BOUNCE',
-  speed:   'SPEED',
+  spread:    'SPREAD',
+  laser:     'LASER',
+  raygun:    'RAY GUN',
+  wingman:   'WINGMAN',
+  bounce:    'BOUNCE',
+  speed:     'SPEED',
+  shotspeed: 'FIRE RATE',
 };
 
 export default function GameHUD({ score, lives, maxLives, wave, activePowerup }) {
