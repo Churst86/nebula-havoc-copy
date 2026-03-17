@@ -22,13 +22,22 @@ function initState() {
     wave: 1,
     waveTimer: 0,
     fireTimer: 0,
-    spiralAngle: 0,  // for raygun spiral tracking
-    // Stacking power-ups: { spread: 2, laser: 1, ... }
+    spiralAngle: 0,
+    // Laser charge-burst state
+    laserCharge: 0,       // counts up each frame while laser is active
+    laserCooldown: 0,     // frames remaining in cooldown after a burst
+    laserBursting: false,
+    laserBurstShots: 0,
+    // Power-up system: max 2 types. lockedPowerups = the 2 chosen types (excludes shield)
     powerups: {},
-    shieldHp: 0,   // 0 = no shield, 1-3 = active
+    lockedPowerups: [],   // up to 2 non-shield powerup keys
+    shieldHp: 0,
     running: false,
   };
 }
+
+// Offensive powerup types (not shield — shield is always droppable)
+const OFFENSIVE_POWERUPS = ['spread', 'laser', 'raygun', 'wingman', 'bounce'];
 
 export default function GameCanvas({ gameState, setGameState, onScoreChange, onLivesChange, onWaveChange, onPowerupChange }) {
   const canvasRef = useRef(null);
