@@ -1044,6 +1044,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       s.waveTimer = 0; // reset timer if enemies come back (e.g. dropper spawned mid-wave)
     }
 
+    // Invincibility countdown
+    if (s.invincibleTimer > 0) s.invincibleTimer--;
+
     // Particles
     s.particles.forEach(pt => { pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.04; pt.alpha -= 0.025; });
     s.particles = s.particles.filter(pt => pt.alpha > 0);
