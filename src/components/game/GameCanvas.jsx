@@ -1168,11 +1168,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
               if (Math.hypot(ne.x - e.x, ne.y - e.y) < BOMB_RADIUS) {
                 ne.hp -= 2;
                 spawnExplosion(s, ne.x, ne.y, '#ff8800', 8);
-                if (ne.hp <= 0) {
-                  ne.dead = true;
-                  s.score += ne.type === 'boss' ? 5000 : ne.type === 'dropper' ? 500 : ne.type === 'elite' ? 300 : ne.type === 'bomb' ? 200 : 100;
-                  onScoreChange(s.score);
-                }
+                if (ne.hp <= 0) ne.dead = true;
               }
             });
             s.score += 200; onScoreChange(s.score);
