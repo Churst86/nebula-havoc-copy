@@ -212,11 +212,12 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   }
 
   function getFireRate(pw) {
+    const speedBonus = (pw.shotspeed || 0) * 6; // each tier reduces cooldown by 6 frames
     if ((pw.laser || 0) > 0) return 999; // laser fires via charge burst only
-    if ((pw.raygun || 0) > 0) return Math.max(5, 10 - (pw.raygun || 0) * 2);
-    // Spread is fired via shotgun system (not this timer), but we still need a timer for other weapons
-    if ((pw.spread || 0) > 0 && (pw.raygun || 0) === 0 && (pw.bounce || 0) === 0) return 30; // slow trigger pull for shotgun
-    return 22; // slow normal auto fire
+    if ((pw.raygun || 0) > 0) return Math.max(8, 40 - (pw.raygun || 0) * 4 - speedBonus);
+    if ((pw.spread || 0) > 0 && (pw.raygun || 0) === 0 && (pw.bounce || 0) === 0) return Math.max(12, 50 - speedBonus);
+    if ((pw.bounce || 0) > 0) return Math.max(12, 55 - speedBonus);
+    return Math.max(12, 55 - speedBonus); // normal shot — slow baseline
   }
 
   // ── Drawing ──────────────────────────────────────────────────
