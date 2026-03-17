@@ -1123,31 +1123,25 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     });
 
     // Player bullets vs enemy bullets collision
+    const destroyedEnemyBullets = new Set();
     s.bullets.forEach(pb => {
       if (pb.hit) return;
-      if (pb.type === 'raygun') {
-        // Raygun pierces and destroys enemy bullets
-        s.enemyBullets = s.enemyBullets.filter(eb => {
-          const dx = pb.x - eb.x, dy = pb.y - eb.y;
-          if (Math.sqrt(dx * dx + dy * dy) < (pb.size || 9) + 6) {
+      s.enemyBullets.forEach((eb, idx) => {
+        const dx = pb.x - eb.x, dy = pb.y - eb.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (pb.type === 'raygun') {
+          if (dist < (pb.size || 9) + 6) {
             spawnExplosion(s, eb.x, eb.y, '#44ffaa', 3);
-            return false;
+            destroyedEnemyBullets.add(idx);
           }
-          return true;
-        });
-      } else {
-        // Other bullets negate enemy bullets
-        s.enemyBullets = s.enemyBullets.filter(eb => {
-          const dx = pb.x - eb.x, dy = pb.y - eb.y;
-          if (Math.sqrt(dx * dx + dy * dy) < 8) {
-            spawnExplosion(s, (pb.x + eb.x) / 2, (pb.y + eb.y) / 2, '#ffaa00', 3);
-            pb.hit = true;
-            return false;
-          }
-          return true;
-        });
-      }
+        } else if (dist < 8) {
+          spawnExplosion(s, (pb.x + eb.x) / 2, (pb.y + eb.y) / 2, '#ffaa00', 3);
+          pb.hit = true;
+          destroyedEnemyBullets.add(idx);
+        }
+      });
     });
+    s.enemyBullets = s.enemyBullets.filter((_, idx) => !destroyedEnemyBullets.has(idx));
 
     // Enemy bullet hits player (remaining bullets after collision)
     s.enemyBullets = s.enemyBullets.filter(b => {
