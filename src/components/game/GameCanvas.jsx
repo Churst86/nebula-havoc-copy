@@ -1122,7 +1122,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     s.enemies.forEach(e => drawEnemy(ctx, e));
     s.bullets.forEach(b => drawBullet(ctx, b, false));
     s.enemyBullets.forEach(b => drawBullet(ctx, b, true));
-    drawPlayer(ctx, p, s.wingmen, s.shieldHp, s.enemies, s.invincibleTimer, keys);
+    drawPlayer(ctx, p, s.wingmen, s.shieldHp, s.enemies, s.invincibleTimer, keys, s.starInvincibleTimer);
 
     // Laser charge indicator + continuous beam draw
     if ((s.powerups.laser || 0) > 0) {
