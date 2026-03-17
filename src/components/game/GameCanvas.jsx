@@ -769,13 +769,19 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         cells.forEach(cell => {
           if (b.hit) return;
           if (b.x >= cell.x && b.x <= cell.x + BLOCK_SIZE && b.y >= cell.y && b.y <= cell.y + BLOCK_SIZE) {
-            block.hp--;
-            if (!piercingTypes.includes(b.type)) b.hit = true;
-            if (block.hp <= 0) {
-              block.dead = true;
-              s.score += 50;
-              onScoreChange(s.score);
-              spawnExplosion(s, block.x + BLOCK_SIZE, block.y, block.color, 8);
+            if (block.invulnerable) {
+              // Bullets always stop on invulnerable blocks (no piercing)
+              b.hit = true;
+              spawnExplosion(s, b.x, b.y, '#aaaacc', 3);
+            } else {
+              block.hp--;
+              if (!piercingTypes.includes(b.type)) b.hit = true;
+              if (block.hp <= 0) {
+                block.dead = true;
+                s.score += 50;
+                onScoreChange(s.score);
+                spawnExplosion(s, block.x + BLOCK_SIZE, block.y, block.color, 8);
+              }
             }
           }
         });
