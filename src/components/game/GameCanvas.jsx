@@ -3,12 +3,19 @@ import MobileControls from './MobileControls';
 import { sounds } from '../../hooks/useSound.js';
 
 // Power-up types (no timer — permanent until replaced/stacked)
-const POWERUP_TYPES = ['spread', 'laser', 'raygun', 'wingman', 'shield', 'bounce'];
+const POWERUP_TYPES = ['spread', 'laser', 'raygun', 'wingman', 'shield', 'bounce', 'speed'];
 
 // Laser charge/burst constants
 const LASER_CHARGE_FRAMES = 60;
 const LASER_BURST_SHOTS = 8;
 const LASER_COOLDOWN_FRAMES = 90;
+
+// Spread shotgun constants
+const SPREAD_SHOTS_PER_RELOAD = 2;   // 2 shots before reload
+const SPREAD_RELOAD_FRAMES = 80;     // reload cooldown frames
+
+// Offensive powerup types (not shield/speed — those are always droppable)
+// speed does NOT count toward the 2-powerup lock
 
 function randomBetween(a, b) { return a + Math.random() * (b - a); }
 
