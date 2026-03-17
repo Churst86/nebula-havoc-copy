@@ -34,7 +34,7 @@ export default function Game() {
       />
 
       {gameState === 'playing' && (
-        <GameHUD score={score} lives={lives} wave={wave} activePowerup={activePowerup} />
+        <GameHUD score={score} lives={lives} maxLives={maxLives} wave={wave} activePowerup={activePowerup} />
       )}
 
       {gameState === 'start' && (
