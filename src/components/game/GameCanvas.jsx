@@ -172,16 +172,18 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       const speed = 9;
       for (let i = 0; i < arms; i++) {
         const a = s.spiralAngle + (i / arms) * Math.PI * 2;
-        s.bullets.push({ x: p.x, y: p.y - 10, vx: Math.sin(a) * speed * 0.55, vy: -Math.cos(a) * speed, type: 'raygun' });
+        // Always fire mostly forward (upward) with a slight spiral offset
+        const forwardBias = 0.3; // how much the spiral offsets from straight up
+        s.bullets.push({ x: p.x, y: p.y - 10, vx: Math.sin(a) * forwardBias * speed, vy: -speed + Math.cos(a) * forwardBias * speed * 0.3, type: 'raygun' });
       }
-      s.spiralAngle += 0.35;
+      s.spiralAngle += 0.45;
     }
 
     if (bounceTier > 0) {
-      // Tier = number of bounces
+      // Single bounce shot alternating left/right
       const bounces = bounceTier * 2;
-      s.bullets.push({ x: p.x - 8, y: p.y - 14, vx: -4, vy: -9, type: 'bounce', bouncesLeft: bounces });
-      s.bullets.push({ x: p.x + 8, y: p.y - 14, vx:  4, vy: -9, type: 'bounce', bouncesLeft: bounces });
+      const side = Math.floor(s.spiralAngle * 2) % 2 === 0 ? -1 : 1;
+      s.bullets.push({ x: p.x + side * 8, y: p.y - 14, vx: side * 3.5, vy: -10, type: 'bounce', bouncesLeft: bounces });
     }
 
     // Normal fallback — only if no special weapons
