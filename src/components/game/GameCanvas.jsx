@@ -580,14 +580,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         const dx = p.x - e.x, dy = p.y - e.y;
         const len = Math.sqrt(dx * dx + dy * dy) || 1;
         if (e.type === 'boss') {
-          // Boss fires spread
-          [-20, -10, 0, 10, 20].forEach(angle => {
+          // Boss fires dense spread
+          [-30, -20, -10, 0, 10, 20, 30].forEach(angle => {
             const rad = (angle * Math.PI) / 180;
-            const bvx = (dx / len) * 3;
-            const bvy = (dy / len) * 3;
-            s.enemyBullets.push({ x: e.x, y: e.y, vx: bvx + Math.sin(rad) * 2, vy: bvy + Math.cos(rad) * 0.5, boss: true });
+            const bvx = (dx / len) * 4;
+            const bvy = (dy / len) * 4;
+            s.enemyBullets.push({ x: e.x, y: e.y, vx: bvx + Math.sin(rad) * 2.5, vy: bvy + Math.cos(rad) * 0.5, boss: true });
           });
-          e.fireTimer = 30;
+          e.fireTimer = 18;
         } else {
           const bspd = e.type === 'dropper' ? 2.5 : 2;
           s.enemyBullets.push({ x: e.x, y: e.y, vx: (dx / len) * bspd, vy: (dy / len) * bspd });
