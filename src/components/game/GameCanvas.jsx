@@ -138,24 +138,33 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     }
   }
 
+  function fireSpreadShot(s) {
+    const p = s.player;
+    const spreadTier = s.powerups.spread || 0;
+    if (spreadTier === 0) return;
+    if (s.spreadReloadTimer > 0) return; // reloading
+    if (s.spreadShotsLeft <= 0) return;
+
+    const [spreadDeg, count] = spreadTier === 1 ? [50, 7] : spreadTier === 2 ? [100, 9] : [150, 11];
+    for (let i = 0; i < count; i++) {
+      const angle = -spreadDeg / 2 + (spreadDeg / (count - 1)) * i;
+      const rad = (angle * Math.PI) / 180;
+      // Slow shotgun speed
+      s.bullets.push({ x: p.x, y: p.y - 18, vx: Math.sin(rad) * 5, vy: -Math.cos(rad) * 7, type: 'spread' });
+    }
+    s.spreadShotsLeft--;
+    if (s.spreadShotsLeft <= 0) {
+      s.spreadReloadTimer = SPREAD_RELOAD_FRAMES;
+    }
+  }
+
   function playerFire(s) {
     const p = s.player;
     const pw = s.powerups;
 
-    const spreadTier = pw.spread || 0;
     const laserTier  = pw.laser  || 0;
     const raygunTier = pw.raygun || 0;
     const bounceTier = pw.bounce || 0;
-
-    // Laser is handled separately via charge/burst system (not here)
-    if (spreadTier > 0) {
-      const [spread, count] = spreadTier === 1 ? [40, 5] : spreadTier === 2 ? [90, 7] : [160, 9];
-      for (let i = 0; i < count; i++) {
-        const angle = -spread / 2 + (spread / (count - 1)) * i;
-        const rad = (angle * Math.PI) / 180;
-        s.bullets.push({ x: p.x, y: p.y - 18, vx: Math.sin(rad) * 6, vy: -Math.cos(rad) * 10, type: 'spread' });
-      }
-    }
 
     if (raygunTier > 0) {
       const arms = raygunTier + 1;
@@ -168,19 +177,21 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     }
 
     if (bounceTier > 0) {
-      const bounces = bounceTier;
+      // Tier = number of bounces
+      const bounces = bounceTier * 2;
       s.bullets.push({ x: p.x - 8, y: p.y - 14, vx: -4, vy: -9, type: 'bounce', bouncesLeft: bounces });
       s.bullets.push({ x: p.x + 8, y: p.y - 14, vx:  4, vy: -9, type: 'bounce', bouncesLeft: bounces });
     }
 
-    if (spreadTier === 0 && laserTier === 0 && raygunTier === 0 && bounceTier === 0) {
-      s.bullets.push({ x: p.x, y: p.y - 18, vx: 0, vy: -12, type: 'normal' });
+    // Normal fallback — only if no special weapons
+    if (laserTier === 0 && raygunTier === 0 && bounceTier === 0 && (pw.spread || 0) === 0) {
+      // Slow single shot — less threat, 1 damage only
+      s.bullets.push({ x: p.x, y: p.y - 18, vx: 0, vy: -7, type: 'normal' });
     }
 
     // Wingmen fire — aim at nearest enemy with weak slow shots
     if ((pw.wingman || 0) > 0) {
       s.wingmen.forEach(w => {
-        // Find nearest enemy
         let target = null, bestDist = Infinity;
         s.enemies.forEach(e => {
           const d = Math.hypot(e.x - w.x, e.y - w.y);
@@ -189,8 +200,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         if (target) {
           const dx = target.x - w.x, dy = target.y - w.y;
           const len = Math.sqrt(dx * dx + dy * dy) || 1;
-          const spd = 7; // slower than player
-          s.bullets.push({ x: w.x, y: w.y - 10, vx: (dx / len) * spd, vy: (dy / len) * spd, type: 'wingman' });
+          s.bullets.push({ x: w.x, y: w.y - 10, vx: (dx / len) * 7, vy: (dy / len) * 7, type: 'wingman' });
         } else {
           s.bullets.push({ x: w.x, y: w.y - 10, vx: 0, vy: -7, type: 'wingman' });
         }
@@ -199,11 +209,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   }
 
   function getFireRate(pw) {
-    // Laser fire rate doesn't apply here (handled by charge system), return slow base for non-laser
     if ((pw.laser || 0) > 0) return 999; // laser fires via charge burst only
     if ((pw.raygun || 0) > 0) return Math.max(5, 10 - (pw.raygun || 0) * 2);
-    if ((pw.spread || 0) > 0) return Math.max(5, 8 - (pw.spread || 0));
-    return 8;
+    // Spread is fired via shotgun system (not this timer), but we still need a timer for other weapons
+    if ((pw.spread || 0) > 0 && (pw.raygun || 0) === 0 && (pw.bounce || 0) === 0) return 30; // slow trigger pull for shotgun
+    return 22; // slow normal auto fire
   }
 
   // ── Drawing ──────────────────────────────────────────────────
