@@ -873,9 +873,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       return b.y > -20 && b.y < H + 20 && b.x > -20 && b.x < W + 20;
     });
 
-    // Enemy fire — dropper does NOT fire
+    // Enemy fire — dropper and bomb do NOT fire
     s.enemies.forEach(e => {
-      if (e.type === 'dropper') return;
+      if (e.type === 'dropper' || e.type === 'bomb') return;
       e.fireTimer--;
       if (e.fireTimer <= 0) {
         const dx = p.x - e.x, dy = p.y - e.y;
