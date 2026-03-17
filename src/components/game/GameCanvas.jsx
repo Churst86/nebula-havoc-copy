@@ -482,20 +482,35 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   }
 
   function drawPowerupItem(ctx, item) {
-    const colors = { spread: '#ffdd00', laser: '#ff44ff', raygun: '#44ffaa', wingman: '#44aaff', shield: '#00ccff', bounce: '#aaff00', speed: '#ff8800', shotspeed: '#ff4488' };
-    const labels = { spread: 'S', laser: 'L', raygun: 'R', wingman: 'W', shield: '🛡', bounce: 'B', speed: '▶', shotspeed: '⚡' };
-    const c = colors[item.type] || '#fff';
+    const colors = { spread: '#ffdd00', laser: '#ff44ff', raygun: '#44ffaa', wingman: '#44aaff', shield: '#00ccff', bounce: '#aaff00', speed: '#ff8800', shotspeed: '#ff4488', star: '#ffffff' };
+    const labels = { spread: 'S', laser: 'L', raygun: 'R', wingman: 'W', shield: '🛡', bounce: 'B', speed: '▶', shotspeed: '⚡', star: '★' };
     ctx.save();
     ctx.translate(item.x, item.y);
     ctx.rotate(item.angle || 0);
-    ctx.shadowColor = c; ctx.shadowBlur = 16;
-    ctx.strokeStyle = c; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.stroke();
-    ctx.fillStyle = c + '33'; ctx.fill();
-    ctx.fillStyle = c;
-    ctx.font = 'bold 11px monospace';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(labels[item.type], 0, 0);
+
+    if (item.type === 'star') {
+      // Rainbow rotating star
+      const hue = (Date.now() * 0.2) % 360;
+      const c1 = `hsl(${hue},100%,70%)`;
+      ctx.shadowColor = c1; ctx.shadowBlur = 22;
+      ctx.strokeStyle = c1; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = c1 + '33'; ctx.fill();
+      ctx.fillStyle = c1;
+      ctx.font = 'bold 14px monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('★', 0, 1);
+    } else {
+      const c = colors[item.type] || '#fff';
+      ctx.shadowColor = c; ctx.shadowBlur = 16;
+      ctx.strokeStyle = c; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = c + '33'; ctx.fill();
+      ctx.fillStyle = c;
+      ctx.font = 'bold 11px monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(labels[item.type], 0, 0);
+    }
     ctx.restore();
   }
 
