@@ -45,6 +45,7 @@ function initState() {
     wave: 1,
     waveTimer: 0,
     fireTimer: 0,
+    invincibleTimer: 0,  // frames of invincibility after health damage
     spiralAngle: 0,
     laserCharge: 0,
     laserCooldown: 0,
