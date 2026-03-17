@@ -506,6 +506,29 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       }
     }
 
+    // Wingmen fire on their own independent timer
+    if ((s.powerups.wingman || 0) > 0 && s.wingmen.length > 0) {
+      s.wingmanFireTimer--;
+      if (s.wingmanFireTimer <= 0) {
+        s.wingmen.forEach(w => {
+          let target = null, bestDist = Infinity;
+          s.enemies.forEach(e => {
+            const d = Math.hypot(e.x - w.x, e.y - w.y);
+            if (d < bestDist) { bestDist = d; target = e; }
+          });
+          if (target) {
+            const dx = target.x - w.x, dy = target.y - w.y;
+            const len = Math.sqrt(dx * dx + dy * dy) || 1;
+            s.bullets.push({ x: w.x, y: w.y - 10, vx: (dx / len) * 7, vy: (dy / len) * 7, type: 'wingman' });
+          } else {
+            s.bullets.push({ x: w.x, y: w.y - 10, vx: 0, vy: -7, type: 'wingman' });
+          }
+        });
+        const shotspeedBonus = (s.powerups.shotspeed || 0) * 6;
+        s.wingmanFireTimer = Math.max(12, 45 - shotspeedBonus);
+      }
+    }
+
     // ── Laser charge / burst / cooldown ──────────────────────
     if ((s.powerups.laser || 0) > 0) {
       if (s.laserCooldown > 0) {
