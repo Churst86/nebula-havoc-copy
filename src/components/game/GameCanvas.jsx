@@ -133,6 +133,22 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         fireTimer: randomBetween(60, 120),
       });
     }
+    // Spawn 1-2 bomb enemies starting wave 2
+    if (wave >= 2) {
+      const bombCount = wave >= 6 ? 2 : 1;
+      for (let i = 0; i < bombCount; i++) {
+        enemies.push({
+          type: 'bomb',
+          x: randomBetween(50, W - 50),
+          y: -50 - i * 40,
+          w: 20, h: 20,
+          hp: 2, maxHp: 2,
+          vx: randomBetween(-0.6, 0.6),
+          vy: (0.4 + wave * 0.05),
+          fireTimer: 9999, // bombs don't shoot
+        });
+      }
+    }
     s.enemies = enemies;
 
     // Reset per-wave dropper state — dropper will appear mid-wave
