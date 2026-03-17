@@ -6,6 +6,10 @@ import HighScoresMenu from './HighScoresMenu';
 
 export default function StartScreen({ onStart }) {
   const [showScores, setShowScores] = useState(false);
+  if (showScores) {
+    return <HighScoresMenu onBack={() => setShowScores(false)} />;
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -35,6 +39,16 @@ export default function StartScreen({ onStart }) {
             className="bg-primary hover:bg-primary/80 text-primary-foreground font-bold text-lg px-10 py-6 rounded-xl"
           >
             START GAME
+          </Button>
+
+          <Button
+            onClick={() => setShowScores(true)}
+            variant="outline"
+            size="lg"
+            className="font-bold text-lg px-10 py-6 rounded-xl gap-2"
+          >
+            <Trophy className="w-5 h-5" />
+            HIGH SCORES
           </Button>
 
           <div className="text-sm text-muted-foreground space-y-1 pt-4">
