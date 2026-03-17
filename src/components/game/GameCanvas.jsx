@@ -2,20 +2,27 @@ import React, { useRef, useEffect, useCallback } from 'react';
 import MobileControls from './MobileControls';
 import { sounds } from '../../hooks/useSound.js';
 
-// Power-up types (no timer — permanent until replaced/stacked)
-const POWERUP_TYPES = ['spread', 'laser', 'raygun', 'wingman', 'shield', 'bounce', 'speed'];
-
 // Laser charge/burst constants
 const LASER_CHARGE_FRAMES = 60;
 const LASER_BURST_SHOTS = 8;
 const LASER_COOLDOWN_FRAMES = 90;
 
 // Spread shotgun constants
-const SPREAD_SHOTS_PER_RELOAD = 2;   // 2 shots before reload
-const SPREAD_RELOAD_FRAMES = 80;     // reload cooldown frames
+const SPREAD_SHOTS_PER_RELOAD = 2;
+const SPREAD_RELOAD_FRAMES = 80;
 
-// Offensive powerup types (not shield/speed — those are always droppable)
-// speed does NOT count toward the 2-powerup lock
+// Tetris block shapes (each cell is [col, row])
+const TETRIS_SHAPES = [
+  [[0,0],[1,0],[2,0],[3,0]],         // I
+  [[0,0],[1,0],[0,1],[1,1]],         // O
+  [[1,0],[0,1],[1,1],[2,1]],         // T
+  [[0,0],[0,1],[1,1],[2,1]],         // L
+  [[2,0],[0,1],[1,1],[2,1]],         // J
+  [[1,0],[2,0],[0,1],[1,1]],         // S
+  [[0,0],[1,0],[1,1],[2,1]],         // Z
+];
+const BLOCK_SIZE = 18;
+const BLOCK_COLORS = ['#00f0ff', '#ff44ff', '#ffdd00', '#44ffaa', '#ff8800', '#aaff00', '#ff4488'];
 
 function randomBetween(a, b) { return a + Math.random() * (b - a); }
 
@@ -29,6 +36,9 @@ function initState() {
     powerupItems: [],
     wingmen: [],
     stars: [],
+    blocks: [],          // falling tetris blocks
+    piledCells: [],      // {x, y, color} settled block cells on the bottom
+    blockSpawnTimer: 120,
     score: 0,
     lives: 3,
     maxLives: 3,
@@ -36,19 +46,16 @@ function initState() {
     waveTimer: 0,
     fireTimer: 0,
     spiralAngle: 0,
-    // Laser charge-burst state
     laserCharge: 0,
     laserCooldown: 0,
     laserBursting: false,
     laserBurstShots: 0,
-    // Spread shotgun state
     spreadShotsLeft: SPREAD_SHOTS_PER_RELOAD,
     spreadReloadTimer: 0,
     spreadFireTimer: 10,
     wingmanFireTimer: 0,
-    // Power-up system: max 2 offensive types locked
     powerups: {},
-    lockedPowerups: [],   // up to 2 non-shield/non-speed powerup keys
+    lockedPowerups: [],
     shieldHp: 0,
     running: false,
   };
@@ -56,8 +63,19 @@ function initState() {
 
 // Offensive powerup types that count toward the 2-lock system
 const OFFENSIVE_POWERUPS = ['spread', 'laser', 'raygun', 'bounce'];
-// Special powerups that bypass the 2-lock (speed, shield, shotspeed, wingman)
+// Special powerups that bypass the 2-lock
 const SPECIAL_POWERUPS = ['speed', 'shield', 'shotspeed', 'wingman'];
+
+// Dropper enemy appearance per powerup type
+const DROPPER_COLORS = {
+  spread: '#ffdd00', laser: '#ff44ff', raygun: '#44ffaa',
+  wingman: '#44aaff', shield: '#00ccff', bounce: '#aaff00',
+  speed: '#ff8800', shotspeed: '#ff4488',
+};
+const DROPPER_LABELS = {
+  spread: 'S', laser: 'L', raygun: 'R', wingman: 'W',
+  shield: '🛡', bounce: 'B', speed: '▶', shotspeed: '⚡',
+};
 
 export default function GameCanvas({ gameState, setGameState, onScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange }) {
   const canvasRef = useRef(null);
@@ -66,7 +84,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   const animRef = useRef(null);
   const lastTimeRef = useRef(0);
 
-  // ── Stars ────────────────────────────────────────────────────
   function initStars(W, H) {
     return Array.from({ length: 120 }, () => ({
       x: Math.random() * W, y: Math.random() * H,
@@ -82,31 +99,34 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     const count = 5 + wave * 2;
     const enemies = [];
 
-    // Boss every 5 waves
     if (wave % 5 === 0) {
       const bossHp = 200 + wave * 25;
       enemies.push({
-        type: 'boss',
-        x: W / 2, y: -60,
-        w: 45, h: 45,
-        hp: bossHp, maxHp: bossHp,
-        vx: 1.8, vy: 0.4,
-        fireTimer: 20,
-        phase: 0,
+        type: 'boss', x: W / 2, y: -60, w: 45, h: 45,
+        hp: bossHp, maxHp: bossHp, vx: 1.8, vy: 0.4, fireTimer: 20, phase: 0,
       });
       sounds.startBossMusic();
     } else {
       sounds.startWaveMusic(wave);
     }
 
-    // Dropper (powerup carrier) — drop pool determined at pickup time, not spawn time
+    // Determine what powerup this dropper carries at spawn time
+    const dropPool = s.lockedPowerups.length >= 2
+      ? [...s.lockedPowerups, 'shield', 'speed', 'shotspeed', 'wingman']
+      : [...OFFENSIVE_POWERUPS, 'speed', 'shotspeed', 'wingman'];
+    const dropType = dropPool[Math.floor(Math.random() * dropPool.length)];
+    const dc = DROPPER_COLORS[dropType] || '#ffd700';
+
     enemies.push({
       type: 'dropper',
-      x: randomBetween(60, W - 60), y: -40,
-      w: 28, h: 28,
+      dropType,
+      x: randomBetween(80, W - 80), y: randomBetween(60, 200),
+      w: 22, h: 22,
       hp: 5, maxHp: 5,
-      vx: randomBetween(-0.5, 0.5), vy: 0.7,
-      fireTimer: randomBetween(120, 180),
+      // Random wandering velocity
+      vx: randomBetween(-1.2, 1.2), vy: randomBetween(-0.8, 0.8),
+      dirTimer: randomBetween(60, 120),
+      color: dc,
     });
 
     for (let i = 0; i < count; i++) {
@@ -134,7 +154,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     for (let i = 0; i < count; i++) {
       const offset = (i - (count - 1) / 2) * spacing;
       const angle = offset * 0.008;
-      // Slight spread on burst shots for dramatic feel
       const spread = (shotIndex / LASER_BURST_SHOTS) * 0.3 - 0.15;
       s.bullets.push({ x: p.x + offset, y: p.y - 18, vx: angle + spread, vy: -20, type: 'laser', fat: laserTier });
     }
@@ -144,26 +163,21 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     const p = s.player;
     const spreadTier = s.powerups.spread || 0;
     if (spreadTier === 0) return;
-    if (s.spreadReloadTimer > 0) return; // reloading
+    if (s.spreadReloadTimer > 0) return;
     if (s.spreadShotsLeft <= 0) return;
-
     const [spreadDeg, count] = spreadTier === 1 ? [50, 7] : spreadTier === 2 ? [100, 9] : [150, 11];
     for (let i = 0; i < count; i++) {
       const angle = -spreadDeg / 2 + (spreadDeg / (count - 1)) * i;
       const rad = (angle * Math.PI) / 180;
-      // Slow shotgun speed
       s.bullets.push({ x: p.x, y: p.y - 18, vx: Math.sin(rad) * 5, vy: -Math.cos(rad) * 7, type: 'spread' });
     }
     s.spreadShotsLeft--;
-    if (s.spreadShotsLeft <= 0) {
-      s.spreadReloadTimer = SPREAD_RELOAD_FRAMES;
-    }
+    if (s.spreadShotsLeft <= 0) s.spreadReloadTimer = SPREAD_RELOAD_FRAMES;
   }
 
   function playerFire(s) {
     const p = s.player;
     const pw = s.powerups;
-
     const laserTier  = pw.laser  || 0;
     const raygunTier = pw.raygun || 0;
     const bounceTier = pw.bounce || 0;
@@ -173,15 +187,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       const speed = 9;
       for (let i = 0; i < arms; i++) {
         const a = s.spiralAngle + (i / arms) * Math.PI * 2;
-        // Always fire mostly forward (upward) with a slight spiral offset
-        const forwardBias = 0.3; // how much the spiral offsets from straight up
+        const forwardBias = 0.3;
         s.bullets.push({ x: p.x, y: p.y - 10, vx: Math.sin(a) * forwardBias * speed, vy: -speed + Math.cos(a) * forwardBias * speed * 0.3, type: 'raygun' });
       }
       s.spiralAngle += 0.45;
     }
 
     if (bounceTier > 0) {
-      // Single bounce shot alternating left/right
       const bounces = bounceTier * 2;
       const side = Math.floor(s.spiralAngle * 2) % 2 === 0 ? -1 : 1;
       s.bullets.push({ x: p.x + side * 8, y: p.y - 14, vx: side * 3.5, vy: -10, type: 'bounce', bouncesLeft: bounces });
@@ -189,26 +201,72 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
 
     // Normal fallback — only if no special weapons
     if (laserTier === 0 && raygunTier === 0 && bounceTier === 0 && (pw.spread || 0) === 0) {
-      // Slow single shot — less threat, 1 damage only
       s.bullets.push({ x: p.x, y: p.y - 18, vx: 0, vy: -7, type: 'normal' });
     }
-
   }
 
   function getFireRate(pw) {
-    const speedBonus = (pw.shotspeed || 0) * 6; // each tier reduces cooldown by 6 frames
-    if ((pw.laser || 0) > 0) return 999; // laser fires via charge burst only
+    const speedBonus = (pw.shotspeed || 0) * 6;
+    if ((pw.laser || 0) > 0) return 999;
     if ((pw.raygun || 0) > 0) return Math.max(8, 40 - (pw.raygun || 0) * 4 - speedBonus);
     if ((pw.spread || 0) > 0 && (pw.raygun || 0) === 0 && (pw.bounce || 0) === 0) return Math.max(12, 50 - speedBonus);
     if ((pw.bounce || 0) > 0) return Math.max(12, 55 - speedBonus);
-    return Math.max(12, 55 - speedBonus); // normal shot — slow baseline
+    return Math.max(12, 55 - speedBonus);
+  }
+
+  // ── Tetris block helpers ─────────────────────────────────────
+  function spawnBlock(W) {
+    const shapeIdx = Math.floor(Math.random() * TETRIS_SHAPES.length);
+    const shape = TETRIS_SHAPES[shapeIdx];
+    const color = BLOCK_COLORS[Math.floor(Math.random() * BLOCK_COLORS.length)];
+    const cols = shape.map(c => c[0]);
+    const maxCol = Math.max(...cols);
+    const startX = randomBetween(BLOCK_SIZE, W - (maxCol + 1) * BLOCK_SIZE);
+    const hp = 3;
+    return { shape, color, x: startX, y: -BLOCK_SIZE * 2, vy: 0.6 + Math.random() * 0.4, hp, maxHp: hp, settled: false };
+  }
+
+  function getBlockCells(block) {
+    return block.shape.map(([col, row]) => ({
+      x: block.x + col * BLOCK_SIZE,
+      y: block.y + row * BLOCK_SIZE,
+    }));
+  }
+
+  function drawBlock(ctx, block) {
+    const alpha = block.hp / block.maxHp;
+    ctx.save();
+    block.shape.forEach(([col, row]) => {
+      const bx = block.x + col * BLOCK_SIZE;
+      const by = block.y + row * BLOCK_SIZE;
+      ctx.shadowColor = block.color;
+      ctx.shadowBlur = 8;
+      ctx.fillStyle = block.color + Math.round(alpha * 0xcc).toString(16).padStart(2, '0');
+      ctx.fillRect(bx + 1, by + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+      ctx.strokeStyle = block.color;
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(bx + 1, by + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+    });
+    ctx.restore();
+  }
+
+  function drawPiledCells(ctx, cells) {
+    cells.forEach(cell => {
+      ctx.save();
+      ctx.shadowColor = cell.color; ctx.shadowBlur = 6;
+      ctx.fillStyle = cell.color + '99';
+      ctx.fillRect(cell.x + 1, cell.y + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+      ctx.strokeStyle = cell.color;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(cell.x + 1, cell.y + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+      ctx.restore();
+    });
   }
 
   // ── Drawing ──────────────────────────────────────────────────
   function drawPlayer(ctx, p, wingmen, shieldHp, enemies) {
     wingmen.forEach(w => {
-      // Rotate wingman to face nearest enemy
-      let angle = -Math.PI / 2; // default: point up
+      let angle = -Math.PI / 2;
       let bestDist = Infinity;
       (enemies || []).forEach(e => {
         const d = Math.hypot(e.x - w.x, e.y - w.y);
@@ -235,23 +293,16 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     ctx.fillStyle = 'rgba(0,240,255,0.15)';
     ctx.fill();
 
-    // Shield ring
     if (shieldHp > 0) {
       const alpha = 0.3 + shieldHp * 0.2;
-      ctx.shadowColor = '#00aaff';
-      ctx.shadowBlur = 20;
+      ctx.shadowColor = '#00aaff'; ctx.shadowBlur = 20;
       ctx.strokeStyle = `rgba(0,180,255,${alpha})`;
       ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(0, 0, 26, 0, Math.PI * 2);
-      ctx.stroke();
-      // Shield pip dots
+      ctx.beginPath(); ctx.arc(0, 0, 26, 0, Math.PI * 2); ctx.stroke();
       for (let i = 0; i < shieldHp; i++) {
         const a = (i / 3) * Math.PI * 2 - Math.PI / 2;
         ctx.fillStyle = '#00ccff';
-        ctx.beginPath();
-        ctx.arc(Math.cos(a) * 26, Math.sin(a) * 26, 3, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(Math.cos(a) * 26, Math.sin(a) * 26, 3, 0, Math.PI * 2); ctx.fill();
       }
     }
     ctx.restore();
@@ -264,37 +315,31 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     if (e.type === 'boss') {
       ctx.shadowColor = '#ff0066'; ctx.shadowBlur = 30;
       ctx.strokeStyle = '#ff0066'; ctx.lineWidth = 3;
-      // Skull-like shape
       ctx.beginPath();
       for (let i = 0; i < 8; i++) {
         const a = (i / 8) * Math.PI * 2 - Math.PI / 2;
         const r = i % 2 === 0 ? 40 : 28;
         i === 0 ? ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r) : ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
       }
-      ctx.closePath();
-      ctx.stroke();
-      ctx.fillStyle = 'rgba(255,0,102,0.1)';
-      ctx.fill();
+      ctx.closePath(); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,0,102,0.1)'; ctx.fill();
       ctx.fillStyle = '#ff0066';
       ctx.font = 'bold 16px sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('☠', 0, 0);
     } else if (e.type === 'dropper') {
-      ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 16;
-      ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 2;
+      const c = e.color || '#ffd700';
+      ctx.shadowColor = c; ctx.shadowBlur = 18;
+      ctx.strokeStyle = c; ctx.lineWidth = 2;
+      // Diamond shape
       ctx.beginPath();
-      for (let i = 0; i < 6; i++) {
-        const a = (i / 6) * Math.PI * 2 - Math.PI / 2;
-        const r = 14;
-        i === 0 ? ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r) : ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-      }
-      ctx.closePath();
+      ctx.moveTo(0, -18); ctx.lineTo(14, 0); ctx.lineTo(0, 18); ctx.lineTo(-14, 0); ctx.closePath();
       ctx.stroke();
-      ctx.fillStyle = 'rgba(255,215,0,0.12)'; ctx.fill();
-      ctx.fillStyle = '#ffd700';
-      ctx.font = 'bold 11px sans-serif';
+      ctx.fillStyle = c + '22'; ctx.fill();
+      ctx.fillStyle = c;
+      ctx.font = 'bold 12px monospace';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('★', 0, 0);
+      ctx.fillText(DROPPER_LABELS[e.dropType] || '★', 0, 1);
     } else if (e.type === 'elite') {
       ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14;
       ctx.strokeStyle = '#ff44ff'; ctx.lineWidth = 2;
@@ -311,10 +356,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     }
 
     if (e.maxHp > 1) {
-      const bw = e.type === 'boss' ? 70 : 24, bh = 3;
-      const bx = -bw / 2, by = e.type === 'boss' ? 48 : e.type === 'dropper' ? 18 : 14;
+      const bw = e.type === 'boss' ? 70 : 28, bh = 3;
+      const bx = -bw / 2, by = e.type === 'boss' ? 48 : 22;
       ctx.fillStyle = '#333'; ctx.fillRect(bx, by, bw, bh);
-      ctx.fillStyle = e.type === 'boss' ? '#ff0066' : e.type === 'dropper' ? '#ffd700' : '#ff44ff';
+      ctx.fillStyle = e.type === 'boss' ? '#ff0066' : (e.color || '#ff44ff');
       ctx.fillRect(bx, by, bw * (e.hp / e.maxHp), bh);
     }
     ctx.restore();
@@ -323,45 +368,35 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   function drawBullet(ctx, b, isEnemy) {
     ctx.save();
     if (b.type === 'wingman') {
-      // Soft blue-white small orb — weak but distinct from player/enemy
       ctx.shadowColor = '#aaddff'; ctx.shadowBlur = 8;
       ctx.fillStyle = '#aaddff';
       ctx.beginPath(); ctx.arc(b.x, b.y, 3, 0, Math.PI * 2); ctx.fill();
     } else if (b.type === 'bounce') {
-      // Vivid lime-green — clearly distinct from orange enemy shots
       ctx.shadowColor = '#aaff00'; ctx.shadowBlur = 12;
       ctx.fillStyle = '#aaff00';
       ctx.beginPath(); ctx.arc(b.x, b.y, 5, 0, Math.PI * 2); ctx.fill();
-      // Small inner white core
       ctx.fillStyle = '#ffffff';
       ctx.beginPath(); ctx.arc(b.x, b.y, 2, 0, Math.PI * 2); ctx.fill();
     } else if (b.type === 'laser') {
-      const w = 3 + (b.fat || 1) * 2; // fatter per tier
+      const w = 3 + (b.fat || 1) * 2;
       ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14 + (b.fat || 1) * 4;
-      // Bright core
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(b.x - w * 0.3, b.y - 12, w * 0.6, 22);
-      // Outer glow beam
       ctx.fillStyle = '#ff44ff';
       ctx.fillRect(b.x - w, b.y - 12, w * 2, 22);
     } else if (b.type === 'raygun') {
-      // Glowing orb for spiral shot
       ctx.shadowColor = '#44ffaa'; ctx.shadowBlur = 16;
       const grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, 7);
       grad.addColorStop(0, '#ffffff');
       grad.addColorStop(0.4, '#44ffaa');
       grad.addColorStop(1, 'rgba(68,255,170,0)');
       ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, 7, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(b.x, b.y, 7, 0, Math.PI * 2); ctx.fill();
     } else if (isEnemy) {
       const isBoss = b.boss;
       ctx.shadowColor = isBoss ? '#ff0066' : '#ff6600'; ctx.shadowBlur = isBoss ? 14 : 8;
       ctx.fillStyle = isBoss ? '#ff0066' : '#ff6600';
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, isBoss ? 6 : 4, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(b.x, b.y, isBoss ? 6 : 4, 0, Math.PI * 2); ctx.fill();
     } else {
       ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 8;
       ctx.fillStyle = '#00f0ff';
@@ -379,9 +414,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     ctx.rotate(item.angle || 0);
     ctx.shadowColor = c; ctx.shadowBlur = 16;
     ctx.strokeStyle = c; ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(0, 0, 12, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.stroke();
     ctx.fillStyle = c + '33'; ctx.fill();
     ctx.fillStyle = c;
     ctx.font = 'bold 11px monospace';
@@ -395,9 +428,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     ctx.globalAlpha = pt.alpha;
     ctx.shadowColor = pt.color; ctx.shadowBlur = 6;
     ctx.fillStyle = pt.color;
-    ctx.beginPath();
-    ctx.arc(pt.x, pt.y, pt.r, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.r, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
 
@@ -413,21 +444,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     if (s.shieldHp > 0) {
       s.shieldHp--;
       sounds.shieldHit();
-      if (s.shieldHp === 0) {
-        sounds.shieldBreak();
-        delete s.powerups.shield;
-      }
+      if (s.shieldHp === 0) { sounds.shieldBreak(); delete s.powerups.shield; }
       onPowerupChange({ ...s.powerups, shieldHp: s.shieldHp });
       return;
     }
     s.lives--;
     onLivesChange(s.lives);
     sounds.playerHit();
-    if (s.lives <= 0) {
-      sounds.stopAllMusic();
-      s.running = false;
-      setGameState('gameover');
-    }
+    if (s.lives <= 0) { sounds.stopAllMusic(); s.running = false; setGameState('gameover'); }
   }
 
   // ── Main loop ────────────────────────────────────────────────
@@ -463,40 +487,35 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     if (keys['ArrowUp'] || keys['w'] || keys['W']) p.y = Math.max(16, p.y - spd);
     if (keys['ArrowDown'] || keys['s'] || keys['S']) p.y = Math.min(H - 16, p.y + spd);
 
-    // Wingmen follow
+    // Wingmen follow — tier 1 = 1 wingman, tier 2 = 2, tier 3 = 3
     if ((s.powerups.wingman || 0) > 0) {
       const tier = s.powerups.wingman;
-      const targets = [
-        { x: p.x - 40, y: p.y + 10 }, { x: p.x + 40, y: p.y + 10 },
-        { x: p.x - 70, y: p.y + 20 }, { x: p.x + 70, y: p.y + 20 },
-      ].slice(0, Math.min(tier * 2, 4));
-      // Ensure correct count
+      const offsets = [
+        { x: -40, y: 10 }, { x: 40, y: 10 }, { x: 0, y: 25 },
+      ].slice(0, tier);
+      const targets = offsets.map(o => ({ x: p.x + o.x, y: p.y + o.y }));
       while (s.wingmen.length < targets.length) s.wingmen.push({ ...targets[s.wingmen.length] });
       while (s.wingmen.length > targets.length) s.wingmen.pop();
       s.wingmen.forEach((w, i) => {
         w.x += (targets[i].x - w.x) * 0.1;
         w.y += (targets[i].y - w.y) * 0.1;
       });
+    } else {
+      s.wingmen = [];
     }
 
-    // Spread shotgun reload tick
+    // Spread reload tick
     if (s.spreadReloadTimer > 0) {
       s.spreadReloadTimer--;
-      if (s.spreadReloadTimer <= 0) {
-        s.spreadShotsLeft = SPREAD_SHOTS_PER_RELOAD;
-      }
+      if (s.spreadReloadTimer <= 0) s.spreadShotsLeft = SPREAD_SHOTS_PER_RELOAD;
     }
 
-    // Auto fire (non-laser, non-spread weapons)
+    // Auto fire
     s.fireTimer--;
-    if (s.fireTimer <= 0) {
-      playerFire(s);
-      s.fireTimer = getFireRate(s.powerups);
-    }
+    if (s.fireTimer <= 0) { playerFire(s); s.fireTimer = getFireRate(s.powerups); }
 
-    // Spread shotgun fires on its own slower timer alongside other weapons
+    // Spread timer
     if ((s.powerups.spread || 0) > 0) {
-      if (s.spreadFireTimer === undefined || s.spreadFireTimer === null) s.spreadFireTimer = 10;
       s.spreadFireTimer--;
       if (s.spreadFireTimer <= 0) {
         fireSpreadShot(s);
@@ -506,7 +525,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       }
     }
 
-    // Wingmen fire on their own independent timer
+    // Wingmen independent fire timer
     if ((s.powerups.wingman || 0) > 0 && s.wingmen.length > 0) {
       s.wingmanFireTimer--;
       if (s.wingmanFireTimer <= 0) {
@@ -534,41 +553,55 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       if (s.laserCooldown > 0) {
         s.laserCooldown--;
       } else if (s.laserBursting) {
-        // Fire one burst shot per frame during burst
         if (s.laserBurstShots > 0) {
           fireLaserBurstShot(s, LASER_BURST_SHOTS - s.laserBurstShots);
           s.laserBurstShots--;
         } else {
-          s.laserBursting = false;
-          s.laserCharge = 0;
-          s.laserCooldown = LASER_COOLDOWN_FRAMES;
+          s.laserBursting = false; s.laserCharge = 0; s.laserCooldown = LASER_COOLDOWN_FRAMES;
         }
       } else {
         s.laserCharge++;
         if (s.laserCharge >= LASER_CHARGE_FRAMES) {
           s.laserBursting = true;
           s.laserBurstShots = LASER_BURST_SHOTS + (s.powerups.laser - 1) * 4;
-          sounds.powerup(); // charge-complete sound cue
+          sounds.powerup();
         }
       }
     } else {
       s.laserCharge = 0; s.laserCooldown = 0; s.laserBursting = false; s.laserBurstShots = 0;
     }
 
-    // Boss movement (phase-based)
+    // ── Enemy movement ────────────────────────────────────────
     s.enemies.forEach(e => {
       if (e.type === 'boss') {
         e.phase = (e.phase || 0) + 0.01;
         e.x += Math.sin(e.phase) * 2;
         e.y = Math.min(e.y + 0.15, H * 0.25);
         if (e.x < 50 || e.x > W - 50) e.vx *= -1;
+      } else if (e.type === 'dropper') {
+        // Random wander — bounce off all walls, never leave screen
+        e.dirTimer = (e.dirTimer || 60) - 1;
+        if (e.dirTimer <= 0) {
+          e.vx = randomBetween(-1.5, 1.5);
+          e.vy = randomBetween(-1.2, 1.2);
+          e.dirTimer = randomBetween(60, 150);
+        }
+        e.x += e.vx; e.y += e.vy;
+        if (e.x < 30) { e.x = 30; e.vx = Math.abs(e.vx); }
+        if (e.x > W - 30) { e.x = W - 30; e.vx = -Math.abs(e.vx); }
+        if (e.y < 30) { e.y = 30; e.vy = Math.abs(e.vy); }
+        if (e.y > H * 0.7) { e.y = H * 0.7; e.vy = -Math.abs(e.vy); }
       } else {
         e.x += e.vx; e.y += e.vy;
+        // Bounce off side walls
         if (e.x < 20 || e.x > W - 20) e.vx *= -1;
+        // Bounce off top/bottom — never leave screen
+        if (e.y < 20) { e.y = 20; e.vy = Math.abs(e.vy); }
+        if (e.y > H - 20) { e.y = H - 20; e.vy = -Math.abs(e.vy); }
       }
     });
 
-    // Move bullets (bounce off walls)
+    // Move bullets
     s.bullets = s.bullets.filter(b => {
       b.x += b.vx; b.y += b.vy;
       if (b.type === 'bounce') {
@@ -584,14 +617,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       return b.y > -20 && b.y < H + 20 && b.x > -20 && b.x < W + 20;
     });
 
-    // Enemy fire
+    // Enemy fire — dropper does NOT fire
     s.enemies.forEach(e => {
+      if (e.type === 'dropper') return;
       e.fireTimer--;
       if (e.fireTimer <= 0) {
         const dx = p.x - e.x, dy = p.y - e.y;
         const len = Math.sqrt(dx * dx + dy * dy) || 1;
         if (e.type === 'boss') {
-          // Boss fires dense spread
           [-30, -20, -10, 0, 10, 20, 30].forEach(angle => {
             const rad = (angle * Math.PI) / 180;
             const bvx = (dx / len) * 4;
@@ -600,9 +633,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           });
           e.fireTimer = 18;
         } else {
-          const bspd = e.type === 'dropper' ? 2.5 : 2;
+          const bspd = 2;
           s.enemyBullets.push({ x: e.x, y: e.y, vx: (dx / len) * bspd, vy: (dy / len) * bspd });
-          e.fireTimer = e.type === 'dropper' ? 100 : (s.wave > 3 ? 50 : 70);
+          e.fireTimer = s.wave > 3 ? 50 : 70;
         }
       }
     });
@@ -616,7 +649,49 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     s.powerupItems.forEach(item => { item.y += 1.2; item.angle = (item.angle || 0) + 0.04; });
     s.powerupItems = s.powerupItems.filter(item => item.y < H + 30);
 
-    // Bullet vs enemy
+    // ── Tetris blocks ─────────────────────────────────────────
+    s.blockSpawnTimer--;
+    if (s.blockSpawnTimer <= 0) {
+      s.blocks.push(spawnBlock(W));
+      s.blockSpawnTimer = Math.max(80, 160 - s.wave * 8);
+    }
+
+    // Move blocks, check piling
+    s.blocks.forEach(block => {
+      if (block.settled) return;
+      block.y += block.vy;
+
+      // Check if any cell would land on bottom or on a piled cell
+      const cells = getBlockCells(block);
+      let shouldSettle = false;
+      cells.forEach(cell => {
+        if (cell.y + BLOCK_SIZE >= H) { shouldSettle = true; }
+        // Check collision with piled cells
+        s.piledCells.forEach(pc => {
+          if (Math.abs(cell.x - pc.x) < BLOCK_SIZE * 0.8 && Math.abs((cell.y + BLOCK_SIZE) - pc.y) < 4) {
+            shouldSettle = true;
+          }
+        });
+      });
+
+      if (shouldSettle) {
+        block.settled = true;
+        // Push cells to piledCells, snapped to grid
+        cells.forEach(cell => {
+          // Snap y to bottom
+          const snappedY = Math.min(Math.round(cell.y / BLOCK_SIZE) * BLOCK_SIZE, H - BLOCK_SIZE);
+          s.piledCells.push({ x: Math.round(cell.x / BLOCK_SIZE) * BLOCK_SIZE, y: snappedY, color: block.color });
+        });
+      }
+    });
+    s.blocks = s.blocks.filter(b => !b.settled);
+
+    // Piled cells — if stack reaches top portion, game over from block pressure isn't needed,
+    // but player touching them causes damage (handled below).
+    // Clean up piled cells that are off screen bottom (shouldn't happen but safety)
+    s.piledCells = s.piledCells.filter(c => c.y < H);
+
+    // ── Bullet vs enemy ───────────────────────────────────────
     const piercingTypes = ['laser', 'raygun', 'spread'];
     s.bullets.forEach(b => {
       if (b.hit) return;
@@ -634,27 +709,16 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
             onScoreChange(s.score);
             sounds.kill();
             spawnExplosion(s, e.x, e.y,
-              e.type === 'boss' ? '#ff0066' : e.type === 'dropper' ? '#ffd700' : e.type === 'elite' ? '#ff44ff' : '#ff4444',
+              e.type === 'boss' ? '#ff0066' : e.type === 'dropper' ? (e.color || '#ffd700') : e.type === 'elite' ? '#ff44ff' : '#ff4444',
               e.type === 'boss' ? 40 : 14
             );
             if (e.type === 'dropper') {
               sounds.killDropper();
-              let dropType;
-              if (s.lockedPowerups.length >= 2) {
-                // Locked: drop one of the 2 locked types, or a special
-                const pool = [...s.lockedPowerups, 'shield', 'speed', 'shotspeed', 'wingman'];
-                dropType = pool[Math.floor(Math.random() * pool.length)];
-              } else {
-                // Still picking: drop any offensive type or a special
-                const pool = [...OFFENSIVE_POWERUPS, 'speed', 'shotspeed', 'wingman'];
-                dropType = pool[Math.floor(Math.random() * pool.length)];
-              }
-              s.powerupItems.push({ x: e.x, y: e.y, type: dropType, angle: 0 });
+              s.powerupItems.push({ x: e.x, y: e.y, type: e.dropType, angle: 0 });
             }
             if (e.type === 'boss') {
               sounds.stopBossMusic();
               sounds.waveComplete();
-              // Grant +1 max life and restore it
               s.maxLives++;
               s.lives = Math.min(s.lives + 1, s.maxLives);
               onLivesChange(s.lives);
@@ -664,6 +728,43 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         }
       });
     });
+
+    // Bullet vs tetris blocks
+    s.bullets.forEach(b => {
+      if (b.hit) return;
+      s.blocks.forEach(block => {
+        if (block.dead) return;
+        const cells = getBlockCells(block);
+        cells.forEach(cell => {
+          if (b.hit) return;
+          if (b.x >= cell.x && b.x <= cell.x + BLOCK_SIZE && b.y >= cell.y && b.y <= cell.y + BLOCK_SIZE) {
+            block.hp--;
+            if (!piercingTypes.includes(b.type)) b.hit = true;
+            if (block.hp <= 0) {
+              block.dead = true;
+              s.score += 50;
+              onScoreChange(s.score);
+              spawnExplosion(s, block.x + BLOCK_SIZE, block.y, block.color, 8);
+            }
+          }
+        });
+      });
+    });
+    s.blocks = s.blocks.filter(b => !b.dead);
+
+    // Bullet vs piled cells
+    s.bullets.forEach(b => {
+      if (b.hit) return;
+      s.piledCells = s.piledCells.filter(cell => {
+        if (b.x >= cell.x && b.x <= cell.x + BLOCK_SIZE && b.y >= cell.y && b.y <= cell.y + BLOCK_SIZE) {
+          if (!piercingTypes.includes(b.type)) b.hit = true;
+          spawnExplosion(s, cell.x + BLOCK_SIZE / 2, cell.y + BLOCK_SIZE / 2, cell.color, 4);
+          return false; // destroy single piled cell
+        }
+        return true;
+      });
+    });
+
     s.bullets = s.bullets.filter(b => !b.hit);
     s.enemies = s.enemies.filter(e => !e.dead);
 
@@ -672,7 +773,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       const dx = item.x - p.x, dy = item.y - p.y;
       if (Math.sqrt(dx * dx + dy * dy) < 22) {
         if (item.type === 'shield') {
-          // Shield gives +1 per pickup, unlimited stacking
           s.shieldHp++;
           sounds.shield();
         } else if (item.type === 'speed') {
@@ -682,14 +782,12 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           s.powerups.shotspeed = Math.min((s.powerups.shotspeed || 0) + 1, 5);
           sounds.powerup();
         } else if (item.type === 'wingman') {
-          // Wingman does NOT count toward 2-lock
           s.powerups.wingman = Math.min((s.powerups.wingman || 0) + 1, 3);
           sounds.powerup();
         } else {
-          // Enforce 2-powerup lock: only accept if already in locked list or can add a slot
           const isLocked = s.lockedPowerups.includes(item.type);
           const canAdd = s.lockedPowerups.length < 2;
-          if (!isLocked && !canAdd) return true; // reject — slots full with different types
+          if (!isLocked && !canAdd) return true;
           if (!isLocked) s.lockedPowerups.push(item.type);
           s.powerups[item.type] = Math.min((s.powerups[item.type] || 0) + 1, 3);
           sounds.powerup();
@@ -720,15 +818,45 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         takeDamage(s);
         return false;
       }
-      // Remove enemies that fly off-screen so waves can progress
-      if (e.y > H + 60) return false;
       return true;
     });
 
-    // Wave clear
-    if (s.enemies.length === 0) {
+    // Player touches falling block cell
+    s.blocks.forEach(block => {
+      getBlockCells(block).forEach(cell => {
+        if (p.x >= cell.x - 10 && p.x <= cell.x + BLOCK_SIZE + 10 &&
+            p.y >= cell.y - 10 && p.y <= cell.y + BLOCK_SIZE + 10) {
+          if (!block._dmgCooldown || block._dmgCooldown <= 0) {
+            takeDamage(s);
+            spawnExplosion(s, p.x, p.y, block.color, 8);
+            block._dmgCooldown = 60;
+          }
+        }
+      });
+      if (block._dmgCooldown > 0) block._dmgCooldown--;
+    });
+
+    // Player touches piled cell
+    s.piledCells.forEach(cell => {
+      if (!cell._dmgCooldown) cell._dmgCooldown = 0;
+      if (p.x >= cell.x - 8 && p.x <= cell.x + BLOCK_SIZE + 8 &&
+          p.y >= cell.y - 8 && p.y <= cell.y + BLOCK_SIZE + 8) {
+        if (cell._dmgCooldown <= 0) {
+          takeDamage(s);
+          spawnExplosion(s, p.x, p.y, cell.color, 8);
+          cell._dmgCooldown = 60;
+        }
+      }
+      cell._dmgCooldown = Math.max(0, (cell._dmgCooldown || 0) - 1);
+    });
+
+    // Wave clear — only count combat enemies (not dropper for wave end, dropper is optional kill)
+    const combatEnemies = s.enemies.filter(e => e.type !== 'dropper');
+    if (combatEnemies.length === 0) {
       s.waveTimer++;
       if (s.waveTimer > 90) {
+        // Remove dropper from previous wave if still alive
+        s.enemies = [];
         s.wave++;
         s.waveTimer = 0;
         onWaveChange(s.wave);
@@ -741,37 +869,32 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     s.particles.forEach(pt => { pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.04; pt.alpha -= 0.025; });
     s.particles = s.particles.filter(pt => pt.alpha > 0);
 
-    // Draw
+    // ── Draw ─────────────────────────────────────────────────
     s.particles.forEach(pt => drawParticle(ctx, pt));
+    drawPiledCells(ctx, s.piledCells);
+    s.blocks.forEach(b => drawBlock(ctx, b));
     s.powerupItems.forEach(item => drawPowerupItem(ctx, item));
     s.enemies.forEach(e => drawEnemy(ctx, e));
     s.bullets.forEach(b => drawBullet(ctx, b, false));
     s.enemyBullets.forEach(b => drawBullet(ctx, b, true));
     drawPlayer(ctx, p, s.wingmen, s.shieldHp, s.enemies);
 
-    // Laser charge indicator — pulsing arc above player
+    // Laser charge indicator
     if ((s.powerups.laser || 0) > 0) {
       const pct = s.laserCooldown > 0 ? 0 : Math.min(s.laserCharge / LASER_CHARGE_FRAMES, 1);
       if (s.laserCooldown > 0) {
-        // Cooldown: grey arc
         ctx.save();
-        ctx.strokeStyle = 'rgba(180,180,180,0.3)';
-        ctx.lineWidth = 3;
-        ctx.shadowBlur = 0;
+        ctx.strokeStyle = 'rgba(180,180,180,0.3)'; ctx.lineWidth = 3; ctx.shadowBlur = 0;
         ctx.beginPath();
         ctx.arc(p.x, p.y, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - s.laserCooldown / LASER_COOLDOWN_FRAMES));
-        ctx.stroke();
-        ctx.restore();
+        ctx.stroke(); ctx.restore();
       } else if (!s.laserBursting) {
-        // Charging: pink arc growing
         ctx.save();
         ctx.strokeStyle = `rgba(255,68,255,${0.4 + pct * 0.6})`;
-        ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 8 + pct * 16;
-        ctx.lineWidth = 2 + pct * 3;
+        ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 8 + pct * 16; ctx.lineWidth = 2 + pct * 3;
         ctx.beginPath();
         ctx.arc(p.x, p.y, 28 + pct * 6, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct);
-        ctx.stroke();
-        ctx.restore();
+        ctx.stroke(); ctx.restore();
       }
     }
 
