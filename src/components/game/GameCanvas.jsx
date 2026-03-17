@@ -385,13 +385,23 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       ctx.fillStyle = '#ff44ff';
       ctx.fillRect(b.x - w, b.y - 12, w * 2, 22);
     } else if (b.type === 'raygun') {
-      ctx.shadowColor = '#44ffaa'; ctx.shadowBlur = 16;
-      const grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, 7);
-      grad.addColorStop(0, '#ffffff');
-      grad.addColorStop(0.4, '#44ffaa');
-      grad.addColorStop(1, 'rgba(68,255,170,0)');
-      ctx.fillStyle = grad;
-      ctx.beginPath(); ctx.arc(b.x, b.y, 7, 0, Math.PI * 2); ctx.fill();
+      // Central beam line
+      ctx.shadowColor = '#44ffaa'; ctx.shadowBlur = 12;
+      ctx.strokeStyle = '#44ffaa';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(b.x, b.y + 8); ctx.lineTo(b.x, b.y - 8); ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(b.x, b.y, 2.5, 0, Math.PI * 2); ctx.fill();
+      // Orbiting orbs
+      const orbitCount = 3;
+      for (let oi = 0; oi < orbitCount; oi++) {
+        const oa = (b.orbitAngle || 0) + (oi / orbitCount) * Math.PI * 2;
+        const ox = b.x + Math.cos(oa) * 6;
+        const oy = b.y + Math.sin(oa) * 6;
+        ctx.shadowColor = '#44ffaa'; ctx.shadowBlur = 10;
+        ctx.fillStyle = '#44ffaa';
+        ctx.beginPath(); ctx.arc(ox, oy, 2, 0, Math.PI * 2); ctx.fill();
+      }
     } else if (isEnemy) {
       const isBoss = b.boss;
       ctx.shadowColor = isBoss ? '#ff0066' : '#ff6600'; ctx.shadowBlur = isBoss ? 14 : 8;
@@ -451,7 +461,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     s.lives--;
     onLivesChange(s.lives);
     sounds.playerHit();
-    if (s.lives <= 0) { sounds.stopAllMusic(); s.running = false; setGameState('gameover'); }
+    if (s.lives <= 0) { sounds.stopAllMusic(); s.running = false; setGameState('continue'); }
   }
 
   // ── Main loop ────────────────────────────────────────────────
@@ -604,6 +614,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     // Move bullets
     s.bullets = s.bullets.filter(b => {
       b.x += b.vx; b.y += b.vy;
+      if (b.type === 'raygun') b.orbitAngle = ((b.orbitAngle || 0) + 0.25);
       if (b.type === 'bounce') {
         if (b.x <= 0 || b.x >= W) {
           if (b.bouncesLeft > 0) { b.vx *= -1; b.x = Math.max(1, Math.min(W - 1, b.x)); b.bouncesLeft--; }
@@ -631,7 +642,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
             const bvy = (dy / len) * 4;
             s.enemyBullets.push({ x: e.x, y: e.y, vx: bvx + Math.sin(rad) * 2.5, vy: bvy + Math.cos(rad) * 0.5, boss: true });
           });
-          e.fireTimer = 18;
+          e.fireTimer = 35;
         } else {
           const bspd = 2;
           s.enemyBullets.push({ x: e.x, y: e.y, vx: (dx / len) * bspd, vy: (dy / len) * bspd });
