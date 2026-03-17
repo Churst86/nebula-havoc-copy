@@ -9,6 +9,7 @@ export default function Game() {
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [wave, setWave] = useState(1);
+  const [activePowerup, setActivePowerup] = useState(null);
 
   const handleStart = useCallback(() => {
     setScore(0);
