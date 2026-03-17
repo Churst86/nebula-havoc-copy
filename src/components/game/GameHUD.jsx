@@ -46,7 +46,7 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup })
               <div className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full"
                 style={{ color: '#00ccff', border: '1px solid #00ccff', background: '#00ccff22' }}>
                 <Shield className="w-3 h-3" />
-                {'●'.repeat(shieldHp)}
+                {shieldHp <= 5 ? '●'.repeat(shieldHp) : `×${shieldHp}`}
               </div>
             )}
             {/* Power-up badges */}
