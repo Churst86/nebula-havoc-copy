@@ -660,8 +660,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       const dx = item.x - p.x, dy = item.y - p.y;
       if (Math.sqrt(dx * dx + dy * dy) < 22) {
         if (item.type === 'shield') {
-          s.shieldHp = Math.min(3, s.shieldHp + 3);
+          // Shield gives +1 per pickup, unlimited stacking
+          s.shieldHp++;
           sounds.shield();
+        } else if (item.type === 'speed') {
+          // Speed does NOT count toward 2-lock
+          s.powerups.speed = Math.min((s.powerups.speed || 0) + 1, 5);
+          sounds.powerup();
         } else {
           // Enforce 2-powerup lock: only accept if already in locked list or can add a slot
           const isLocked = s.lockedPowerups.includes(item.type);
