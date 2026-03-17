@@ -175,8 +175,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   }
 
   function getFireRate(pw) {
-    if ((pw.laser || 0) > 0) return Math.max(2, 5 - (pw.laser || 0));
-    if ((pw.raygun || 0) > 0) return Math.max(4, 10 - (pw.raygun || 0) * 2);
+    if ((pw.laser || 0) > 0) return Math.max(6, 12 - (pw.laser || 0) * 2); // slower rate for charge-burst feel
+    if ((pw.raygun || 0) > 0) return Math.max(5, 10 - (pw.raygun || 0) * 2);
     if ((pw.spread || 0) > 0) return Math.max(5, 8 - (pw.spread || 0));
     return 8;
   }
