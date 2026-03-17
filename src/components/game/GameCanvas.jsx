@@ -5,6 +5,11 @@ import { sounds } from '../../hooks/useSound.js';
 // Power-up types (no timer — permanent until replaced/stacked)
 const POWERUP_TYPES = ['spread', 'laser', 'raygun', 'wingman', 'shield', 'bounce'];
 
+// Laser charge/burst constants
+const LASER_CHARGE_FRAMES = 60;
+const LASER_BURST_SHOTS = 8;
+const LASER_COOLDOWN_FRAMES = 90;
+
 function randomBetween(a, b) { return a + Math.random() * (b - a); }
 
 function initState() {
