@@ -8,7 +8,7 @@ const POWERUP_COLORS = {
   wingman:   '#44aaff',
   bounce:    '#aaff00',
   speed:     '#ff8800',
-  shotspeed: '#ff4488',
+  rapidfire: '#ff4488',
 };
 const POWERUP_LABELS = {
   spread:    'SPREAD',
@@ -17,7 +17,7 @@ const POWERUP_LABELS = {
   wingman:   'WINGMAN',
   bounce:    'BOUNCE',
   speed:     'SPEED',
-  shotspeed: 'FIRE RATE',
+  rapidfire: 'RAPID FIRE',
 };
 
 export default function GameHUD({ score, lives, maxLives, wave, activePowerup, continuesLeft }) {
