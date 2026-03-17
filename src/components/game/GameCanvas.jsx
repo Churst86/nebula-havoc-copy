@@ -70,9 +70,9 @@ function initState() {
 // Offensive powerup types that count toward the 2-lock system
 const OFFENSIVE_POWERUPS = ['spread', 'laser', 'raygun', 'bounce'];
 // Special powerups that bypass the 2-lock
-const SPECIAL_POWERUPS = ['speed', 'shield', 'shotspeed', 'wingman'];
+const SPECIAL_POWERUPS = ['speed', 'shield', 'rapidfire', 'wingman'];
 // Auxiliary upgrades (one per wave each)
-const AUXILIARY_UPGRADES = ['speed', 'shotspeed', 'wingman', 'shield'];
+const AUXILIARY_UPGRADES = ['speed', 'rapidfire', 'wingman', 'shield'];
 
 const STAR_INVINCIBLE_FRAMES = 600; // 10 seconds at 60fps
 
