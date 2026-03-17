@@ -110,7 +110,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     const enemies = [];
 
     if (wave % 5 === 0) {
-      const bossHp = 200 + wave * 25;
+      const bossHp = 20 + wave * 5;
       enemies.push({
         type: 'boss', x: W / 2, y: -60, w: 45, h: 45,
         hp: bossHp, maxHp: bossHp, vx: 1.8, vy: 0.4, fireTimer: 20, phase: 0,
