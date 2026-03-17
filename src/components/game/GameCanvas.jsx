@@ -1102,8 +1102,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         } else if (item.type === 'speed') {
           s.powerups.speed = Math.min((s.powerups.speed || 0) + 1, 5);
           sounds.powerup();
-        } else if (item.type === 'shotspeed') {
-          s.powerups.shotspeed = Math.min((s.powerups.shotspeed || 0) + 1, 5);
+        } else if (item.type === 'rapidfire') {
+          s.powerups.rapidfire = Math.min((s.powerups.rapidfire || 0) + 1, 5);
           sounds.powerup();
         } else if (item.type === 'wingman') {
           s.powerups.wingman = Math.min((s.powerups.wingman || 0) + 1, 3);
