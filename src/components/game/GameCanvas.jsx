@@ -68,16 +68,20 @@ function initState() {
 const OFFENSIVE_POWERUPS = ['spread', 'laser', 'raygun', 'bounce'];
 // Special powerups that bypass the 2-lock
 const SPECIAL_POWERUPS = ['speed', 'shield', 'shotspeed', 'wingman'];
+// Auxiliary upgrades (one per wave each)
+const AUXILIARY_UPGRADES = ['speed', 'shotspeed', 'wingman', 'shield'];
+
+const STAR_INVINCIBLE_FRAMES = 600; // 10 seconds at 60fps
 
 // Dropper enemy appearance per powerup type
 const DROPPER_COLORS = {
   spread: '#ffdd00', laser: '#ff44ff', raygun: '#44ffaa',
   wingman: '#44aaff', shield: '#00ccff', bounce: '#aaff00',
-  speed: '#ff8800', shotspeed: '#ff4488',
+  speed: '#ff8800', shotspeed: '#ff4488', star: '#ffffff',
 };
 const DROPPER_LABELS = {
   spread: 'S', laser: 'L', raygun: 'R', wingman: 'W',
-  shield: '🛡', bounce: 'B', speed: '▶', shotspeed: '⚡',
+  shield: '🛡', bounce: 'B', speed: '▶', shotspeed: '⚡', star: '★',
 };
 
 export default function GameCanvas({ gameState, setGameState, onScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, continuesLeft, onContinueUsed }) {
