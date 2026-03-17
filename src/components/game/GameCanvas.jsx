@@ -593,7 +593,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         if (s.laserBeamTimer % 4 === 0) { // damage tick every 4 frames
           s.enemies.forEach(e => {
             if (e.dead) return;
-            if (Math.abs(e.x - p.x) < beamW + e.w && e.y < p.y) {
+            if (Math.abs(e.x - p.x) < beamW + (e.w || 18) && e.y < p.y) {
               e.hp -= 1;
               sounds.hit();
               spawnExplosion(s, e.x, e.y, '#ff44ff', 3);
