@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { Crosshair } from 'lucide-react';
+import { Crosshair, Trophy } from 'lucide-react';
+import HighScoresMenu from './HighScoresMenu';
 
 export default function StartScreen({ onStart }) {
+  const [showScores, setShowScores] = useState(false);
   return (
     <motion.div
       initial={{ opacity: 0 }}
