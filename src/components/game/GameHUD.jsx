@@ -44,6 +44,13 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
             Wave {wave}
           </div>
           <div className="flex flex-wrap justify-center gap-1">
+            {/* Star invincibility */}
+            {starInvincible && (
+              <div className="text-xs font-bold px-2 py-0.5 rounded-full animate-pulse"
+                style={{ color: '#fff', border: '1px solid #fff', background: 'rgba(255,255,255,0.15)' }}>
+                ★ INVINCIBLE
+              </div>
+            )}
             {/* Shield indicator */}
             {shieldHp > 0 && (
               <div className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full"
