@@ -296,16 +296,25 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       ctx.fillStyle = '#ff9900';
       ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI * 2); ctx.fill();
     } else if (b.type === 'laser') {
-      ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 10;
+      const w = 3 + (b.fat || 1) * 2; // fatter per tier
+      ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14 + (b.fat || 1) * 4;
+      // Bright core
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(b.x - w * 0.3, b.y - 12, w * 0.6, 22);
+      // Outer glow beam
       ctx.fillStyle = '#ff44ff';
-      ctx.fillRect(b.x - 2, b.y - 10, 4, 18);
+      ctx.fillRect(b.x - w, b.y - 12, w * 2, 22);
     } else if (b.type === 'raygun') {
-      ctx.shadowColor = '#44ffaa'; ctx.shadowBlur = 12;
-      ctx.strokeStyle = '#44ffaa'; ctx.lineWidth = 3;
+      // Glowing orb for spiral shot
+      ctx.shadowColor = '#44ffaa'; ctx.shadowBlur = 16;
+      const grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, 7);
+      grad.addColorStop(0, '#ffffff');
+      grad.addColorStop(0.4, '#44ffaa');
+      grad.addColorStop(1, 'rgba(68,255,170,0)');
+      ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.moveTo(b.x - 5, b.y); ctx.lineTo(b.x + 5, b.y);
-      ctx.moveTo(b.x, b.y - 10); ctx.lineTo(b.x, b.y + 10);
-      ctx.stroke();
+      ctx.arc(b.x, b.y, 7, 0, Math.PI * 2);
+      ctx.fill();
     } else if (isEnemy) {
       const isBoss = b.boss;
       ctx.shadowColor = isBoss ? '#ff0066' : '#ff6600'; ctx.shadowBlur = isBoss ? 14 : 8;
