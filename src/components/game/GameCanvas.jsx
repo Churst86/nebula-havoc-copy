@@ -205,10 +205,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       s.bullets.push({ x: p.x + side * 8, y: p.y - 14, vx: side * 3.5, vy: -10, type: 'bounce', bouncesLeft: bounces });
     }
 
-    // Normal fallback — only if no special weapons active (laser handled separately)
-    if (laserTier === 0 && raygunTier === 0 && bounceTier === 0 && (pw.spread || 0) === 0) {
-      s.bullets.push({ x: p.x, y: p.y - 18, vx: 0, vy: -7, type: 'normal' });
-    }
+    // Basic gun always fires (laser beam is the only exception — handled by laserBeamActive guard above)
+    s.bullets.push({ x: p.x, y: p.y - 18, vx: 0, vy: -7, type: 'normal' });
   }
 
   function getFireRate(pw) {
