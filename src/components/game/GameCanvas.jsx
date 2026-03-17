@@ -48,8 +48,8 @@ function initState() {
     spiralAngle: 0,
     laserCharge: 0,
     laserCooldown: 0,
-    laserBursting: false,
-    laserBurstShots: 0,
+    laserBeamActive: false,   // beam is firing
+    laserBeamTimer: 0,        // frames remaining on beam
     spreadShotsLeft: SPREAD_SHOTS_PER_RELOAD,
     spreadReloadTimer: 0,
     spreadFireTimer: 10,
@@ -58,6 +58,8 @@ function initState() {
     lockedPowerups: [],
     shieldHp: 0,
     running: false,
+    dropperSpawnTimer: 0,     // timer to spawn dropper mid-wave
+    gunDroppedThisWave: [],   // gun powerup types already dropped this wave
   };
 }
 
