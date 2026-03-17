@@ -622,7 +622,35 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         if (e.y < 30) { e.y = 30; e.vy = Math.abs(e.vy); }
         if (e.y > H * 0.7) { e.y = H * 0.7; e.vy = -Math.abs(e.vy); }
       } else {
-        e.x += e.vx; e.y += e.vy;
+        // Hiding behaviour: ~20% chance per enemy to seek cover behind a block
+        if (!e.hideMode) e.hideMode = Math.random() < 0.20;
+        if (e.hideMode && s.blocks.length > 0) {
+          // Find nearest block cell that's between enemy and player (above enemy)
+          let bestBlock = null, bestDist = Infinity;
+          s.blocks.forEach(block => {
+            if (block.invulnerable) return; // prefer solid blocks but any works
+            const cells = getBlockCells(block);
+            cells.forEach(cell => {
+              const cx = cell.x + BLOCK_SIZE / 2, cy = cell.y + BLOCK_SIZE / 2;
+              // Only hide behind blocks that are between enemy and player (higher up)
+              if (cy < e.y) {
+                const d = Math.hypot(cx - e.x, cy - e.y);
+                if (d < bestDist) { bestDist = d; bestBlock = { cx, cy }; }
+              }
+            });
+          });
+          if (bestBlock && bestDist > 8) {
+            const dx = bestBlock.cx - e.x, dy = bestBlock.cy - e.y;
+            const len = Math.sqrt(dx * dx + dy * dy) || 1;
+            const spd = Math.hypot(e.vx, e.vy) || 1;
+            e.x += (dx / len) * spd;
+            e.y += (dy / len) * spd;
+          } else {
+            e.x += e.vx; e.y += e.vy;
+          }
+        } else {
+          e.x += e.vx; e.y += e.vy;
+        }
         // Bounce off side walls
         if (e.x < 20 || e.x > W - 20) e.vx *= -1;
         // Bounce off top/bottom — never leave screen
