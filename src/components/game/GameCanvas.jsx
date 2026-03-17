@@ -538,8 +538,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       if (s.spreadReloadTimer <= 0) s.spreadShotsLeft = SPREAD_SHOTS_PER_RELOAD;
     }
 
-    // Auto fire (laser doesn't use bullet system — skip when laser equipped)
-    if ((s.powerups.laser || 0) === 0) {
+    // Auto fire — only block firing during active beam (not during charge/cooldown)
+    if (!s.laserBeamActive) {
       s.fireTimer--;
       if (s.fireTimer <= 0) { playerFire(s); s.fireTimer = getFireRate(s.powerups); }
     }
