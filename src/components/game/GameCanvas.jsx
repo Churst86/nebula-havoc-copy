@@ -588,9 +588,48 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         const laserTier = s.powerups.laser;
         const beamW = 6 + laserTier * 4; // width of beam
         if (s.laserBeamTimer % 4 === 0) { // damage tick every 4 frames
+          // Find the closest blocking tetris block in beam path
+          let beamBlockY = 0; // beam stops at this Y (0 = top of screen)
+          s.blocks.forEach(block => {
+            if (block.dead) return;
+            getBlockCells(block).forEach(cell => {
+              const cx = cell.x + BLOCK_SIZE / 2;
+              if (Math.abs(cx - p.x) < beamW + BLOCK_SIZE / 2 && cell.y < p.y) {
+                const stopY = cell.y + BLOCK_SIZE;
+                if (stopY > beamBlockY) {
+                  beamBlockY = stopY;
+                  block._laserHit = true;
+                }
+              }
+            });
+          });
+          // Damage the first block hit by the beam
+          s.blocks.forEach(block => {
+            if (block._laserHit && !block.dead) {
+              block._laserHit = false;
+              if (!block.invulnerable) {
+                block.hp--;
+                sounds.hit();
+                spawnExplosion(s, block.x + BLOCK_SIZE / 2, block.y, block.color, 3);
+                if (block.hp <= 0) {
+                  block.dead = true;
+                  s.score += 50;
+                  onScoreChange(s.score);
+                  spawnExplosion(s, block.x + BLOCK_SIZE, block.y, block.color, 8);
+                }
+              } else {
+                spawnExplosion(s, block.x + BLOCK_SIZE / 2, block.y, '#aaaacc', 3);
+              }
+            } else {
+              block._laserHit = false;
+            }
+          });
+          s.blocks = s.blocks.filter(b => !b.dead);
+
+          // Beam only hits enemies above the first block
           s.enemies.forEach(e => {
             if (e.dead) return;
-            if (Math.abs(e.x - p.x) < beamW + (e.w || 18) && e.y < p.y) {
+            if (Math.abs(e.x - p.x) < beamW + (e.w || 18) && e.y < p.y && e.y > beamBlockY) {
               e.hp -= 1;
               sounds.hit();
               spawnExplosion(s, e.x, e.y, '#ff44ff', 3);
@@ -607,6 +646,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
             }
           });
           s.enemies = s.enemies.filter(e => !e.dead);
+          // Store beam stop Y for drawing
+          s.laserBeamBlockY = beamBlockY;
         }
         if (s.laserBeamTimer <= 0) {
           s.laserBeamActive = false;
