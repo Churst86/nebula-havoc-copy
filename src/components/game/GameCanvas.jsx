@@ -182,24 +182,20 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     const raygunTier = pw.raygun || 0;
     const bounceTier = pw.bounce || 0;
 
+    // Raygun: fires a single large plasma orb straight up (bigger with tier)
     if (raygunTier > 0) {
-      const arms = raygunTier + 1;
-      const speed = 9;
-      for (let i = 0; i < arms; i++) {
-        const a = s.spiralAngle + (i / arms) * Math.PI * 2;
-        const forwardBias = 0.3;
-        s.bullets.push({ x: p.x, y: p.y - 10, vx: Math.sin(a) * forwardBias * speed, vy: -speed + Math.cos(a) * forwardBias * speed * 0.3, type: 'raygun' });
-      }
-      s.spiralAngle += 0.45;
+      const size = 6 + raygunTier * 3; // 9, 12, 15
+      s.bullets.push({ x: p.x, y: p.y - 14, vx: 0, vy: -11, type: 'raygun', size, orbitAngle: 0 });
     }
 
     if (bounceTier > 0) {
       const bounces = bounceTier * 2;
       const side = Math.floor(s.spiralAngle * 2) % 2 === 0 ? -1 : 1;
+      s.spiralAngle += 0.1;
       s.bullets.push({ x: p.x + side * 8, y: p.y - 14, vx: side * 3.5, vy: -10, type: 'bounce', bouncesLeft: bounces });
     }
 
-    // Normal fallback — only if no special weapons
+    // Normal fallback — only if no special weapons active (laser handled separately)
     if (laserTier === 0 && raygunTier === 0 && bounceTier === 0 && (pw.spread || 0) === 0) {
       s.bullets.push({ x: p.x, y: p.y - 18, vx: 0, vy: -7, type: 'normal' });
     }
