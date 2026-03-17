@@ -52,8 +52,10 @@ function initState() {
   };
 }
 
-// Offensive powerup types (not shield — shield is always droppable)
+// Offensive powerup types that count toward the 2-lock system
 const OFFENSIVE_POWERUPS = ['spread', 'laser', 'raygun', 'wingman', 'bounce'];
+// Special powerups that bypass the 2-lock (speed, shield)
+const SPECIAL_POWERUPS = ['speed', 'shield'];
 
 export default function GameCanvas({ gameState, setGameState, onScoreChange, onLivesChange, onWaveChange, onPowerupChange }) {
   const canvasRef = useRef(null);
