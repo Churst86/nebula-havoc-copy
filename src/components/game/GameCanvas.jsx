@@ -641,7 +641,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       ctx.stroke();
     }
 
-    if (e.maxHp > 1 && e.type !== 'mine' && e.type !== 'eater') {
+    if (e.maxHp > 1 && e.type !== 'mine' && e.type !== 'eater' && e.type !== 'eater') {
       const bw = e.type === 'boss' ? 70 : 28, bh = 3;
       const bx = -bw / 2, by = e.type === 'boss' ? 48 : 22;
       ctx.fillStyle = '#333'; ctx.fillRect(bx, by, bw, bh);
