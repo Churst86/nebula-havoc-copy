@@ -2,7 +2,7 @@ import React from 'react';
 import { Heart, Zap, Shield, RefreshCw, Pause, Play, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const GUN_POWERUPS = ['shotgun', 'laser', 'bounce', 'missile'];
+const GUN_POWERUPS = ['shotgun', 'laser', 'photon', 'bounce', 'missile'];
 const POWERUP_COLORS = {
   shotgun:   '#ffdd00',
   laser:     '#ff44ff',
@@ -12,6 +12,7 @@ const POWERUP_COLORS = {
   speed:     '#ff8800',
   rapidfire: '#ff4488',
   reverse:   '#ff6600',
+  missile:   '#ff00ff',
 };
 const POWERUP_LABELS = {
   shotgun:   'SHOTGUN',
@@ -22,6 +23,7 @@ const POWERUP_LABELS = {
   speed:     'SPEED',
   rapidfire: 'RAPID FIRE',
   reverse:   'REVERSE',
+  missile:   'MISSILE',
 };
 
 export default function GameHUD({ score, lives, maxLives, wave, activePowerup, continuesLeft, isPaused, onPauseToggle, onOpenOptions }) {
