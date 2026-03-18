@@ -7,8 +7,11 @@ import StartScreen from '../components/game/StartScreen';
 import OptionsScreen from '../components/game/OptionsScreen';
 import CongratulationsScreen from '../components/game/CongratulationsScreen';
 import DifficultySelector from '../components/game/DifficultySelector';
+import TrophyDisplay from '../components/game/TrophyDisplay';
+import TrophyPopup from '../components/game/TrophyPopup';
 import { loadSettings, saveSettings, DIFFICULTY_CONFIG } from '../lib/gameSettings';
 import { sounds } from '../hooks/useSound.js';
+import { addTrophy, getTrophyData } from '../lib/trophySystem.js';
 
 const CONTINUE_SCORE_THRESHOLD = 1000; // score needed to earn a continue
 const MAX_CONTINUES = 3;
