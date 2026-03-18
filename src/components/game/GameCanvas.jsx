@@ -87,6 +87,12 @@ const DROPPER_LABELS = {
   shield: '🛡', bounce: 'B', speed: '▶', rapidfire: '⚡', star: '★',
 };
 
+// All dropper types in rotation order (star excluded — spawned separately at low chance)
+const DROPPER_ROTATION = ['spread', 'laser', 'raygun', 'bounce', 'wingman', 'shield', 'speed', 'rapidfire'];
+const DROPPER_ROTATE_FRAMES = 300; // rotate every 5 seconds at 60fps
+// Star spawns separately with a low independent chance
+const STAR_SPAWN_INTERVAL = 1800; // ~30 seconds between star dropper spawns
+
 export default function GameCanvas({ gameState, setGameState, onScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, continuesLeft, onContinueUsed, isPaused }) {
   const canvasRef = useRef(null);
   const keysRef = useRef({});
