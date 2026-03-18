@@ -158,6 +158,7 @@ export default function Game() {
         onMaxLivesChange={setMaxLives}
         onWaveChange={handleWaveChange}
         onPowerupChange={setActivePowerup}
+        onTrophyEarned={handleTrophyEarned}
         continuesLeft={continuesLeft}
         onContinueUsed={handleContinueUsed}
         isPaused={isPaused}
