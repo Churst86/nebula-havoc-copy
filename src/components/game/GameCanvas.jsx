@@ -1230,20 +1230,22 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       cell._dmgCooldown = Math.max(0, (cell._dmgCooldown || 0) - 1);
     });
 
-    // Wave clear — only count combat enemies (not dropper for wave end, dropper is optional kill)
+    // Wave clear — only count combat enemies; droppers survive into the next wave
     const combatEnemies = s.enemies.filter(e => e.type !== 'dropper');
     if (combatEnemies.length === 0) {
       s.waveTimer++;
       if (s.waveTimer > 90) {
-        s.enemies = [];
+        const survivingDroppers = s.enemies.filter(e => e.type === 'dropper');
         s.wave++;
         s.waveTimer = 0;
         onWaveChange(s.wave);
         sounds.waveComplete();
         spawnWave(W, s);
+        // Re-add surviving droppers after wave spawn (spawnWave replaces s.enemies)
+        s.enemies.push(...survivingDroppers);
       }
     } else {
-      s.waveTimer = 0; // reset timer if enemies come back (e.g. dropper spawned mid-wave)
+      s.waveTimer = 0;
     }
 
     // Invincibility countdown
