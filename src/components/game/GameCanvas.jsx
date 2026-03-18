@@ -944,7 +944,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         fireSpreadShot(s);
         const shotgunTier = s.powerups.shotgun || 0;
         const rapidfireBonus = (s.powerups.rapidfire || 0) === 1 ? 10 : (s.powerups.rapidfire || 0) * 8;
-        s.spreadFireTimer = Math.max(12, 55 - shotgunTier * 4 - rapidfireBonus);
+        s.spreadFireTimer = Math.max(15, 65 - shotgunTier * 4 - rapidfireBonus);
         }
         }
 
