@@ -32,6 +32,7 @@ export default function Game() {
     const saved = localStorage.getItem('completedDifficulties');
     return saved ? JSON.parse(saved) : [];
   });
+  const [earnedTrophy, setEarnedTrophy] = useState(null);
   const scoreRef = useRef(0);
   const waveRef = useRef(1);
 
