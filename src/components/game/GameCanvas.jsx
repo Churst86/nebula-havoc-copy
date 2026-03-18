@@ -415,9 +415,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       ctx.closePath(); ctx.stroke();
       ctx.fillStyle = 'rgba(255,0,102,0.1)'; ctx.fill();
       ctx.fillStyle = '#ff0066';
-      ctx.font = 'bold 16px sans-serif';
+      ctx.font = 'bold 14px sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('☠', 0, 0);
+      ctx.fillText('☠', 0, -6);
+      // Gun label
+      const gunLabels = { spread: 'S', laser: 'L', raygun: 'R', bounce: 'B' };
+      ctx.font = 'bold 10px monospace';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(gunLabels[e.gun] || '?', 0, 8);
     } else if (e.type === 'dropper') {
       const c = e.color || '#ffd700';
       ctx.shadowColor = c; ctx.shadowBlur = 18;
