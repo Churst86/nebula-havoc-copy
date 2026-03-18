@@ -864,9 +864,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           return true;
         });
 
+        const isPiercing = laserTier >= 10;
+        const laserColor = isPiercing ? '#ffffff' : '#ff44ff';
+        if (s.laserFlareTimer > 0) s.laserFlareTimer--;
+
         if (s.laserBeamTimer % 4 === 0) { // damage tick every 4 frames
           // Find the closest blocking tetris block in beam path
-          let beamBlockY = 0; // beam stops at this Y (0 = top of screen)
+          let beamBlockY = 0;
           s.blocks.forEach(block => {
             if (block.dead) return;
             getBlockCells(block).forEach(cell => {
@@ -880,7 +884,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
               }
             });
           });
-          // Damage the first block hit by the beam
           s.blocks.forEach(block => {
             if (block._laserHit && !block.dead) {
               block._laserHit = false;
@@ -903,34 +906,45 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           });
           s.blocks = s.blocks.filter(b => !b.dead);
 
-          // Beam hits the FIRST enemy above the first block (no pierce)
+          // Beam hits enemies — piercing at tier 10 (hits all), otherwise first only
           let beamStopY = beamBlockY;
-          // Find the lowest (closest to player) enemy in beam path
-          let firstEnemy = null, firstEnemyY = -Infinity;
-          s.enemies.forEach(e => {
-            if (e.dead) return;
-            if (Math.abs(e.x - p.x) < beamW + (e.w || 18) && e.y < p.y && e.y > beamBlockY) {
-              if (e.y > firstEnemyY) { firstEnemyY = e.y; firstEnemy = e; }
-            }
-          });
-          if (firstEnemy) {
-            beamStopY = Math.max(beamBlockY, firstEnemy.y - (firstEnemy.h || 18));
-            firstEnemy.hp -= 1;
-            sounds.hit();
-            spawnExplosion(s, firstEnemy.x, firstEnemy.y, '#ff44ff', 3);
-            if (firstEnemy.hp <= 0) {
-              firstEnemy.dead = true;
-              const pts = firstEnemy.type === 'boss' ? 5000 : firstEnemy.type === 'dropper' ? 500 : firstEnemy.type === 'elite' ? 300 : 100;
-              s.score += pts;
-              onScoreChange(s.score);
-              sounds.kill();
-              spawnExplosion(s, firstEnemy.x, firstEnemy.y, firstEnemy.type === 'boss' ? '#ff0066' : '#ff44ff', firstEnemy.type === 'boss' ? 40 : 14);
-              if (firstEnemy.type === 'dropper') { sounds.killDropper(); s.powerupItems.push({ x: firstEnemy.x, y: firstEnemy.y, type: firstEnemy.dropType, angle: 0 }); }
-              if (firstEnemy.type === 'boss') { sounds.stopBossMusic(); sounds.waveComplete(); s.maxLives++; s.lives = Math.min(s.lives + 1, s.maxLives); onLivesChange(s.lives); onMaxLivesChange(s.maxLives); }
+          const enemiesInBeam = s.enemies
+            .filter(e => !e.dead && Math.abs(e.x - p.x) < beamW + (e.w || 18) && e.y < p.y && e.y > beamBlockY)
+            .sort((a, b) => b.y - a.y); // closest to player first
+
+          if (isPiercing) {
+            enemiesInBeam.forEach(e => {
+              e.hp -= 1;
+              sounds.hit();
+              spawnExplosion(s, e.x, e.y, laserColor, 3);
+              if (e.hp <= 0) {
+                e.dead = true;
+                const pts = e.type === 'boss' ? 5000 : e.type === 'dropper' ? 500 : e.type === 'elite' ? 300 : 100;
+                s.score += pts; onScoreChange(s.score); sounds.kill();
+                spawnExplosion(s, e.x, e.y, e.type === 'boss' ? '#ff0066' : laserColor, e.type === 'boss' ? 40 : 14);
+                if (e.type === 'dropper') { sounds.killDropper(); s.powerupItems.push({ x: e.x, y: e.y, type: e.dropType, angle: 0 }); }
+                if (e.type === 'boss') { sounds.stopBossMusic(); sounds.waveComplete(); s.maxLives++; s.lives = Math.min(s.lives + 1, s.maxLives); onLivesChange(s.lives); onMaxLivesChange(s.maxLives); }
+              }
+            });
+            beamStopY = beamBlockY;
+          } else {
+            const firstEnemy = enemiesInBeam[0] || null;
+            if (firstEnemy) {
+              beamStopY = Math.max(beamBlockY, firstEnemy.y - (firstEnemy.h || 18));
+              firstEnemy.hp -= 1;
+              sounds.hit();
+              spawnExplosion(s, firstEnemy.x, firstEnemy.y, laserColor, 3);
+              if (firstEnemy.hp <= 0) {
+                firstEnemy.dead = true;
+                const pts = firstEnemy.type === 'boss' ? 5000 : firstEnemy.type === 'dropper' ? 500 : firstEnemy.type === 'elite' ? 300 : 100;
+                s.score += pts; onScoreChange(s.score); sounds.kill();
+                spawnExplosion(s, firstEnemy.x, firstEnemy.y, firstEnemy.type === 'boss' ? '#ff0066' : laserColor, firstEnemy.type === 'boss' ? 40 : 14);
+                if (firstEnemy.type === 'dropper') { sounds.killDropper(); s.powerupItems.push({ x: firstEnemy.x, y: firstEnemy.y, type: firstEnemy.dropType, angle: 0 }); }
+                if (firstEnemy.type === 'boss') { sounds.stopBossMusic(); sounds.waveComplete(); s.maxLives++; s.lives = Math.min(s.lives + 1, s.maxLives); onLivesChange(s.lives); onMaxLivesChange(s.maxLives); }
+              }
             }
           }
           s.enemies = s.enemies.filter(e => !e.dead);
-          // Store beam stop Y for drawing (stops at first enemy or first block)
           s.laserBeamBlockY = beamStopY;
         }
         if (s.laserBeamTimer <= 0) {
