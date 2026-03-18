@@ -160,7 +160,7 @@ function startWaveMusic(wave) {
       const t = ctx.currentTime;
 
       if (step % 2 === 0) {
-        playNoise({ duration: tempo * 0.6, gain: 0.12 + intensity * 0.1, filterFreq: 80 });
+        playNoiseCheap({ duration: tempo * 0.6, gain: 0.12 + intensity * 0.1, filterFreq: 80, useMusicBus: true });
       }
 
       const bass = ctx.createOscillator();
