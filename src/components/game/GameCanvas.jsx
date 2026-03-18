@@ -1671,6 +1671,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         if (item.type === 'star') {
           s.starInvincibleTimer = STAR_INVINCIBLE_FRAMES;
           sounds.powerup();
+          } else if (item.type === 'reverse') {
+//       s.powerups.reverse = Math.min((s.powerups.reverse || 0) + 1, 10);
+//       sounds.powerup();
         } else if (item.type === 'shield') {
           s.shieldHp = Math.min(s.shieldHp + 1, 10);
           sounds.shield();
