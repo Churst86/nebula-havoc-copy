@@ -3,9 +3,9 @@ import MobileControls from './MobileControls';
 import { sounds } from '../../hooks/useSound.js';
 
 // Laser beam constants
-const LASER_CHARGE_FRAMES = 60;      // frames to charge before firing
+const LASER_CHARGE_FRAMES = 90;      // frames to charge before firing (slower = fires less often)
 const LASER_BEAM_FRAMES = 180;       // frames beam stays active (~3 sec)
-const LASER_COOLDOWN_FRAMES = 150;   // frames of cooldown after beam ends
+const LASER_COOLDOWN_FRAMES = 180;   // frames of cooldown after beam ends
 
 // Spread shotgun constants
 const SPREAD_SHOTS_PER_RELOAD = 2;
