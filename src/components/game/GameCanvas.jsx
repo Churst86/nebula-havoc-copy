@@ -76,7 +76,7 @@ function initState() {
 }
 
 // Offensive powerup types that count toward the 2-lock system
-const OFFENSIVE_POWERUPS = ['spread', 'laser', 'raygun', 'bounce'];
+const OFFENSIVE_POWERUPS = ['spread', 'laser', 'photon', 'bounce'];
 // Special powerups that bypass the 2-lock
 const SPECIAL_POWERUPS = ['speed', 'shield', 'rapidfire', 'wingman'];
 // Auxiliary upgrades (one per wave each)
@@ -130,7 +130,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
 
     if (wave % 5 === 0) {
       const bossHp = Math.round((20 + wave * 5) * hpMult);
-      const bossGuns = ['spread', 'laser', 'raygun', 'bounce'];
+      const bossGuns = ['spread', 'laser', 'photon', 'bounce'];
       const bossGun = bossGuns[Math.floor(Math.random() * bossGuns.length)];
       const bossTier = Math.floor(wave / 5); // 1, 2, 3, 4...
       enemies.push({
@@ -258,15 +258,15 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     const raygunTier = pw.raygun || 0;
     const bounceTier = pw.bounce || 0;
 
-    // Raygun: fixed size orb, pierces 1 extra enemy per tier starting at lvl 2
+    // Photon: fixed size orb, pierces 1 extra enemy per tier starting at lvl 2
     // At tier 10: orbiting projectile that still moves forward
-    if (raygunTier > 0 && s.bullets.filter(b => b.type === 'raygun').length < 2) {
-      const RAYGUN_BASE_SIZE = 10;
+    if (raygunTier > 0 && s.bullets.filter(b => b.type === 'photon').length < 2) {
+      const PHOTON_BASE_SIZE = 10;
       const pierceCount = raygunTier >= 2 ? raygunTier - 1 : 0; // +1 pierce per level from lvl2
       const isSuperOrbit = raygunTier >= 10;
       s.bullets.push({
         x: p.x, y: p.y - 14, vx: 0, vy: -11,
-        type: 'raygun', size: RAYGUN_BASE_SIZE, orbitAngle: 0,
+        type: 'photon', size: PHOTON_BASE_SIZE, orbitAngle: 0,
         pierceCount, piercedEnemies: [],
         isSuperOrbit, orbitPhase: 0,
       });
@@ -285,7 +285,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
 
   function getFireRate(pw) {
     const speedBonus = (pw.rapidfire || 0) === 1 ? 10 : (pw.rapidfire || 0) * 8;
-    if ((pw.raygun || 0) > 0) return Math.max(14, 50 - (pw.raygun || 0) * 4 - speedBonus);
+    if ((pw.photon || 0) > 0) return Math.max(14, 50 - (pw.photon || 0) * 4 - speedBonus);
     if ((pw.spread || 0) > 0 && (pw.raygun || 0) === 0 && (pw.bounce || 0) === 0) return Math.max(12, 50 - speedBonus);
     if ((pw.bounce || 0) > 0) return Math.max(10, 35 - speedBonus);
     return Math.max(10, 35 - speedBonus);
@@ -531,7 +531,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       ctx.font = `bold 15px sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(tierEmoji, 0, -6);
-      const gunLabels = { spread: 'S', laser: 'L', raygun: 'R', bounce: 'B' };
+      const gunLabels = { spread: 'S', laser: 'L', photon: 'R', bounce: 'B' };
       ctx.font = 'bold 10px monospace';
       ctx.fillStyle = '#ffffff';
       ctx.fillText(gunLabels[e.gun] || '?', 0, 10);
@@ -730,7 +730,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       ctx.fillRect(b.x - w * 0.3, b.y - 12, w * 0.6, 22);
       ctx.fillStyle = '#ff44ff';
       ctx.fillRect(b.x - w, b.y - 12, w * 2, 22);
-    } else if (b.type === 'raygun') {
+    } else if (b.type === 'photon') {
       const sz = b.size || 10;
       const isSuperOrbit = b.isSuperOrbit;
       const hue = isSuperOrbit ? (Date.now() * 0.4) % 360 : 150; // rainbow for tier 10, green otherwise
@@ -788,8 +788,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   }
 
   function drawPowerupItem(ctx, item) {
-    const colors = { spread: '#ffdd00', laser: '#ff44ff', raygun: '#44ffaa', wingman: '#44aaff', shield: '#00ccff', bounce: '#aaff00', speed: '#ff8800', rapidfire: '#ff4488', star: '#ffffff' };
-    const labels = { spread: 'S', laser: 'L', raygun: 'R', wingman: 'W', shield: '🛡', bounce: 'B', speed: '▶', rapidfire: '⚡', star: '★' };
+    const colors = { spread: '#ffdd00', laser: '#ff44ff', photon: '#44ffaa', wingman: '#44aaff', shield: '#00ccff', bounce: '#aaff00', speed: '#ff8800', rapidfire: '#ff4488', star: '#ffffff' };
+    const labels = { spread: 'S', laser: 'L', photon: 'R', wingman: 'W', shield: '🛡', bounce: 'B', speed: '▶', rapidfire: '⚡', star: '★' };
     ctx.save();
     ctx.translate(item.x, item.y);
     ctx.rotate(item.angle || 0);
@@ -1031,9 +1031,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         const pw = s.powerups;
         const rapidfireBonus = (pw.rapidfire || 0) === 1 ? 10 : (pw.rapidfire || 0) * 8;
         s.superWingmen.forEach(sw => {
-          if ((pw.raygun || 0) > 0) {
-            const size = 6 + (pw.raygun) * 3;
-            s.bullets.push({ x: sw.x, y: sw.y - 14, vx: 0, vy: -11, type: 'raygun', size, orbitAngle: 0 });
+          if ((pw.photon || 0) > 0) {
+            const size = 6 + (pw.photon) * 3;
+            s.bullets.push({ x: sw.x, y: sw.y - 14, vx: 0, vy: -11, type: 'photon', size, orbitAngle: 0 });
           }
           if ((pw.bounce || 0) > 0) {
             const side = Math.floor(s.spiralAngle * 2) % 2 === 0 ? -1 : 1;
@@ -1388,7 +1388,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     // Move bullets
     s.bullets = s.bullets.filter(b => {
       b.x += b.vx; b.y += b.vy;
-      if (b.type === 'raygun') {
+      if (b.type === 'photon') {
         b.orbitAngle = ((b.orbitAngle || 0) + 0.25);
         // Tier 10 super orbit: orbiting mini-orbs that spin around the bullet as it moves forward
         if (b.isSuperOrbit) b.orbitPhase = ((b.orbitPhase || 0) + 0.18);
@@ -1428,7 +1428,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
             for (let li = 0; li < 3; li++) {
               s.enemyBullets.push({ x: e.x, y: e.y + li * 6, vx: (dx / len) * 6.5, vy: (dy / len) * 6.5, boss: true });
             }
-          } else if (gun === 'raygun') {
+          } else if (gun === 'photon') {
             // Big slow plasma orb
             s.enemyBullets.push({ x: e.x, y: e.y, vx: (dx / len) * 2.8, vy: (dy / len) * 2.8, boss: true, big: true });
           } else if (gun === 'bounce') {
@@ -1524,8 +1524,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         const dx = b.x - e.x, dy = b.y - e.y;
         if (Math.abs(dx) < e.w && Math.abs(dy) < e.h) {
           if (b.type === 'spread') { explodeSpread(b, newSpreadPellets); b.hit = true; return; }
-          // Raygun pierce: skip enemies already pierced, consume one pierce count
-          if (b.type === 'raygun' && b.pierceCount > 0) {
+          // Photon pierce: skip enemies already pierced, consume one pierce count
+          if (b.type === 'photon' && b.pierceCount > 0) {
             if (b.piercedEnemies && b.piercedEnemies.includes(e)) return;
             b.piercedEnemies = b.piercedEnemies || [];
             b.piercedEnemies.push(e);
@@ -1625,8 +1625,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
               spawnExplosion(s, b.x, b.y, '#aaaacc', 3);
               return;
             } else {
-              // Raygun deals 2 damage to blocks; others deal 1
-              block.hp -= b.type === 'raygun' ? 2 : 1;
+              // Photon deals 2 damage to blocks; others deal 1
+              block.hp -= b.type === 'photon' ? 2 : 1;
               if (!piercingTypes.includes(b.type)) b.hit = true;
               if (block.hp <= 0) {
                 block.dead = true;
