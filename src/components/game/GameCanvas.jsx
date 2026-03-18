@@ -4,12 +4,14 @@ import { sounds } from '../../hooks/useSound.js';
 import { spawnBerserk, spawnEater } from '../../lib/enemySpawners.js';
 import { updateBerserkMovement, updateBerserkLaser, drawBerserk } from '../../lib/berserkUtils.js';
 import { fireReverseShot, drawReverseFlame } from '../../lib/reverseGunUtils.js';
-import { fireMissiles, updateMissiles, drawMissile } from '../../lib/missileUtils.js';
+import { fireMissiles, updateMissiles, drawMissile, getMissileHitDamage, shouldSpawnMissileExplosion } from '../../lib/missileUtils.js';
 import { DROPPER_COLORS, DROPPER_LABELS, DROPPER_ROTATION } from '../../lib/powerupConfig.js';
 import { drawBlock, drawPiledCells, drawParticle } from '../../lib/drawingUtils.js';
 import { fireSpreadShot, getFireRate } from '../../lib/powerups/gunPowerups.js';
 import { drawPowerupItem } from '../../lib/powerupVisuals.js';
+import { applyUtilityPowerup } from '../../lib/powerups/utilityPowerups.js';
 import { drawEnemy, updateEnemyPositions } from './EnemyRenderer.jsx';
+import { drawBerserk } from '../../lib/berserkUtils.js';
 
 const LASER_CHARGE_FRAMES = 90;
 const LASER_BEAM_FRAMES = 180;
@@ -42,7 +44,7 @@ function initState() {
     wingmanFireTimer: 0, superWingmanFireTimer: 0, powerups: {}, lockedPowerups: [],
     shieldHp: 0, running: false, starInvincibleTimer: 0, dropperSpawnTimer: DROPPER_SPAWN_INTERVAL,
     dropperRotationIdx: 0, dropperRotateTimer: DROPPER_ROTATE_FRAMES, starDropperTimer: STAR_SPAWN_INTERVAL,
-    reverseFireTimer: 0,
+    reverseFireTimer: 0, waveEnemiesCleared: false,
   };
 }
 
@@ -107,6 +109,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     if (wave > 10 && (wave % 2 === 0 || (isHell && wave > 25))) { spawnEater(enemies, W, wave, hpMult); }
     if (wave > 15 && (wave % 2 === 1 || (isHell && wave > 25))) { spawnBerserk(enemies, W, wave, hpMult, isHell); }
     s.enemies = enemies;
+    s.waveEnemiesCleared = false;
   }
 
   function getNextDropperType(s) {
@@ -198,7 +201,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   }
 
   function drawPlayer(ctx, p, wingmen, shieldHp, enemies, invincibleTimer, keys, starInvincibleTimer, superWingman, superWingmen) {
-    // Simplified player draw - main logic would go here
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 18;
@@ -208,10 +210,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     ctx.stroke();
     ctx.fillStyle = 'rgba(0,240,255,0.15)';
     ctx.fill();
+    if (invincibleTimer > 0 && Math.floor(invincibleTimer / 10) % 2 === 0) {
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(0, 0, 22, 0, Math.PI * 2); ctx.stroke();
+    }
     ctx.restore();
   }
-
-
 
   function drawBullet(ctx, b, isEnemy) {
     ctx.save();
@@ -294,7 +299,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     if (keys['ArrowUp'] || keys['w'] || keys['W']) p.y = Math.max(16, p.y - spd);
     if (keys['ArrowDown'] || keys['s'] || keys['S']) p.y = Math.min(H - 16, p.y + spd);
 
-    // Core game loop simplified for space
+    // Invincibility/star timers
+    if (s.invincibleTimer > 0) s.invincibleTimer--;
+    if (s.starInvincibleTimer > 0) s.starInvincibleTimer--;
+
+    // Fire system
     if (s.spreadReloadTimer > 0) s.spreadReloadTimer--;
     if (!s.laserBeamActive) {
       s.fireTimer--;
@@ -311,9 +320,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       }
     }
 
+    // Dropper spawning
     s.dropperSpawnTimer--;
     if (s.dropperSpawnTimer <= 0) { spawnDropper(W, s); s.dropperSpawnTimer = DROPPER_SPAWN_INTERVAL; }
 
+    // Enemy movement & behavior
     s.enemies.forEach(e => {
       if (e.type === 'dropper') {
         e.dirTimer = (e.dirTimer || 60) - 1;
@@ -327,15 +338,31 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         if (e.x > W - 30) { e.x = W - 30; e.vx = -Math.abs(e.vx); }
         if (e.y < 30) { e.y = 30; e.vy = Math.abs(e.vy); }
         if (e.y > H * 0.7) { e.y = H * 0.7; e.vy = -Math.abs(e.vy); }
-      } else {
-        // Basic enemy movement
-        e.x += e.vx;
-        e.y += e.vy;
+      } else if (e.type === 'berserk') {
+        updateBerserkMovement(e, p.x, p.y, W, H);
+        updateBerserkLaser(s, e, p);
+      } else if (e.type === 'eater') {
+        e._chargePlayerTimer = (e._chargePlayerTimer || 0) + 1;
+        if (e._chargePlayerTimer > 180) {
+          const dx = p.x - e.x, dy = p.y - e.y;
+          const len = Math.hypot(dx, dy) || 1;
+          e.vx = (dx / len) * 2.5;
+          e.vy = (dy / len) * 2.5;
+        }
       }
     });
 
     updateEnemyPositions(s, W, H);
 
+    // Block spawning & movement
+    s.blockSpawnTimer--;
+    if (s.blockSpawnTimer <= 0) { s.blocks.push(spawnBlock(W)); s.blockSpawnTimer = 120; }
+    s.blocks = s.blocks.filter(b => {
+      b.y += b.vy;
+      return b.y < H;
+    });
+
+    // Bullets
     s.bullets = s.bullets.filter(b => {
       b.x += b.vx; b.y += b.vy;
       if (b.type === 'photon') b.orbitAngle = ((b.orbitAngle || 0) + 0.25);
@@ -343,19 +370,85 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       return b.y > -20 && b.y < H + 20 && b.x > -20 && b.x < W + 20;
     });
 
+    // Powerup items
     s.powerupItems.forEach(item => { item.y += 1.2; item.angle = (item.angle || 0) + 0.04; });
     s.powerupItems = s.powerupItems.filter(item => item.y < H + 30);
 
+    // Collision: bullets vs enemies
+    for (let i = 0; i < s.bullets.length; i++) {
+      const b = s.bullets[i];
+      for (let j = 0; j < s.enemies.length; j++) {
+        const e = s.enemies[j];
+        const dist = Math.hypot(b.x - e.x, b.y - e.y);
+        if (dist < (b.size || 4) + (e.w / 2)) {
+          let damage = 1;
+          if (b.type === 'missile') damage = getMissileHitDamage((b.missileTier || 1));
+          e.hp -= damage;
+          if (e.hp <= 0) {
+            sounds.enemyExplode();
+            s.score += (e.type === 'boss' ? 500 : e.type === 'elite' ? 50 : 10);
+            onScoreChange(s.score);
+            spawnExplosion(s, e.x, e.y, e.type === 'eater' ? '#ff00ff' : '#ffff00');
+            if (e.type === 'eater' && !e._mini) spawnMiniEaters(W, s, e);
+            if (e.dropType || (e.type === 'dropper')) {
+              const type = e.dropType || 'shield';
+              s.powerupItems.push({ x: e.x, y: e.y, type, angle: 0 });
+            }
+          }
+          if (shouldSpawnMissileExplosion(b.missileTier)) {
+            spawnExplosion(s, b.x, b.y, '#ff00ff', 6);
+          }
+          s.bullets.splice(i, 1); i--;
+          break;
+        }
+      }
+    }
+
+    // Collision: player vs enemies
+    s.enemies.forEach(e => {
+      const dist = Math.hypot(p.x - e.x, p.y - e.y);
+      if (dist < 20 + (e.w / 2)) takeDamage(s);
+    });
+
+    // Collision: player vs powerups
+    s.powerupItems = s.powerupItems.filter(item => {
+      const dist = Math.hypot(p.x - item.x, p.y - item.y);
+      if (dist < 25) {
+        if (['shield', 'star', 'speed', 'rapidfire', 'wingman'].includes(item.type)) {
+          applyUtilityPowerup(item, s, p, onPowerupChange, sounds);
+        } else {
+          s.powerups[item.type] = Math.min((s.powerups[item.type] || 0) + 1, 10);
+          sounds.powerup();
+          onPowerupChange(s.powerups);
+        }
+        return false;
+      }
+      return true;
+    });
+
+    // Particles
     s.particles.forEach(pt => {
       if (pt.shockwave) { pt.shockwaveR += 4; pt.alpha -= 0.04; }
       else { pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.04; pt.alpha -= 0.025; }
     });
     s.particles = s.particles.filter(pt => pt.alpha > 0);
 
-    // Draw
+    // Wave completion check
+    if (s.enemies.length === 0 && !s.waveEnemiesCleared) {
+      s.waveEnemiesCleared = true;
+      s.wave++;
+      onWaveChange(s.wave);
+      spawnWave(W, s);
+    }
+
+    // Draw everything
     s.particles.forEach(pt => drawParticle(ctx, pt));
     s.powerupItems.forEach(item => drawPowerupItem(ctx, item));
-    s.enemies.forEach(e => drawEnemy(ctx, e));
+    s.blocks.forEach(b => drawBlock(ctx, b, BLOCK_SIZE));
+    s.enemies.forEach(e => {
+      if (e.type === 'berserk') drawBerserk(ctx, e);
+      else drawEnemy(ctx, e);
+    });
     s.bullets.forEach(b => drawBullet(ctx, b, false));
     drawPlayer(ctx, p, s.wingmen, s.shieldHp, s.enemies, s.invincibleTimer, keys, s.starInvincibleTimer, s.superWingman, s.superWingmen);
 
