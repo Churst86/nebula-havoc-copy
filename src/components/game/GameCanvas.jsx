@@ -139,21 +139,34 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         fireTimer: randomBetween(60, 120),
       });
     }
-    // Spawn 1-2 bomb enemies starting wave 2
+    // Spawn 1-2 mine enemies starting wave 2
     if (wave >= 2) {
-      const bombCount = wave >= 6 ? 2 : 1;
-      for (let i = 0; i < bombCount; i++) {
+      const mineCount = wave >= 6 ? 2 : 1;
+      for (let i = 0; i < mineCount; i++) {
         enemies.push({
-          type: 'bomb',
+          type: 'mine',
           x: randomBetween(50, W - 50),
           y: -50 - i * 40,
           w: 20, h: 20,
-          hp: 2, maxHp: 2,
+          hp: 3, maxHp: 3,
           vx: randomBetween(-0.6, 0.6),
           vy: (0.4 + wave * 0.05),
-          fireTimer: 9999, // bombs don't shoot
+          fireTimer: 9999, // mines don't shoot
         });
       }
+    }
+    // Spawn block-eater starting wave 4
+    if (wave >= 4) {
+      enemies.push({
+        type: 'eater',
+        x: randomBetween(50, W - 50),
+        y: -40,
+        w: 22, h: 22,
+        hp: 4, maxHp: 4,
+        vx: randomBetween(-0.8, 0.8),
+        vy: (0.3 + wave * 0.03),
+        fireTimer: 9999, // eater doesn't shoot
+      });
     }
     s.enemies = enemies;
   }
