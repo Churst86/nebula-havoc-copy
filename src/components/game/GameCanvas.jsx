@@ -1183,8 +1183,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
             e._chargeDx = dx / len;
             e._chargeDy = dy / len;
             e._charging = true;
-            e._chargeDuration = 45; // longer charge (~0.75s) = greater distance
-            e._chargeTimer = randomBetween(60, 120);
+            e._chargeDuration = 60; // full screen charge
+            e._chargeTimer = randomBetween(30, 60);
           }
         }
       } else if (e.type === 'eater') {
