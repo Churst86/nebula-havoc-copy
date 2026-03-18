@@ -88,7 +88,7 @@ const DROPPER_ROTATE_FRAMES = 300; // rotate every 5 seconds at 60fps
 // Star spawns separately with a low independent chance
 const STAR_SPAWN_INTERVAL = 1800; // ~30 seconds between star dropper spawns
 
-export default function GameCanvas({ gameState, setGameState, onScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, onTrophyEarned, continuesLeft, onContinueUsed, isPaused, difficultyConfig, gameSpeed = 30 }) {
+export default function GameCanvas({ gameState, setGameState, onScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, continuesLeft, onContinueUsed, isPaused, difficultyConfig, gameSpeed = 30 }) {
   const canvasRef = useRef(null);
   const keysRef = useRef({});
   const stateRef = useRef(initState());
@@ -96,8 +96,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   const lastTimeRef = useRef(0);
   const isPausedRef = useRef(isPaused);
   const gameSpeedRef = useRef(gameSpeed);
-  const enemyCountRef = useRef(0);
-  const trackedMilestonesRef = useRef({});
   useEffect(() => { gameSpeedRef.current = gameSpeed; }, [gameSpeed]);
   useEffect(() => {
     isPausedRef.current = isPaused;
@@ -1424,11 +1422,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
               e.dead = true;
               const pts = e.type === 'boss' ? 5000 : e.type === 'dropper' ? 500 : e.type === 'elite' ? 300 : e.type === 'mine' ? 300 : e.type === 'eater' ? 800 : 100;
               s.score += pts; onScoreChange(s.score); sounds.kill();
-              enemyCountRef.current++;
-              if (enemyCountRef.current === 500 && !trackedMilestonesRef.current.enemies_500) {
-                trackedMilestonesRef.current.enemies_500 = true;
-                onTrophyEarned?.('enemies_500');
-              }
               spawnExplosion(s, e.x, e.y, e.type === 'boss' ? '#ff0066' : '#44ffaa', e.type === 'boss' ? 40 : 14);
               if (e.type === 'dropper') { sounds.killDropper(); s.powerupItems.push({ x: e.x, y: e.y, type: e.dropType, angle: 0 }); }
               if (e.type === 'boss') { sounds.stopBossMusic(); sounds.waveComplete(); s.maxLives++; s.lives = Math.min(s.lives + 1, s.maxLives); onLivesChange(s.lives); onMaxLivesChange(s.maxLives); }
@@ -1596,11 +1589,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           if (!isLocked) s.lockedPowerups.push(item.type);
           s.powerups[item.type] = Math.min((s.powerups[item.type] || 0) + 1, 10);
           sounds.powerup();
-          // Check for gun level 10 trophy
-          if (s.powerups[item.type] === 10 && !trackedMilestonesRef.current.gun_level_10) {
-            trackedMilestonesRef.current.gun_level_10 = true;
-            onTrophyEarned?.('gun_level_10');
-          }
         }
         onPowerupChange({ ...s.powerups, shieldHp: s.shieldHp, starInvincible: s.starInvincibleTimer > 0 });
         return false;

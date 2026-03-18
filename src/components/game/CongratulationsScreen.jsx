@@ -1,25 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Trophy, Zap } from 'lucide-react';
-import DifficultySelector from './DifficultySelector';
 
-export default function CongratulationsScreen({ difficulty, score, onPlayNext, onPlayAgain, onHome, completedDifficulties }) {
-  const [showSelector, setShowSelector] = useState(false);
+export default function CongratulationsScreen({ difficulty, score, onPlayNext, onPlayAgain, onHome }) {
   const difficultyName = { easy: 'Easy', challenging: 'Challenging', hell: 'Hell' }[difficulty];
   const levelTarget = { easy: 25, challenging: 50, hell: 100 }[difficulty];
   const nextDifficulty = { easy: 'challenging', challenging: 'hell', hell: null }[difficulty];
-
-  if (showSelector) {
-    return (
-      <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-50">
-        <DifficultySelector
-          completedDifficulties={completedDifficulties}
-          onSelectDifficulty={(diff) => onPlayNext(diff)}
-          onHome={onHome}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-50">
@@ -53,10 +39,10 @@ export default function CongratulationsScreen({ difficulty, score, onPlayNext, o
                 Ready for the next challenge?
               </p>
               <Button
-                onClick={() => setShowSelector(true)}
+                onClick={onPlayNext}
                 className="w-full bg-primary hover:bg-primary/90 text-lg h-12"
               >
-                Choose Difficulty
+                Play {difficulty === 'easy' ? 'CHALLENGING' : 'HELL'} Mode
               </Button>
             </>
           ) : (

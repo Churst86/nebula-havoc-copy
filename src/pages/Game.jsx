@@ -7,12 +7,8 @@ import StartScreen from '../components/game/StartScreen';
 import OptionsScreen from '../components/game/OptionsScreen';
 import CongratulationsScreen from '../components/game/CongratulationsScreen';
 import DifficultySelector from '../components/game/DifficultySelector';
-import TrophyDisplay from '../components/game/TrophyDisplay';
-import TrophyPopup from '../components/game/TrophyPopup';
-import TitleScreen from '../components/game/TitleScreen';
 import { loadSettings, saveSettings, DIFFICULTY_CONFIG } from '../lib/gameSettings';
 import { sounds } from '../hooks/useSound.js';
-import { addTrophy, getTrophyData } from '../lib/trophySystem.js';
 
 const CONTINUE_SCORE_THRESHOLD = 1000; // score needed to earn a continue
 const MAX_CONTINUES = 3;
@@ -33,7 +29,6 @@ export default function Game() {
     const saved = localStorage.getItem('completedDifficulties');
     return saved ? JSON.parse(saved) : [];
   });
-  const [earnedTrophy, setEarnedTrophy] = useState(null);
   const scoreRef = useRef(0);
   const waveRef = useRef(1);
 
@@ -81,9 +76,6 @@ export default function Game() {
           localStorage.setItem('completedDifficulties', JSON.stringify(updated));
           return updated;
         });
-        // Award difficulty trophy
-        const trophyMap = { easy: 'easy_complete', challenging: 'challenging_complete', hell: 'hell_complete' };
-        handleTrophyEarned(trophyMap[currentDifficulty]);
         setGameState('congratulations');
       } else {
         setGameState('gameover');
@@ -115,14 +107,6 @@ export default function Game() {
   const handleSettingsChange = useCallback((next) => {
     setSettings(next);
     saveSettings(next);
-  }, []);
-
-  const handleTrophyEarned = useCallback((trophyKey) => {
-    const isNew = addTrophy(trophyKey);
-    if (isNew) {
-      const trophy = getTrophyData(trophyKey);
-      setEarnedTrophy(trophy);
-    }
   }, []);
 
   // Enter key toggles pause during gameplay
@@ -162,7 +146,6 @@ export default function Game() {
         onMaxLivesChange={setMaxLives}
         onWaveChange={handleWaveChange}
         onPowerupChange={setActivePowerup}
-        onTrophyEarned={handleTrophyEarned}
         continuesLeft={continuesLeft}
         onContinueUsed={handleContinueUsed}
         isPaused={isPaused}
@@ -200,10 +183,13 @@ export default function Game() {
       )}
 
       {gameState === 'start' && (
-        <>
-          <TitleScreen onPlayClick={() => handleStart('easy')} />
-          <TrophyDisplay />
-        </>
+        <div className="absolute inset-0 z-40 bg-black/90 flex items-center justify-center">
+          <DifficultySelector
+            completedDifficulties={completedDifficulties}
+            onSelectDifficulty={(difficulty) => handleStart(difficulty)}
+            onHome={() => {}} // Keep on start screen if no home option
+          />
+        </div>
       )}
 
       {gameState === 'continue' && (
@@ -215,31 +201,13 @@ export default function Game() {
         />
       )}
 
-      {gameState === 'congratulations' && (
-        <CongratulationsScreen
-          difficulty={currentDifficulty}
-          score={score}
-          completedDifficulties={completedDifficulties}
-          onPlayNext={(nextDiff) => handleStart(nextDiff, activePowerup)}
-          onPlayAgain={() => handleStart(currentDifficulty)}
-          onHome={() => setGameState('start')}
-        />
-      )}
-
       {gameState === 'gameover' && (
         <HighScores
           score={score}
           wave={wave}
-          onRestart={() => handleStart(currentDifficulty)}
+          onRestart={handleStart}
           onReturnToTitle={() => setGameState('start')}
           isNewScore={isHighScore(score)}
-        />
-      )}
-
-      {earnedTrophy && (
-        <TrophyPopup
-          trophy={earnedTrophy}
-          onComplete={() => setEarnedTrophy(null)}
         />
       )}
     </div>
