@@ -722,12 +722,29 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     if ((s.powerups.wingman || 0) > 0 && s.wingmen.length > 0) {
       s.wingmanFireTimer--;
       if (s.wingmanFireTimer <= 0) {
+        // Find non-invulnerable blocks as fallback targets
+        const blockTargets = [];
+        s.blocks.forEach(block => {
+          if (!block.invulnerable) {
+            const cells = getBlockCells(block);
+            if (cells.length > 0) blockTargets.push({ x: cells[0].x + BLOCK_SIZE / 2, y: cells[0].y + BLOCK_SIZE / 2 });
+          }
+        });
+        s.piledCells.forEach(cell => blockTargets.push({ x: cell.x + BLOCK_SIZE / 2, y: cell.y + BLOCK_SIZE / 2 }));
+
         s.wingmen.forEach(w => {
           let target = null, bestDist = Infinity;
           s.enemies.forEach(e => {
             const d = Math.hypot(e.x - w.x, e.y - w.y);
-            if (d < bestDist) { bestDist = d; target = e; }
+            if (d < bestDist) { bestDist = d; target = { x: e.x, y: e.y }; }
           });
+          // Fall back to nearest non-invulnerable block if no enemies
+          if (!target && blockTargets.length > 0) {
+            blockTargets.forEach(bt => {
+              const d = Math.hypot(bt.x - w.x, bt.y - w.y);
+              if (d < bestDist) { bestDist = d; target = bt; }
+            });
+          }
           if (target) {
             const dx = target.x - w.x, dy = target.y - w.y;
             const len = Math.sqrt(dx * dx + dy * dy) || 1;
