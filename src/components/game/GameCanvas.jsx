@@ -1411,7 +1411,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     }
 
     animRef.current = requestAnimationFrame(loop);
-  }, [onScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, setGameState, isPaused]);
+  }, [onScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, setGameState]);
 
   // ── Start / stop ─────────────────────────────────────────────
   useEffect(() => {
