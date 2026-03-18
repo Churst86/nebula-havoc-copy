@@ -4,6 +4,8 @@ import GameHUD from '../components/game/GameHUD';
 import HighScores, { isHighScore } from '../components/game/HighScores';
 import ContinueScreen from '../components/game/ContinueScreen';
 import StartScreen from '../components/game/StartScreen';
+import OptionsScreen from '../components/game/OptionsScreen';
+import { loadSettings, saveSettings, DIFFICULTY_CONFIG } from '../lib/gameSettings';
 
 const CONTINUE_SCORE_THRESHOLD = 1000; // score needed to earn a continue
 const MAX_CONTINUES = 3;
