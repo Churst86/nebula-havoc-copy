@@ -42,19 +42,18 @@ export default function Game() {
     setWave(w);
   }, []);
 
-  const handleStart = useCallback(() => {
-    scoreRef.current = 0;
+  const handleStart = useCallback((difficulty = 'easy', carryoverPowerups = null) => {
+    setCurrentDifficulty(difficulty);
+    scoreRef.current = carryoverPowerups ? score : 0;
     waveRef.current = 1;
-    setScore(0);
+    setScore(carryoverPowerups ? score : 0);
     setLives(3);
     setMaxLives(3);
     setWave(1);
-    setActivePowerup({});
-    // Earn continues based on score threshold (max MAX_CONTINUES)
-    // Starts fresh — continues earned mid-game based on score
+    setActivePowerup(carryoverPowerups || {});
     setContinuesLeft(0);
     setGameState('playing');
-  }, []);
+  }, [score]);
 
   // Called by canvas when lives hit 0
   const handleSetGameState = useCallback((state) => {
