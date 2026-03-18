@@ -201,11 +201,6 @@ export default function Game() {
       {gameState === 'start' && (
         <div className="absolute inset-0 z-40 bg-black/90 flex items-center justify-center">
           <TrophyDisplay />
-          <DifficultySelector
-            completedDifficulties={completedDifficulties}
-            onSelectDifficulty={(difficulty) => handleStart(difficulty)}
-            onHome={() => {}} // Keep on start screen if no home option
-          />
         </div>
       )}
 
