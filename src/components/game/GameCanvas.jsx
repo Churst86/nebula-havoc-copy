@@ -1332,6 +1332,12 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       if (e.dead) return;
       const dx = e.x - p.x, dy = e.y - p.y;
       if (Math.abs(dx) < 18 && Math.abs(dy) < 18) {
+        // Star invincibility: don't kill bosses on contact, just push them away
+        if (s.starInvincibleTimer > 0 && e.type === 'boss') {
+          e.x += (e.x - p.x) * 0.3;
+          e.y += (e.y - p.y) * 0.3;
+          return;
+        }
         if (e.type === 'bomb') {
           const BOMB_RADIUS = 140;
           spawnExplosion(s, e.x, e.y, '#ff8800', 60);
