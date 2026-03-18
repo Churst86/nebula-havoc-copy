@@ -5,6 +5,8 @@ import HighScores, { isHighScore } from '../components/game/HighScores';
 import ContinueScreen from '../components/game/ContinueScreen';
 import StartScreen from '../components/game/StartScreen';
 import OptionsScreen from '../components/game/OptionsScreen';
+import CongratulationsScreen from '../components/game/CongratulationsScreen';
+import DifficultySelector from '../components/game/DifficultySelector';
 import { loadSettings, saveSettings, DIFFICULTY_CONFIG } from '../lib/gameSettings';
 import { sounds } from '../hooks/useSound.js';
 
