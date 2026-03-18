@@ -1424,6 +1424,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
               e.dead = true;
               const pts = e.type === 'boss' ? 5000 : e.type === 'dropper' ? 500 : e.type === 'elite' ? 300 : e.type === 'mine' ? 300 : e.type === 'eater' ? 800 : 100;
               s.score += pts; onScoreChange(s.score); sounds.kill();
+              enemyCountRef.current++;
+              if (enemyCountRef.current === 500 && !trackedMilestonesRef.current.enemies_500) {
+                trackedMilestonesRef.current.enemies_500 = true;
+                onTrophyEarned?.('enemies_500');
+              }
               spawnExplosion(s, e.x, e.y, e.type === 'boss' ? '#ff0066' : '#44ffaa', e.type === 'boss' ? 40 : 14);
               if (e.type === 'dropper') { sounds.killDropper(); s.powerupItems.push({ x: e.x, y: e.y, type: e.dropType, angle: 0 }); }
               if (e.type === 'boss') { sounds.stopBossMusic(); sounds.waveComplete(); s.maxLives++; s.lives = Math.min(s.lives + 1, s.maxLives); onLivesChange(s.lives); onMaxLivesChange(s.maxLives); }
