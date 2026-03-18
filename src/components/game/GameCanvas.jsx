@@ -993,22 +993,37 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       }
     }
 
-    // Super wingmen fire player's weapon loadout
+    // Super wingmen fire a random gun upgrade
     if (s.superWingmen && s.superWingmen.length > 0) {
       s.superWingmanFireTimer = (s.superWingmanFireTimer || 0) - 1;
       if (s.superWingmanFireTimer <= 0) {
         const pw = s.powerups;
         const rapidfireBonus = (pw.rapidfire || 0) === 1 ? 10 : (pw.rapidfire || 0) * 8;
+        const gunOptions = ['shotgun', 'laser', 'photon', 'bounce', 'missile'].filter(g => (pw[g] || 0) > 0);
+        const activeGun = gunOptions.length > 0 ? gunOptions[Math.floor(Math.random() * gunOptions.length)] : null;
+        
         s.superWingmen.forEach(sw => {
-          if ((pw.photon || 0) > 0) {
+          if (activeGun === 'photon') {
             const size = 6 + (pw.photon) * 3;
             s.bullets.push({ x: sw.x, y: sw.y - 14, vx: 0, vy: -11, type: 'photon', size, orbitAngle: 0 });
-          }
-          if ((pw.bounce || 0) > 0) {
+          } else if (activeGun === 'bounce') {
             const side = Math.floor(s.spiralAngle * 2) % 2 === 0 ? -1 : 1;
             s.bullets.push({ x: sw.x + side * 8, y: sw.y - 14, vx: side * 3.5, vy: -10, type: 'bounce', bouncesLeft: (pw.bounce) * 2 });
+          } else if (activeGun === 'missile') {
+            const missileTier = pw.missile || 0;
+            const count = Math.min(missileTier, 3);
+            for (let i = 0; i < count; i++) {
+              const angle = (i / count) * Math.PI * 0.8 - Math.PI * 0.4;
+              s.bullets.push({ x: sw.x, y: sw.y - 14, vx: Math.sin(angle) * 2, vy: -8 + Math.cos(angle) * 1, type: 'missile', target: null });
+            }
+          } else if (activeGun === 'shotgun') {
+            const tier = pw.shotgun || 0;
+            const pelletCount = tier === 1 ? 7 : tier === 2 ? 9 : 11;
+            const spreadDeg = tier === 1 ? 50 : tier === 2 ? 100 : 150;
+            s.bullets.push({ x: sw.x, y: sw.y - 14, vx: 0, vy: -10, type: 'spread', spreadTier: tier, pelletCount, spreadDeg, armed: false });
+          } else {
+            s.bullets.push({ x: sw.x, y: sw.y - 18, vx: 0, vy: -7, type: 'normal' });
           }
-          s.bullets.push({ x: sw.x, y: sw.y - 18, vx: 0, vy: -7, type: 'normal' });
         });
         s.superWingmanFireTimer = Math.max(10, getFireRate(pw) + 5 - rapidfireBonus);
       }
