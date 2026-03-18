@@ -26,7 +26,7 @@ export function updateMissiles(bullets, enemies) {
       const dx = b.target.x - b.x, dy = b.target.y - b.y;
       const len = Math.hypot(dx, dy) || 1;
       const speed = Math.hypot(b.vx, b.vy) || 8;
-      const turnRate = 0.2;
+      const turnRate = 0.35;
       b.vx += (dx / len) * turnRate;
       b.vy += (dy / len) * turnRate;
       // Cap speed to prevent runaway acceleration
