@@ -1524,6 +1524,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       }
     });
     s.particles = s.particles.filter(pt => pt.alpha > 0);
+    if (s.particles.length > 500) s.particles = s.particles.slice(-500);
 
     // ── Draw ─────────────────────────────────────────────────
     s.particles.forEach(pt => drawParticle(ctx, pt));
