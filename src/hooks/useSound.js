@@ -69,7 +69,47 @@ function stopAllBg() {
   bgTimeouts = [];
 }
 
-// Wave music: gets faster, more layers, and dissonant as wave increases
+// Music era definitions — change style every 10 waves
+function getMusicEra(wave) {
+  const era = Math.floor((wave - 1) / 10); // 0=waves1-10, 1=waves11-20, 2=waves21-30...
+  const eras = [
+    // Era 0: Classic arcade (waves 1-10)
+    {
+      baseNotes: [55, 55, 65.4, 55, 55, 49, 55, 55],
+      leadFn: (w) => w <= 3 ? [220,246.9,261.6,220,196,220,246.9,293.7] : w <= 6 ? [220,261.6,311.1,220,207.7,233.1,311.1,349.2] : [220,277.2,329.6,220,185,220,277.2,370],
+      harmNotes: [329.6,349.2,392,329.6,311.1,329.6,392,440],
+      leadType: (w) => w > 4 ? 'square' : 'triangle',
+      bassType: 'sawtooth',
+    },
+    // Era 1: Dark industrial (waves 11-20)
+    {
+      baseNotes: [41.2, 41.2, 43.7, 41.2, 36.7, 41.2, 43.7, 49],
+      leadFn: () => [174,185,196,174,164.8,174,196,207.7],
+      harmNotes: [246.9,261.6,277.2,246.9,233.1,246.9,277.2,311.1],
+      leadType: () => 'sawtooth',
+      bassType: 'square',
+    },
+    // Era 2: Cyberpunk synth (waves 21-30)
+    {
+      baseNotes: [65.4,65.4,73.4,65.4,61.7,65.4,73.4,82.4],
+      leadFn: () => [261.6,293.7,329.6,261.6,246.9,261.6,311.1,349.2],
+      harmNotes: [392,415.3,440,392,370,392,440,493.9],
+      leadType: () => 'square',
+      bassType: 'sawtooth',
+    },
+    // Era 3: Chaotic dissonance (waves 31+)
+    {
+      baseNotes: [55,58.3,55,51.9,55,58.3,51.9,49],
+      leadFn: () => [233.1,261.6,233.1,220,246.9,261.6,220,207.7],
+      harmNotes: [349.2,370,349.2,329.6,370,392,329.6,311.1],
+      leadType: () => 'sawtooth',
+      bassType: 'square',
+    },
+  ];
+  return eras[Math.min(era, eras.length - 1)];
+}
+
+// Wave music: gets faster, more layers, changes style every 10 waves
 function startWaveMusic(wave) {
   stopAllBg();
   bgPlaying = true;
@@ -77,27 +117,20 @@ function startWaveMusic(wave) {
 
   try {
     const ctx = getCtx();
+    const master = getMasterGain(ctx);
 
-    // Intensity parameters scale with wave
     const intensity = Math.min(wave / 10, 1); // 0..1
-    const tempo = Math.max(0.08, 0.22 - intensity * 0.12); // 0.22 → 0.10 s/beat
+    const tempo = Math.max(0.08, 0.22 - intensity * 0.12);
     const masterVol = 0.08 + intensity * 0.06;
 
-    const masterGain = ctx.createGain();
-    masterGain.gain.value = masterVol;
-    masterGain.connect(ctx.destination);
+    const localGain = ctx.createGain();
+    localGain.gain.value = masterVol;
+    localGain.connect(master);
 
-    // Root notes cycle, higher waves add more chromatic tension
-    const baseNotes = [55, 55, 65.4, 55, 55, 49, 55, 55];
-    // Add a dissonant upper layer when wave > 5
-    const leadNotes = wave <= 3
-      ? [220, 246.9, 261.6, 220, 196, 220, 246.9, 293.7]
-      : wave <= 6
-      ? [220, 261.6, 311.1, 220, 207.7, 233.1, 311.1, 349.2]
-      : [220, 277.2, 329.6, 220, 185, 220, 277.2, 370];
-
-    // High-intensity waves add a second lead harmony
-    const harmNotes = [329.6, 349.2, 392, 329.6, 311.1, 329.6, 392, 440];
+    const era = getMusicEra(wave);
+    const baseNotes = era.baseNotes;
+    const leadNotes = era.leadFn(wave);
+    const harmNotes = era.harmNotes;
 
     let step = 0;
 
@@ -105,33 +138,29 @@ function startWaveMusic(wave) {
       if (!bgPlaying) return;
       const t = ctx.currentTime;
 
-      // Bass drum on beats 1 and 3
       if (step % 2 === 0) {
         playNoise({ duration: tempo * 0.6, gain: 0.12 + intensity * 0.1, filterFreq: 80 });
       }
 
-      // Bass line
       const bass = ctx.createOscillator();
       const bassGain = ctx.createGain();
-      bass.type = 'sawtooth';
+      bass.type = era.bassType;
       bass.frequency.value = baseNotes[step % baseNotes.length];
       bassGain.gain.setValueAtTime(0.35 + intensity * 0.15, t);
       bassGain.gain.exponentialRampToValueAtTime(0.001, t + tempo * 0.85);
-      bass.connect(bassGain); bassGain.connect(masterGain);
+      bass.connect(bassGain); bassGain.connect(localGain);
       bass.start(t); bass.stop(t + tempo);
 
-      // Lead melody
       const lead = ctx.createOscillator();
       const leadGain = ctx.createGain();
-      lead.type = wave > 4 ? 'square' : 'triangle';
+      lead.type = era.leadType(wave);
       lead.frequency.value = leadNotes[step % leadNotes.length];
-      lead.detune.value = intensity * 12; // slight pitch drift adds tension
+      lead.detune.value = intensity * 12;
       leadGain.gain.setValueAtTime(0.18 + intensity * 0.12, t);
       leadGain.gain.exponentialRampToValueAtTime(0.001, t + tempo * 0.7);
-      lead.connect(leadGain); leadGain.connect(masterGain);
+      lead.connect(leadGain); leadGain.connect(localGain);
       lead.start(t); lead.stop(t + tempo);
 
-      // Harmony layer (wave 6+)
       if (wave >= 6) {
         const harm = ctx.createOscillator();
         const harmGain = ctx.createGain();
@@ -140,15 +169,13 @@ function startWaveMusic(wave) {
         harm.detune.value = -intensity * 8;
         harmGain.gain.setValueAtTime(0.1 + intensity * 0.08, t);
         harmGain.gain.exponentialRampToValueAtTime(0.001, t + tempo * 0.6);
-        harm.connect(harmGain); harmGain.connect(masterGain);
+        harm.connect(harmGain); harmGain.connect(localGain);
         harm.start(t); harm.stop(t + tempo);
       }
 
-      // High-hat (wave 4+, faster waves add 16th note hats)
       if (wave >= 4) {
         playNoise({ duration: 0.03, gain: 0.04 + intensity * 0.04, filterFreq: 8000 });
         if (wave >= 8) {
-          // Extra 16th note hat halfway through the beat
           bgTimeouts.push(setTimeout(() => {
             if (bgPlaying) playNoise({ duration: 0.02, gain: 0.03, filterFreq: 10000 });
           }, tempo * 500));
