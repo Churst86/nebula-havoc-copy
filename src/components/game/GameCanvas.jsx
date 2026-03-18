@@ -863,6 +863,42 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         e.x += Math.sin(e.phase) * 2;
         e.y = Math.min(e.y + 0.15, H * 0.25);
         if (e.x < 50 || e.x > W - 50) e.vx *= -1;
+      } else if (e.type === 'bomb') {
+        // Bomb: slow drift normally, periodically charges at player
+        e._chargeTimer = (e._chargeTimer || randomBetween(120, 240)) - 1;
+        if (e._charging) {
+          // Mid-charge: rocket toward player
+          e.x += e._chargeDx * 5.5;
+          e.y += e._chargeDy * 5.5;
+          e._chargeDuration = (e._chargeDuration || 0) - 1;
+          if (e._chargeDuration <= 0) {
+            e._charging = false;
+            // Bounce off walls after charge ends
+            e.vx = randomBetween(-0.8, 0.8);
+            e.vy = randomBetween(0.3, 0.8);
+          }
+          // Wrap/clamp at walls
+          if (e.x < 20) { e.x = 20; e._charging = false; }
+          if (e.x > W - 20) { e.x = W - 20; e._charging = false; }
+          if (e.y < 20) { e.y = 20; e._charging = false; }
+          if (e.y > H - 20) { e.y = H - 20; e._charging = false; }
+        } else {
+          // Idle drift
+          e.x += e.vx; e.y += e.vy;
+          if (e.x < 20 || e.x > W - 20) e.vx *= -1;
+          if (e.y < 20) { e.y = 20; e.vy = Math.abs(e.vy); }
+          if (e.y > H - 20) { e.y = H - 20; e.vy = -Math.abs(e.vy); }
+          // Trigger charge
+          if (e._chargeTimer <= 0) {
+            const dx = p.x - e.x, dy = p.y - e.y;
+            const len = Math.hypot(dx, dy) || 1;
+            e._chargeDx = dx / len;
+            e._chargeDy = dy / len;
+            e._charging = true;
+            e._chargeDuration = 22; // frames of charging (~0.37s)
+            e._chargeTimer = randomBetween(150, 280);
+          }
+        }
       } else if (e.type === 'dropper') {
         // Random wander — bounce off all walls, never leave screen
         e.dirTimer = (e.dirTimer || 60) - 1;
