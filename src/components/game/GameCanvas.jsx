@@ -1700,7 +1700,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         } else {
           const isLocked = s.lockedPowerups.includes(item.type);
           const canAdd = s.lockedPowerups.length < 3;
-          if (!isLocked && !canAdd) return true;
+          if (!isLocked && !canAdd) { onPowerupChange({ ...s.powerups, shieldHp: s.shieldHp }); return false; }
           if (!isLocked) s.lockedPowerups.push(item.type);
           s.powerups[item.type] = Math.min((s.powerups[item.type] || 0) + 1, 10);
           sounds.powerup();
