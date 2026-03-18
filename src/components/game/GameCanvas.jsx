@@ -96,7 +96,7 @@ const DROPPER_ROTATE_FRAMES = 300; // rotate every 5 seconds at 60fps
 // Star spawns separately with a low independent chance
 const STAR_SPAWN_INTERVAL = 1800; // ~30 seconds between star dropper spawns
 
-export default function GameCanvas({ gameState, setGameState, onScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, continuesLeft, onContinueUsed, isPaused }) {
+export default function GameCanvas({ gameState, setGameState, onScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, continuesLeft, onContinueUsed, isPaused, difficultyConfig }) {
   const canvasRef = useRef(null);
   const keysRef = useRef({});
   const stateRef = useRef(initState());
