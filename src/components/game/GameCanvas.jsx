@@ -293,7 +293,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   }
 
   // ── Drawing ──────────────────────────────────────────────────
-  function drawPlayer(ctx, p, wingmen, shieldHp, enemies, invincibleTimer, keys, starInvincibleTimer) {
+  function drawPlayer(ctx, p, wingmen, shieldHp, enemies, invincibleTimer, keys, starInvincibleTimer, superWingman) {
     wingmen.forEach(w => {
       let angle = -Math.PI / 2;
       let bestDist = Infinity;
@@ -311,6 +311,25 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       ctx.stroke();
       ctx.restore();
     });
+
+    // Super wingman — drawn as a cyan-gold player clone
+    if (superWingman) {
+      ctx.save();
+      ctx.translate(superWingman.x, superWingman.y);
+      ctx.shadowColor = '#ffdd00'; ctx.shadowBlur = 22;
+      ctx.strokeStyle = '#ffdd00'; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, -18); ctx.lineTo(13, 12); ctx.lineTo(0, 6); ctx.lineTo(-13, 12); ctx.closePath();
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255,221,0,0.12)';
+      ctx.fill();
+      // Gold star badge
+      ctx.fillStyle = '#ffdd00';
+      ctx.font = 'bold 9px monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('★', 0, 0);
+      ctx.restore();
+    }
 
     // Flash when invincible — skip drawing every other 6 frames
     if (invincibleTimer > 0 && Math.floor(invincibleTimer / 6) % 2 === 0) return;
