@@ -1212,9 +1212,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     });
     s.blocks = s.blocks.filter(b => !b.settled);
 
-    // Piled cells — if stack reaches top portion, game over from block pressure isn't needed,
-    // but player touching them causes damage (handled below).
-    // Clean up piled cells that are off screen bottom (shouldn't happen but safety)
+    // Piled cells — cap at 200 to prevent memory/perf issues at high waves (remove oldest)
+    if (s.piledCells.length > 200) s.piledCells = s.piledCells.slice(-200);
     s.piledCells = s.piledCells.filter(c => c.y < H);
 
     // Helper: explode a spread bullet into pellets
