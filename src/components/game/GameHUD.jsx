@@ -97,8 +97,19 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
         </div>
       </div>
 
-      {/* Pause button — bottom-right, clear of all other UI */}
-      <div className="absolute bottom-6 right-6 pointer-events-auto">
+      {/* Pause + Options buttons — bottom-right */}
+      <div className="absolute bottom-6 right-6 pointer-events-auto flex gap-2">
+        {isPaused && (
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={onOpenOptions}
+            className="text-muted-foreground hover:bg-white/10 w-12 h-12"
+            title="Options"
+          >
+            <Settings className="w-5 h-5" />
+          </Button>
+        )}
         <Button
           size="icon"
           variant="ghost"
