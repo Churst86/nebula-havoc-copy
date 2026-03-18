@@ -240,14 +240,20 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   // ── Fire logic ───────────────────────────────────────────────
   function fireSpreadShot(s) {
     const p = s.player;
-    const spreadTier = s.powerups.spread || 0;
-    if (spreadTier === 0) return;
+    const shotgunTier = s.powerups.shotgun || 0;
+    if (shotgunTier === 0) return;
     if (s.spreadReloadTimer > 0) return;
     if (s.spreadShotsLeft <= 0) return;
     // Fire a single fast bullet straight up — it explodes into spread on hit
-    const pelletCount = spreadTier === 1 ? 7 : spreadTier === 2 ? 9 : 11;
-    const spreadDeg = spreadTier === 1 ? 50 : spreadTier === 2 ? 100 : 150;
-    s.bullets.push({ x: p.x, y: p.y - 18, vx: 0, vy: -10, type: 'spread', spreadTier, pelletCount, spreadDeg, armed: false });
+    const pelletCount = shotgunTier === 1 ? 7 : shotgunTier === 2 ? 9 : 11;
+    const spreadDeg = shotgunTier === 1 ? 50 : shotgunTier === 2 ? 100 : 150;
+    const extraShots = Math.floor((shotgunTier - 1) / 3); // 0 shots at tier 1-2, 1 at tier 3-5, 2 at tier 6-8, 3 at tier 9-10
+    s.bullets.push({ x: p.x, y: p.y - 18, vx: 0, vy: -10, type: 'spread', spreadTier: shotgunTier, pelletCount, spreadDeg, armed: false });
+    // Fire extra shots from sides every 3 levels
+    for (let i = 0; i < extraShots; i++) {
+      const side = i % 2 === 0 ? -1 : 1;
+      s.bullets.push({ x: p.x + side * 12, y: p.y - 18, vx: side * 2, vy: -10, type: 'spread', spreadTier: shotgunTier, pelletCount, spreadDeg, armed: false });
+    }
     s.spreadShotsLeft--;
     if (s.spreadShotsLeft <= 0) s.spreadReloadTimer = SPREAD_RELOAD_FRAMES;
   }
