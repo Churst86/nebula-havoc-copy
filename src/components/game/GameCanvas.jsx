@@ -215,10 +215,18 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     const raygunTier = pw.raygun || 0;
     const bounceTier = pw.bounce || 0;
 
-    // Raygun: fires a single large plasma orb straight up (bigger with tier), max 2 on screen
+    // Raygun: fixed size orb, pierces 1 extra enemy per tier starting at lvl 2
+    // At tier 10: orbiting projectile that still moves forward
     if (raygunTier > 0 && s.bullets.filter(b => b.type === 'raygun').length < 2) {
-      const size = 6 + raygunTier * 3; // 9, 12, 15
-      s.bullets.push({ x: p.x, y: p.y - 14, vx: 0, vy: -11, type: 'raygun', size, orbitAngle: 0 });
+      const RAYGUN_BASE_SIZE = 10;
+      const pierceCount = raygunTier >= 2 ? raygunTier - 1 : 0; // +1 pierce per level from lvl2
+      const isSuperOrbit = raygunTier >= 10;
+      s.bullets.push({
+        x: p.x, y: p.y - 14, vx: 0, vy: -11,
+        type: 'raygun', size: RAYGUN_BASE_SIZE, orbitAngle: 0,
+        pierceCount, piercedEnemies: [],
+        isSuperOrbit, orbitPhase: 0,
+      });
     }
 
     if (bounceTier > 0) {
