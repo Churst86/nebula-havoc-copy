@@ -1,11 +1,16 @@
 // Berserk enemy utilities
 export function updateBerserkMovement(e, p, W, H) {
+  const dx = p.x - e.x, dy = p.y - e.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const followSpeed = 0.8;
+  e.vx = (dx / len) * followSpeed;
+  e.vy = (dy / len) * followSpeed;
   e.x += e.vx;
   e.y += e.vy;
-  if (e.x < 20) { e.x = 20; e.vx = Math.abs(e.vx); }
-  if (e.x > W - 20) { e.x = W - 20; e.vx = -Math.abs(e.vx); }
-  if (e.y < 20) { e.y = 20; e.vy = Math.abs(e.vy); }
-  if (e.y > H - 20) { e.y = H - 20; e.vy = -Math.abs(e.vy); }
+  if (e.x < 20) e.x = 20;
+  if (e.x > W - 20) e.x = W - 20;
+  if (e.y < 20) e.y = 20;
+  if (e.y > H - 20) e.y = H - 20;
 }
 
 export function updateBerserkLaser(e, s, p, W, H) {
