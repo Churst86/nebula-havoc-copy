@@ -1377,7 +1377,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           s.powerups.rapidfire = Math.min((s.powerups.rapidfire || 0) + 1, 10);
           sounds.powerup();
         } else if (item.type === 'wingman') {
-          s.powerups.wingman = Math.min((s.powerups.wingman || 0) + 1, 6);
+          s.powerups.wingman = Math.min((s.powerups.wingman || 0) + 1, 10);
           sounds.powerup();
         } else {
           const isLocked = s.lockedPowerups.includes(item.type);
