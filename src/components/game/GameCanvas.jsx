@@ -1611,7 +1611,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     });
 
     // Wave clear — only count combat enemies; droppers survive into the next wave
-    const combatEnemies = s.enemies.filter(e => e.type !== 'dropper');
+    const combatEnemies = s.enemies.filter(e => e.type !== 'dropper' && e.type !== 'eater');
     if (combatEnemies.length === 0) {
       s.waveTimer++;
       if (s.waveTimer > 90) {
