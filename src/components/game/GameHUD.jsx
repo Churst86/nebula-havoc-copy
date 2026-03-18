@@ -101,6 +101,23 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
         </div>
       </div>
 
+      {/* Gun Upgrades — bottom-left */}
+      {gunKeys.length > 0 && (
+        <div className="absolute bottom-6 left-6 flex flex-col gap-1">
+          {gunKeys.map(key => {
+            const tier = powerups[key] || 1;
+            const color = POWERUP_COLORS[key];
+            return (
+              <div key={key}
+                className="text-xs font-bold px-3 py-1 rounded-full"
+                style={{ color, border: `1px solid ${color}`, background: `${color}22` }}>
+                🔫 {POWERUP_LABELS[key]} Lv{tier}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Pause + Options buttons — bottom-right */}
       <div className="absolute bottom-6 right-6 pointer-events-auto flex gap-2">
         {isPaused && (
