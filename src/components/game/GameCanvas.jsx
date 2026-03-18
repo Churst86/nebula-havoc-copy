@@ -861,18 +861,37 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         if (e.x > W - 30) { e.x = W - 30; e.vx = -Math.abs(e.vx); }
         if (e.y < 30) { e.y = 30; e.vy = Math.abs(e.vy); }
         if (e.y > H * 0.7) { e.y = H * 0.7; e.vy = -Math.abs(e.vy); }
+      } else if (e.type === 'elite') {
+        // Elite: aggressive sine-wave weaving toward player, periodically dashes
+        e.movePhase = (e.movePhase || 0) + 0.07;
+        e.dashTimer = (e.dashTimer || 0) - 1;
+        if (e.dashTimer <= 0) {
+          // Dash toward player every ~3 seconds
+          const dx = p.x - e.x, dy = p.y - e.y;
+          const len = Math.hypot(dx, dy) || 1;
+          const spd = Math.hypot(e.vx, e.vy) || 1.5;
+          e.vx = (dx / len) * spd * 2.5;
+          e.vy = (dy / len) * spd * 1.2;
+          e.dashTimer = randomBetween(120, 200);
+        }
+        // Weave perpendicular to movement direction
+        const weaveMag = 2.2;
+        e.x += e.vx + Math.sin(e.movePhase) * weaveMag;
+        e.y += e.vy;
+        if (e.x < 20) { e.x = 20; e.vx = Math.abs(e.vx); }
+        if (e.x > W - 20) { e.x = W - 20; e.vx = -Math.abs(e.vx); }
+        if (e.y < 20) { e.y = 20; e.vy = Math.abs(e.vy); }
+        if (e.y > H - 20) { e.y = H - 20; e.vy = -Math.abs(e.vy); }
       } else {
-        // Hiding behaviour: ~20% chance per enemy to seek cover behind a block
+        // Basic: hide behind blocks, standard movement
         if (!e.hideMode) e.hideMode = Math.random() < 0.20;
         if (e.hideMode && s.blocks.length > 0) {
-          // Find nearest block cell that's between enemy and player (above enemy)
           let bestBlock = null, bestDist = Infinity;
           s.blocks.forEach(block => {
-            if (block.invulnerable) return; // prefer solid blocks but any works
+            if (block.invulnerable) return;
             const cells = getBlockCells(block);
             cells.forEach(cell => {
               const cx = cell.x + BLOCK_SIZE / 2, cy = cell.y + BLOCK_SIZE / 2;
-              // Only hide behind blocks that are between enemy and player (higher up)
               if (cy < e.y) {
                 const d = Math.hypot(cx - e.x, cy - e.y);
                 if (d < bestDist) { bestDist = d; bestBlock = { cx, cy }; }
@@ -891,9 +910,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         } else {
           e.x += e.vx; e.y += e.vy;
         }
-        // Bounce off side walls
         if (e.x < 20 || e.x > W - 20) e.vx *= -1;
-        // Bounce off top/bottom — never leave screen
         if (e.y < 20) { e.y = 20; e.vy = Math.abs(e.vy); }
         if (e.y > H - 20) { e.y = H - 20; e.vy = -Math.abs(e.vy); }
       }
