@@ -278,6 +278,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       const side = Math.floor(s.spiralAngle * 2) % 2 === 0 ? -1 : 1;
       s.spiralAngle += 0.1;
       s.bullets.push({ x: p.x + side * 8, y: p.y - 14, vx: side * 3.5, vy: -10, type: 'bounce', bouncesLeft: bounces });
+      // Extra random-direction bullets per tier
+      for (let i = 1; i < bounceTier; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        s.bullets.push({ x: p.x, y: p.y - 14, vx: Math.cos(angle) * 6, vy: Math.sin(angle) * 6 - 2, type: 'bounce', bouncesLeft: bounces });
+      }
     }
 
     // Basic gun always fires (laser beam is the only exception — handled by laserBeamActive guard above)
