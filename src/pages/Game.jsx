@@ -5,8 +5,6 @@ import HighScores, { isHighScore } from '../components/game/HighScores';
 import ContinueScreen from '../components/game/ContinueScreen';
 import StartScreen from '../components/game/StartScreen';
 import OptionsScreen from '../components/game/OptionsScreen';
-import CongratulationsScreen from '../components/game/CongratulationsScreen';
-import DifficultySelector from '../components/game/DifficultySelector';
 import { loadSettings, saveSettings, DIFFICULTY_CONFIG } from '../lib/gameSettings';
 import { sounds } from '../hooks/useSound.js';
 
@@ -24,11 +22,6 @@ export default function Game() {
   const [isPaused, setIsPaused] = useState(false);
   const [settings, setSettings] = useState(() => loadSettings());
   const [showPauseOptions, setShowPauseOptions] = useState(false);
-  const [currentDifficulty, setCurrentDifficulty] = useState('easy');
-  const [completedDifficulties, setCompletedDifficulties] = useState(() => {
-    const saved = localStorage.getItem('completedDifficulties');
-    return saved ? JSON.parse(saved) : [];
-  });
   const scoreRef = useRef(0);
   const waveRef = useRef(1);
 
@@ -42,48 +35,35 @@ export default function Game() {
     setWave(w);
   }, []);
 
-  const handleStart = useCallback((difficulty = 'easy', carryoverPowerups = null) => {
-    setCurrentDifficulty(difficulty);
-    scoreRef.current = carryoverPowerups ? score : 0;
+  const handleStart = useCallback(() => {
+    scoreRef.current = 0;
     waveRef.current = 1;
-    setScore(carryoverPowerups ? score : 0);
+    setScore(0);
     setLives(3);
     setMaxLives(3);
     setWave(1);
-    setActivePowerup(carryoverPowerups || {});
+    setActivePowerup({});
+    // Earn continues based on score threshold (max MAX_CONTINUES)
+    // Starts fresh — continues earned mid-game based on score
     setContinuesLeft(0);
     setGameState('playing');
-  }, [score]);
+  }, []);
 
-  // Called by canvas when lives hit 0 or level complete
+  // Called by canvas when lives hit 0
   const handleSetGameState = useCallback((state) => {
     if (state === 'continue') {
       const earned = Math.min(Math.floor(scoreRef.current / CONTINUE_SCORE_THRESHOLD), MAX_CONTINUES);
       setContinuesLeft(prev => {
+        // If we already have continues available, just show the screen
         if (prev > 0) { setGameState('continue'); return prev; }
         if (earned > 0) { setGameState('continue'); return earned; }
         setGameState('gameover');
         return 0;
       });
-    } else if (state === 'gameover') {
-      // Check if player beat level target for current difficulty
-      const levelTargets = { easy: 25, challenging: 50, hell: 100 };
-      const target = levelTargets[currentDifficulty];
-      if (waveRef.current > target) {
-        // Player beat the difficulty!
-        setCompletedDifficulties(prev => {
-          const updated = [...new Set([...prev, currentDifficulty])];
-          localStorage.setItem('completedDifficulties', JSON.stringify(updated));
-          return updated;
-        });
-        setGameState('congratulations');
-      } else {
-        setGameState('gameover');
-      }
     } else {
       setGameState(state);
     }
-  }, [currentDifficulty]);
+  }, []);
 
   const handleContinue = useCallback(() => {
     scoreRef.current = Math.max(0, scoreRef.current - 5000);
@@ -130,7 +110,7 @@ export default function Game() {
     sounds.setSfxVolume(settings.sfxVolume ?? settings.soundVolume ?? 0.8);
   }, [settings.sfxVolume, settings.soundVolume]);
 
-  const difficultyConfig = DIFFICULTY_CONFIG[currentDifficulty] || DIFFICULTY_CONFIG.easy;
+  const difficultyConfig = DIFFICULTY_CONFIG[settings.difficulty] || DIFFICULTY_CONFIG.normal;
 
   return (
     <div
@@ -183,13 +163,7 @@ export default function Game() {
       )}
 
       {gameState === 'start' && (
-        <div className="absolute inset-0 z-40 bg-black/90 flex items-center justify-center">
-          <DifficultySelector
-            completedDifficulties={completedDifficulties}
-            onSelectDifficulty={(difficulty) => handleStart(difficulty)}
-            onHome={() => {}} // Keep on start screen if no home option
-          />
-        </div>
+        <StartScreen onStart={handleStart} settings={settings} onSettingsChange={handleSettingsChange} />
       )}
 
       {gameState === 'continue' && (
