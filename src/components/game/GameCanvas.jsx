@@ -907,7 +907,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       s.superWingman = null;
     }
 
-    // Spread reload tick
+    // Shotgun reload tick
     if (s.spreadReloadTimer > 0) {
       s.spreadReloadTimer--;
       if (s.spreadReloadTimer <= 0) s.spreadShotsLeft = SPREAD_SHOTS_PER_RELOAD;
