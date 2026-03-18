@@ -1656,7 +1656,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     // Laser charge indicator + continuous beam draw
     if ((s.powerups.laser || 0) > 0) {
       const laserTier = s.powerups.laser;
-      const beamW = 4 + laserTier * 3;
+      const beamW = laserTier >= 10 ? (4 + laserTier * 3) * 2 : 4 + laserTier * 3;
 
       const isPiercingDraw = laserTier >= 10;
       const beamColor = isPiercingDraw ? '#ffffff' : '#ff44ff';
