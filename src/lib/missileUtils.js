@@ -38,6 +38,10 @@ export function getMissileHitDamage(missileTier) {
   return 1;
 }
 
+export function shouldSpawnMissileExplosion(missileTier) {
+  return missileTier >= 5;
+}
+
 export function drawMissile(ctx, b) {
   const missileTier = b.missileTier || 1;
   
