@@ -215,13 +215,31 @@ export default function Game() {
         />
       )}
 
+      {gameState === 'congratulations' && (
+        <CongratulationsScreen
+          difficulty={currentDifficulty}
+          score={score}
+          completedDifficulties={completedDifficulties}
+          onPlayNext={(nextDiff) => handleStart(nextDiff, activePowerup)}
+          onPlayAgain={() => handleStart(currentDifficulty)}
+          onHome={() => setGameState('start')}
+        />
+      )}
+
       {gameState === 'gameover' && (
         <HighScores
           score={score}
           wave={wave}
-          onRestart={handleStart}
+          onRestart={() => handleStart(currentDifficulty)}
           onReturnToTitle={() => setGameState('start')}
           isNewScore={isHighScore(score)}
+        />
+      )}
+
+      {earnedTrophy && (
+        <TrophyPopup
+          trophy={earnedTrophy}
+          onComplete={() => setEarnedTrophy(null)}
         />
       )}
     </div>
