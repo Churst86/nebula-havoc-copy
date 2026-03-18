@@ -101,10 +101,14 @@ export default function Game() {
     return () => window.removeEventListener('keydown', onKey);
   }, [gameState]);
 
-  // Apply master volume to sounds when settings change
+  // Apply separate music/sfx volumes when settings change
   useEffect(() => {
-    sounds.setMasterVolume(settings.soundVolume);
-  }, [settings.soundVolume]);
+    sounds.setMusicVolume(settings.musicVolume ?? settings.soundVolume ?? 0.8);
+  }, [settings.musicVolume, settings.soundVolume]);
+
+  useEffect(() => {
+    sounds.setSfxVolume(settings.sfxVolume ?? settings.soundVolume ?? 0.8);
+  }, [settings.sfxVolume, settings.soundVolume]);
 
   const difficultyConfig = DIFFICULTY_CONFIG[settings.difficulty] || DIFFICULTY_CONFIG.normal;
 
