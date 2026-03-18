@@ -78,6 +78,17 @@ export default function Game() {
     setIsPaused(p => !p);
   }, []);
 
+  // Enter key toggles pause during gameplay
+  React.useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Enter' && (gameState === 'playing' || gameState === 'resuming')) {
+        setIsPaused(p => !p);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [gameState]);
+
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black select-none" tabIndex={-1}>
       <GameCanvas
