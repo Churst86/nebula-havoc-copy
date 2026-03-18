@@ -821,9 +821,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     } else {
       const c = colors[item.type] || '#fff';
       ctx.shadowColor = c; ctx.shadowBlur = 16;
-      ctx.strokeStyle = c; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.stroke();
+      // Plain glowing circle — no spikes (distinct from the spiky dropper enemy)
+      ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2);
       ctx.fillStyle = c + '33'; ctx.fill();
+      ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.stroke();
+      // Inner bright ring
+      ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2);
+      ctx.strokeStyle = c + '88'; ctx.lineWidth = 1; ctx.stroke();
       ctx.fillStyle = c;
       ctx.font = 'bold 11px monospace';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
