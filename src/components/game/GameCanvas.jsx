@@ -723,15 +723,15 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     if (keys['ArrowUp'] || keys['w'] || keys['W']) p.y = Math.max(16, p.y - spd);
     if (keys['ArrowDown'] || keys['s'] || keys['S']) p.y = Math.min(H - 16, p.y + spd);
 
-    // Wingmen follow — tier 1-5 = 1-5 small wingmen, tier 6+ = super wingman (player clone) + 5 basic
+    // Wingmen follow — tier 1-4 = 1-4 small wingmen, tier 5 = 1st super wingman (no basics), tier 6+ = 2 super wingmen (no basics)
     const wingmanTier = s.powerups.wingman || 0;
-    const hasSuperWingman = wingmanTier >= 6;
-    const basicWingmanCount = hasSuperWingman ? 5 : wingmanTier;
+    const superWingmanCount = wingmanTier >= 5 ? (wingmanTier >= 6 ? 2 : 1) : 0;
+    const basicWingmanCount = superWingmanCount > 0 ? 0 : wingmanTier;
     if (wingmanTier > 0) {
       const allOffsets = [
-        { x: -40, y: 10 }, { x: 40, y: 10 }, { x: 0, y: 25 }, { x: -65, y: 20 }, { x: 65, y: 20 },
+        { x: -40, y: 10 }, { x: 40, y: 10 }, { x: 0, y: 25 }, { x: -65, y: 20 },
       ];
-      // Basic wingmen (up to 5)
+      // Basic wingmen (only when no super wingman)
       const basicOffsets = allOffsets.slice(0, basicWingmanCount);
       const basicTargets = basicOffsets.map(o => ({ x: p.x + o.x, y: p.y + o.y }));
       while (s.wingmen.length < basicTargets.length) s.wingmen.push({ ...basicTargets[s.wingmen.length] });
@@ -740,16 +740,23 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         w.x += (basicTargets[i].x - w.x) * 0.1;
         w.y += (basicTargets[i].y - w.y) * 0.1;
       });
-      // Super wingman: follows above-left of player
-      if (hasSuperWingman) {
-        if (!s.superWingman) s.superWingman = { x: p.x - 80, y: p.y };
-        s.superWingman.x += (p.x - 80 - s.superWingman.x) * 0.08;
-        s.superWingman.y += (p.y - s.superWingman.y) * 0.08;
-      } else {
-        s.superWingman = null;
+      // Super wingmen: up to 2, flank the player
+      const superOffsets = [{ x: -80, y: 0 }, { x: 80, y: 0 }];
+      if (!s.superWingmen) s.superWingmen = [];
+      while (s.superWingmen.length < superWingmanCount) {
+        const off = superOffsets[s.superWingmen.length];
+        s.superWingmen.push({ x: p.x + off.x, y: p.y + off.y });
       }
+      while (s.superWingmen.length > superWingmanCount) s.superWingmen.pop();
+      s.superWingmen.forEach((sw, i) => {
+        sw.x += (p.x + superOffsets[i].x - sw.x) * 0.08;
+        sw.y += (p.y + superOffsets[i].y - sw.y) * 0.08;
+      });
+      // Legacy single superWingman ref (for fire logic)
+      s.superWingman = s.superWingmen[0] || null;
     } else {
       s.wingmen = [];
+      s.superWingmen = [];
       s.superWingman = null;
     }
 
