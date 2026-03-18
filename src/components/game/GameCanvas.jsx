@@ -1060,42 +1060,94 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           e.y = targetY + Math.sin(e.phase * 2) * 50;
         }
         if (e.x < 50 || e.x > W - 50) e.vx *= -1;
-      } else if (e.type === 'bomb') {
-        // Bomb: slow drift normally, periodically charges at player
-        e._chargeTimer = (e._chargeTimer || randomBetween(120, 240)) - 1;
+      } else if (e.type === 'mine') {
+        // Mine: slow drift, periodically charges far at player, recharges after cooldown
+        e._chargeTimer = (e._chargeTimer === undefined ? randomBetween(60, 120) : e._chargeTimer) - 1;
+        e._rechargeCooldown = Math.max(0, (e._rechargeCooldown || 0) - 1);
         if (e._charging) {
-          // Mid-charge: rocket toward player
-          e.x += e._chargeDx * 5.5;
-          e.y += e._chargeDy * 5.5;
+          // Mid-charge: fast rocket toward player
+          e.x += e._chargeDx * 7;
+          e.y += e._chargeDy * 7;
           e._chargeDuration = (e._chargeDuration || 0) - 1;
           if (e._chargeDuration <= 0) {
             e._charging = false;
-            // Bounce off walls after charge ends
+            e._rechargeCooldown = randomBetween(180, 300); // ~3-5s cooldown before next charge
             e.vx = randomBetween(-0.8, 0.8);
             e.vy = randomBetween(0.3, 0.8);
           }
-          // Wrap/clamp at walls
-          if (e.x < 20) { e.x = 20; e._charging = false; }
-          if (e.x > W - 20) { e.x = W - 20; e._charging = false; }
-          if (e.y < 20) { e.y = 20; e._charging = false; }
-          if (e.y > H - 20) { e.y = H - 20; e._charging = false; }
+          if (e.x < 20) { e.x = 20; e._charging = false; e._rechargeCooldown = 180; }
+          if (e.x > W - 20) { e.x = W - 20; e._charging = false; e._rechargeCooldown = 180; }
+          if (e.y < 20) { e.y = 20; e._charging = false; e._rechargeCooldown = 180; }
+          if (e.y > H - 20) { e.y = H - 20; e._charging = false; e._rechargeCooldown = 180; }
         } else {
           // Idle drift
           e.x += e.vx; e.y += e.vy;
           if (e.x < 20 || e.x > W - 20) e.vx *= -1;
           if (e.y < 20) { e.y = 20; e.vy = Math.abs(e.vy); }
           if (e.y > H - 20) { e.y = H - 20; e.vy = -Math.abs(e.vy); }
-          // Trigger charge
-          if (e._chargeTimer <= 0) {
+          // Trigger charge when timer expires AND recharge cooldown done
+          if (e._chargeTimer <= 0 && e._rechargeCooldown <= 0) {
             const dx = p.x - e.x, dy = p.y - e.y;
             const len = Math.hypot(dx, dy) || 1;
             e._chargeDx = dx / len;
             e._chargeDy = dy / len;
             e._charging = true;
-            e._chargeDuration = 22; // frames of charging (~0.37s)
-            e._chargeTimer = randomBetween(150, 280);
+            e._chargeDuration = 45; // longer charge (~0.75s) = greater distance
+            e._chargeTimer = randomBetween(60, 120);
           }
         }
+      } else if (e.type === 'eater') {
+        // Block-eater: hunts nearest tetris block/piled cell, eats it to gain HP
+        e._eating = false;
+        let targetX = null, targetY = null, bestDist = Infinity;
+
+        // Look for falling blocks first
+        s.blocks.forEach(block => {
+          if (block.invulnerable || block.dead) return;
+          const cells = getBlockCells(block);
+          cells.forEach(cell => {
+            const d = Math.hypot(cell.x + BLOCK_SIZE / 2 - e.x, cell.y + BLOCK_SIZE / 2 - e.y);
+            if (d < bestDist) { bestDist = d; targetX = cell.x + BLOCK_SIZE / 2; targetY = cell.y + BLOCK_SIZE / 2; e._targetBlock = block; e._targetCell = null; }
+          });
+        });
+        // Also look for piled cells
+        s.piledCells.forEach((cell, idx) => {
+          const d = Math.hypot(cell.x + BLOCK_SIZE / 2 - e.x, cell.y + BLOCK_SIZE / 2 - e.y);
+          if (d < bestDist) { bestDist = d; targetX = cell.x + BLOCK_SIZE / 2; targetY = cell.y + BLOCK_SIZE / 2; e._targetBlock = null; e._targetCellIdx = idx; }
+        });
+
+        if (targetX !== null && bestDist > 8) {
+          const dx2 = targetX - e.x, dy2 = targetY - e.y;
+          const len2 = Math.hypot(dx2, dy2) || 1;
+          const eSpd = 1.4 + (s.wave * 0.05);
+          e.x += (dx2 / len2) * eSpd;
+          e.y += (dy2 / len2) * eSpd;
+        } else if (targetX !== null && bestDist <= 22) {
+          // Eating! Consume the block cell
+          e._eating = true;
+          if (e._targetBlock && !e._targetBlock.dead) {
+            e._targetBlock.hp -= 0.05; // drain block HP continuously
+            if (e._targetBlock.hp <= 0) {
+              e._targetBlock.dead = true;
+              e.hp = Math.min(e.hp + 2, 20); // gain 2 HP, cap at 20
+              e.maxHp = Math.max(e.maxHp, e.hp);
+              spawnExplosion(s, e.x, e.y, '#44ff88', 8);
+            }
+          } else if (e._targetCellIdx !== undefined && s.piledCells[e._targetCellIdx]) {
+            s.piledCells.splice(e._targetCellIdx, 1);
+            e.hp = Math.min(e.hp + 1, 20); // gain 1 HP from piled cell
+            e.maxHp = Math.max(e.maxHp, e.hp);
+            spawnExplosion(s, e.x, e.y, '#44ff88', 6);
+          }
+        } else {
+          // Wander if no blocks
+          e.x += e.vx; e.y += e.vy;
+        }
+        // Keep in bounds
+        if (e.x < 20) { e.x = 20; e.vx = Math.abs(e.vx); }
+        if (e.x > W - 20) { e.x = W - 20; e.vx = -Math.abs(e.vx); }
+        if (e.y < 20) { e.y = 20; e.vy = Math.abs(e.vy); }
+        if (e.y > H - 20) { e.y = H - 20; e.vy = -Math.abs(e.vy); }
       } else if (e.type === 'dropper') {
         // Random wander — bounce off all walls, never leave screen
         e.dirTimer = (e.dirTimer || 60) - 1;
