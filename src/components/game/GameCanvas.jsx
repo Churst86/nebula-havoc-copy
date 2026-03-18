@@ -252,18 +252,18 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   }
 
   function playerFire(s) {
-    const p = s.player;
-    const pw = s.powerups;
-    const laserTier  = pw.laser  || 0;
-    const raygunTier = pw.raygun || 0;
-    const bounceTier = pw.bounce || 0;
+     const p = s.player;
+     const pw = s.powerups;
+     const laserTier  = pw.laser  || 0;
+     const photonTier = pw.photon || 0;
+     const bounceTier = pw.bounce || 0;
 
     // Photon: fixed size orb, pierces 1 extra enemy per tier starting at lvl 2
     // At tier 10: orbiting projectile that still moves forward
-    if (raygunTier > 0 && s.bullets.filter(b => b.type === 'photon').length < 2) {
+    if (photonTier > 0 && s.bullets.filter(b => b.type === 'photon').length < 2) {
       const PHOTON_BASE_SIZE = 10;
-      const pierceCount = raygunTier >= 2 ? raygunTier - 1 : 0; // +1 pierce per level from lvl2
-      const isSuperOrbit = raygunTier >= 10;
+      const pierceCount = photonTier >= 2 ? photonTier - 1 : 0; // +1 pierce per level from lvl2
+      const isSuperOrbit = photonTier >= 10;
       s.bullets.push({
         x: p.x, y: p.y - 14, vx: 0, vy: -11,
         type: 'photon', size: PHOTON_BASE_SIZE, orbitAngle: 0,
@@ -273,7 +273,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     }
 
     if (bounceTier > 0) {
-      const bounces = bounceTier * 2;
+      const bounces = bounceTier * 2 + bounceTier;
       const side = Math.floor(s.spiralAngle * 2) % 2 === 0 ? -1 : 1;
       s.spiralAngle += 0.1;
       s.bullets.push({ x: p.x + side * 8, y: p.y - 14, vx: side * 3.5, vy: -10, type: 'bounce', bouncesLeft: bounces });
