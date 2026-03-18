@@ -1131,7 +1131,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     // Rotate displayed powerup type every 5 seconds
     s.dropperRotateTimer--;
     if (s.dropperRotateTimer <= 0) {
+      // Advance to next non-maxed type
       s.dropperRotationIdx = (s.dropperRotationIdx + 1) % DROPPER_ROTATION.length;
+      // Skip types already at max tier
+      for (let i = 0; i < DROPPER_ROTATION.length; i++) {
+        const t = DROPPER_ROTATION[s.dropperRotationIdx];
+        if ((s.powerups[t] || 0) < 10) break;
+        s.dropperRotationIdx = (s.dropperRotationIdx + 1) % DROPPER_ROTATION.length;
+      }
       s.dropperRotateTimer = DROPPER_ROTATE_FRAMES;
       // Update existing droppers to new type
       s.enemies.forEach(e => {
