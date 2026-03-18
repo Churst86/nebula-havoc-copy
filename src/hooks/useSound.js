@@ -195,10 +195,10 @@ function startWaveMusic(wave) {
       }
 
       if (wave >= 4) {
-        playNoise({ duration: 0.03, gain: 0.04 + intensity * 0.04, filterFreq: 8000 });
+        playNoiseCheap({ duration: 0.03, gain: 0.04 + intensity * 0.04, filterFreq: 8000, useMusicBus: true });
         if (wave >= 8) {
           bgTimeouts.push(setTimeout(() => {
-            if (bgPlaying) playNoise({ duration: 0.02, gain: 0.03, filterFreq: 10000 });
+            if (bgPlaying) playNoiseCheap({ duration: 0.02, gain: 0.03, filterFreq: 10000, useMusicBus: true });
           }, tempo * 500));
         }
       }
