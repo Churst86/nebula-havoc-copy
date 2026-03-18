@@ -1509,7 +1509,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
                 spawnExplosion(s, p.x, p.y, '#ff8800', 18);
               }
             }
-            const pts = e.type === 'boss' ? 5000 : e.type === 'dropper' ? 500 : e.type === 'elite' ? 300 : e.type === 'mine' ? 300 : e.type === 'eater' ? 400 : 100;
+            const pts = e.type === 'boss' ? 5000 : e.type === 'dropper' ? 500 : e.type === 'elite' ? 300 : e.type === 'mine' ? 300 : e.type === 'eater' ? 800 : 100;
             s.score += pts;
             onScoreChange(s.score);
             sounds.kill();
