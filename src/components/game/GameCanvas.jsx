@@ -1049,6 +1049,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
 
     s.enemyBullets = s.enemyBullets.filter(b => {
       b.x += b.vx; b.y += b.vy;
+      if (b.bouncing && b.bouncesLeft > 0) {
+        if (b.x < 0 || b.x > W) { b.vx *= -1; b.x = Math.max(0, Math.min(W, b.x)); b.bouncesLeft--; }
+        if (b.y < 0) { b.vy *= -1; b.y = Math.max(0, b.y); b.bouncesLeft--; }
+      }
       return b.y < H + 20 && b.x > -20 && b.x < W + 20 && b.y > -20;
     });
 
