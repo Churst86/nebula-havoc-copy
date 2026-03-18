@@ -77,11 +77,7 @@ export function drawEnemy(ctx, e) {
 export function updateEnemyPositions(s, W, H) {
   s.enemies = s.enemies.filter(e => {
     if (!e) return false;
-    
-    e.x += e.vx;
-    e.y += e.vy;
-    
-    // Remove if off-screen
+    // Remove if off-screen (don't update position here, already done in main loop)
     return e.x > -50 && e.x < W + 50 && e.y < H + 50;
   });
 }
