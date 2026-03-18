@@ -64,6 +64,9 @@ function initState() {
     running: false,
     starInvincibleTimer: 0,   // frames of star invincibility
     dropperSpawnTimer: DROPPER_SPAWN_INTERVAL, // global recurring timer
+    dropperRotationIdx: 0,    // which powerup type the next dropper will carry
+    dropperRotateTimer: DROPPER_ROTATE_FRAMES, // countdown to rotate dropper type
+    starDropperTimer: STAR_SPAWN_INTERVAL,     // separate timer for rare star dropper
   };
 }
 
