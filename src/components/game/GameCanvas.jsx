@@ -856,6 +856,12 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       animRef.current = requestAnimationFrame(loop);
       return;
     }
+    // Frame-rate throttle based on gameSpeed setting
+    const targetInterval = 1000 / gameSpeedRef.current;
+    if (timestamp - lastTimeRef.current < targetInterval) {
+      animRef.current = requestAnimationFrame(loop);
+      return;
+    }
     lastTimeRef.current = timestamp;
 
     const canvas = canvasRef.current;
