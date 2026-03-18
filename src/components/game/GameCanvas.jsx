@@ -115,10 +115,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       const bossHp = 20 + wave * 5;
       const bossGuns = ['spread', 'laser', 'raygun', 'bounce'];
       const bossGun = bossGuns[Math.floor(Math.random() * bossGuns.length)];
+      const bossTier = Math.floor(wave / 5); // 1, 2, 3, 4...
       enemies.push({
         type: 'boss', x: W / 2, y: -60, w: 45, h: 45,
         hp: bossHp, maxHp: bossHp, vx: 1.8, vy: 0.4, fireTimer: 20, phase: 0,
-        gun: bossGun,
+        gun: bossGun, tier: bossTier,
       });
       sounds.startBossMusic();
     } else {
