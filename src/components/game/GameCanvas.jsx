@@ -299,7 +299,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   }
 
   // ── Drawing ──────────────────────────────────────────────────
-  function drawPlayer(ctx, p, wingmen, shieldHp, enemies, invincibleTimer, keys, starInvincibleTimer, superWingman) {
+  function drawPlayer(ctx, p, wingmen, shieldHp, enemies, invincibleTimer, keys, starInvincibleTimer, superWingman, superWingmen) {
     wingmen.forEach(w => {
       let angle = -Math.PI / 2;
       let bestDist = Infinity;
