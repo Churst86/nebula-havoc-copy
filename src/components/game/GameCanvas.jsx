@@ -1531,30 +1531,54 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       const laserTier = s.powerups.laser;
       const beamW = 6 + laserTier * 4;
 
+      const isPiercingDraw = laserTier >= 10;
+      const beamColor = isPiercingDraw ? '#ffffff' : '#ff44ff';
+      const beamColorRgb = isPiercingDraw ? '255,255,255' : '255,68,255';
+      const beamCenterRgb = isPiercingDraw ? '255,255,255' : '255,200,255';
+
       if (s.laserBeamActive) {
-        // Draw beam from player to first block (or top of screen)
         const beamEndY = (s.laserBeamBlockY || 0);
         const beamAlpha = 0.7 + Math.sin(Date.now() * 0.03) * 0.3;
         ctx.save();
         // Outer glow
-        ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 30;
-        ctx.strokeStyle = `rgba(255,68,255,${beamAlpha * 0.4})`;
+        ctx.shadowColor = beamColor; ctx.shadowBlur = 30;
+        ctx.strokeStyle = `rgba(${beamColorRgb},${beamAlpha * 0.4})`;
         ctx.lineWidth = beamW * 3;
         ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, beamEndY); ctx.stroke();
         // Core beam
         ctx.shadowBlur = 20;
-        ctx.strokeStyle = `rgba(255,68,255,${beamAlpha})`;
+        ctx.strokeStyle = `rgba(${beamColorRgb},${beamAlpha})`;
         ctx.lineWidth = beamW;
         ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, beamEndY); ctx.stroke();
         // Bright center
-        ctx.strokeStyle = `rgba(255,200,255,${beamAlpha})`;
+        ctx.strokeStyle = `rgba(${beamCenterRgb},${beamAlpha})`;
         ctx.lineWidth = beamW * 0.3;
         ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, beamEndY); ctx.stroke();
+
+        // Muzzle flare at beam origin
+        if (s.laserFlareTimer > 0) {
+          const flarePct = s.laserFlareTimer / 12;
+          ctx.shadowColor = beamColor; ctx.shadowBlur = 40 * flarePct;
+          ctx.fillStyle = `rgba(${beamColorRgb},${flarePct * 0.9})`;
+          const flareR = beamW * 3 * flarePct;
+          ctx.beginPath(); ctx.arc(p.x, p.y - 18, flareR, 0, Math.PI * 2); ctx.fill();
+          // Cross spokes
+          ctx.strokeStyle = `rgba(${beamCenterRgb},${flarePct})`;
+          ctx.lineWidth = 2;
+          for (let fi = 0; fi < 4; fi++) {
+            const fa = (fi / 4) * Math.PI * 2;
+            ctx.beginPath();
+            ctx.moveTo(p.x + Math.cos(fa) * flareR * 0.4, p.y - 18 + Math.sin(fa) * flareR * 0.4);
+            ctx.lineTo(p.x + Math.cos(fa) * flareR * 1.6, p.y - 18 + Math.sin(fa) * flareR * 1.6);
+            ctx.stroke();
+          }
+        }
+
         ctx.restore();
         // Beam timer ring
-        const beamPct = s.laserBeamTimer / (LASER_BEAM_FRAMES + (laserTier - 1) * 60);
+        const beamPct = s.laserBeamTimer / LASER_BEAM_FRAMES;
         ctx.save();
-        ctx.strokeStyle = `rgba(255,68,255,0.6)`; ctx.lineWidth = 3; ctx.shadowBlur = 0;
+        ctx.strokeStyle = `rgba(${beamColorRgb},0.6)`; ctx.lineWidth = 3; ctx.shadowBlur = 0;
         ctx.beginPath();
         ctx.arc(p.x, p.y, 32, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * beamPct);
         ctx.stroke(); ctx.restore();
@@ -1567,8 +1591,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       } else {
         const pct = Math.min(s.laserCharge / LASER_CHARGE_FRAMES, 1);
         ctx.save();
-        ctx.strokeStyle = `rgba(255,68,255,${0.4 + pct * 0.6})`;
-        ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 8 + pct * 16; ctx.lineWidth = 2 + pct * 3;
+        ctx.strokeStyle = `rgba(${beamColorRgb},${0.4 + pct * 0.6})`;
+        ctx.shadowColor = beamColor; ctx.shadowBlur = 8 + pct * 16; ctx.lineWidth = 2 + pct * 3;
         ctx.beginPath();
         ctx.arc(p.x, p.y, 28 + pct * 6, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct);
         ctx.stroke(); ctx.restore();
