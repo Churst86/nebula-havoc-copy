@@ -1162,7 +1162,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           e._chargeDuration = (e._chargeDuration || 0) - 1;
           if (e._chargeDuration <= 0) {
             e._charging = false;
-            e._rechargeCooldown = randomBetween(180, 300); // ~3-5s cooldown before next charge
+            e._rechargeCooldown = randomBetween(60, 120); // ~1-2s cooldown before next charge
             e.vx = randomBetween(-0.8, 0.8);
             e.vy = randomBetween(0.3, 0.8);
           }
