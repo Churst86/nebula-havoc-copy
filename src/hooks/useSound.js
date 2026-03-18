@@ -254,12 +254,22 @@ function startBossMusic() {
   } catch {}
 }
 
+let userVolume = 0.8; // default
+
 export const sounds = {
+  setMasterVolume(vol) {
+    userVolume = Math.max(0, Math.min(1, vol));
+    try {
+      const ctx = getCtx();
+      const master = getMasterGain(ctx);
+      master.gain.setTargetAtTime(userVolume, ctx.currentTime, 0.1);
+    } catch {}
+  },
   setPauseVolume(paused) {
     try {
       const ctx = getCtx();
       const master = getMasterGain(ctx);
-      master.gain.setTargetAtTime(paused ? 0.08 : 1.0, ctx.currentTime, 0.15);
+      master.gain.setTargetAtTime(paused ? userVolume * 0.1 : userVolume, ctx.currentTime, 0.15);
     } catch {}
   },
   shoot()        { playTone({ freq: 880, type: 'square', duration: 0.06, gain: 0.08, freqEnd: 440 }); },
