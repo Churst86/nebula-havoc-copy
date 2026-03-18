@@ -265,6 +265,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
      const laserTier  = pw.laser  || 0;
      const photonTier = pw.photon || 0;
      const bounceTier = pw.bounce || 0;
+     const missileTier = pw.missile || 0;
+
+    if (missileTier > 0) fireMissiles(s, p, missileTier);
 
     // Photon: fixed size orb, pierces 1 extra enemy per tier starting at lvl 2
     // At tier 10: orbiting projectile that still moves forward
