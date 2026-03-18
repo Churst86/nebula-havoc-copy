@@ -647,26 +647,47 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       ctx.fillStyle = '#ff44ff';
       ctx.fillRect(b.x - w, b.y - 12, w * 2, 22);
     } else if (b.type === 'raygun') {
-      const sz = b.size || 9;
+      const sz = b.size || 10;
+      const isSuperOrbit = b.isSuperOrbit;
+      const hue = isSuperOrbit ? (Date.now() * 0.4) % 360 : 150; // rainbow for tier 10, green otherwise
+      const orbColor = isSuperOrbit ? `hsl(${hue},100%,65%)` : '#44ffaa';
+      const orbColorA = isSuperOrbit ? `hsla(${hue},100%,65%,0.3)` : 'rgba(68,255,170,0.25)';
+
       // Outer glow
-      ctx.shadowColor = '#44ffaa'; ctx.shadowBlur = sz * 2;
-      ctx.fillStyle = 'rgba(68,255,170,0.25)';
+      ctx.shadowColor = orbColor; ctx.shadowBlur = sz * 2;
+      ctx.fillStyle = orbColorA;
       ctx.beginPath(); ctx.arc(b.x, b.y, sz + 4, 0, Math.PI * 2); ctx.fill();
       // Main orb
-      ctx.fillStyle = '#44ffaa';
+      ctx.fillStyle = orbColor;
       ctx.beginPath(); ctx.arc(b.x, b.y, sz, 0, Math.PI * 2); ctx.fill();
       // Bright core
       ctx.fillStyle = '#ffffff';
       ctx.beginPath(); ctx.arc(b.x, b.y, sz * 0.4, 0, Math.PI * 2); ctx.fill();
-      // Orbiting orbs (count = tier)
-      const orbitCount = Math.round((sz - 6) / 3) + 2; // 2–4
-      for (let oi = 0; oi < orbitCount; oi++) {
-        const oa = (b.orbitAngle || 0) + (oi / orbitCount) * Math.PI * 2;
-        const ox = b.x + Math.cos(oa) * (sz + 8);
-        const oy = b.y + Math.sin(oa) * (sz + 8);
-        ctx.shadowColor = '#44ffaa'; ctx.shadowBlur = 8;
-        ctx.fillStyle = '#44ffaa';
-        ctx.beginPath(); ctx.arc(ox, oy, 3, 0, Math.PI * 2); ctx.fill();
+
+      if (isSuperOrbit) {
+        // Tier 10: 6 orbiting mini orbs that spin and still travel forward with the bullet
+        const ORBIT_COUNT = 6;
+        const ORBIT_R = sz + 10;
+        for (let oi = 0; oi < ORBIT_COUNT; oi++) {
+          const oa = (b.orbitPhase || 0) + (oi / ORBIT_COUNT) * Math.PI * 2;
+          const hue2 = ((hue + oi * 60) % 360);
+          const c2 = `hsl(${hue2},100%,70%)`;
+          const ox = b.x + Math.cos(oa) * ORBIT_R;
+          const oy = b.y + Math.sin(oa) * ORBIT_R;
+          ctx.shadowColor = c2; ctx.shadowBlur = 10;
+          ctx.fillStyle = c2;
+          ctx.beginPath(); ctx.arc(ox, oy, 4, 0, Math.PI * 2); ctx.fill();
+        }
+      } else {
+        // Normal: 2 static orbiting dots
+        for (let oi = 0; oi < 2; oi++) {
+          const oa = (b.orbitAngle || 0) + (oi / 2) * Math.PI * 2;
+          const ox = b.x + Math.cos(oa) * (sz + 8);
+          const oy = b.y + Math.sin(oa) * (sz + 8);
+          ctx.shadowColor = orbColor; ctx.shadowBlur = 8;
+          ctx.fillStyle = orbColor;
+          ctx.beginPath(); ctx.arc(ox, oy, 3, 0, Math.PI * 2); ctx.fill();
+        }
       }
     } else if (isEnemy) {
       const isBoss = b.boss;
