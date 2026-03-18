@@ -101,6 +101,16 @@ export default function Game() {
     setGameState('gameover');
   }, []);
 
+  const handleProgressToDifficulty = useCallback(() => {
+    const nextDifficulty = NEXT_DIFFICULTY[settings.difficulty];
+    if (nextDifficulty) {
+      const newSettings = { ...settings, difficulty: nextDifficulty };
+      handleSettingsChange(newSettings);
+      // Start new game with current powerups
+      handleStart(true);
+    }
+  }, [settings, handleStart]);
+
   const handlePauseToggle = useCallback(() => {
     setIsPaused(p => !p);
     setShowPauseOptions(false);
