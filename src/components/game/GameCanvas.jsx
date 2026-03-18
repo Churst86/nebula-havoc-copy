@@ -1354,44 +1354,42 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           e.hp--;
           sounds.hit();
           b.hit = true;
-          // Bomb: immediately charge at player on first hit
-          if (e.type === 'bomb' && e.hp === 1 && !e._charging) {
+          // Mine: immediately charge at player on first hit (hp goes from 3 to 2)
+          if (e.type === 'mine' && e.hp === e.maxHp - 1 && !e._charging) {
             const dx = p.x - e.x, dy = p.y - e.y;
             const len = Math.hypot(dx, dy) || 1;
             e._chargeDx = dx / len; e._chargeDy = dy / len;
-            e._charging = true; e._chargeDuration = 30;
-            e._chargeTimer = randomBetween(150, 280);
+            e._charging = true; e._chargeDuration = 45;
+            e._chargeTimer = randomBetween(60, 120);
+            e._rechargeCooldown = 0;
           }
           if (e.hp <= 0) {
             e.dead = true;
-            // Bomb AoE explosion on death
-            if (e.type === 'bomb') {
-              const BOMB_RADIUS = 140;
+            // Mine AoE explosion on death
+            if (e.type === 'mine') {
+              const MINE_RADIUS = 160;
               spawnExplosion(s, e.x, e.y, '#ff8800', 60);
               spawnExplosion(s, e.x, e.y, '#ffdd00', 35);
               spawnExplosion(s, e.x, e.y, '#ffffff', 15);
-              // Multiple shockwave rings
               s.particles.push({ x: e.x, y: e.y, vx: 0, vy: 0, r: 10, alpha: 1, color: '#ff8800', shockwave: true, shockwaveR: 10 });
               s.particles.push({ x: e.x, y: e.y, vx: 0, vy: 0, r: 10, alpha: 0.7, color: '#ffdd00', shockwave: true, shockwaveR: 5 });
-              // Damage nearby enemies
               s.enemies.forEach(ne => {
                 if (ne === e || ne.dead) return;
-                if (Math.hypot(ne.x - e.x, ne.y - e.y) < BOMB_RADIUS) {
+                if (Math.hypot(ne.x - e.x, ne.y - e.y) < MINE_RADIUS) {
                   ne.hp -= 3;
                   spawnExplosion(s, ne.x, ne.y, '#ff8800', 12);
                   if (ne.hp <= 0) ne.dead = true;
                 }
               });
-              // Damage player if nearby (unless shield/invincibility frames — star does NOT protect here)
-              if (Math.hypot(p.x - e.x, p.y - e.y) < BOMB_RADIUS) {
+              if (Math.hypot(p.x - e.x, p.y - e.y) < MINE_RADIUS) {
                 const savedStar = s.starInvincibleTimer;
-                s.starInvincibleTimer = 0; // temporarily disable star for bomb AoE
+                s.starInvincibleTimer = 0;
                 takeDamage(s);
                 s.starInvincibleTimer = savedStar;
                 spawnExplosion(s, p.x, p.y, '#ff8800', 18);
               }
             }
-            const pts = e.type === 'boss' ? 5000 : e.type === 'dropper' ? 500 : e.type === 'elite' ? 300 : e.type === 'bomb' ? 200 : 100;
+            const pts = e.type === 'boss' ? 5000 : e.type === 'dropper' ? 500 : e.type === 'elite' ? 300 : e.type === 'mine' ? 300 : e.type === 'eater' ? 400 : 100;
             s.score += pts;
             onScoreChange(s.score);
             sounds.kill();
