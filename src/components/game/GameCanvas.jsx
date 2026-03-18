@@ -984,6 +984,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         const spreadTier = s.powerups.spread || 0;
         const rapidfireBonus = (s.powerups.rapidfire || 0) === 1 ? 10 : (s.powerups.rapidfire || 0) * 8;
         s.spreadFireTimer = Math.max(12, 55 - spreadTier * 4 - rapidfireBonus);
+         if ((s.powerups.reverse || 0) > 0) {
+      s.reverseFireTimer--;
+      if (s.reverseFireTimer <= 0) {
+         fireReverseShot(s);
+         const reverseTier = s.powerups.reverse || 0;
+         const rapidfireBonus = (s.powerups.rapidfire || 0) === 1 ? 10 : (s.powerups.rapidfire || 0) * 8;
+         const baseDelay = Math.max(12, 55 - (reverseTier > 3 ? (reverseTier - 3) * 3 : 0) - rapidfireBonus);
+         s.reverseFireTimer = baseDelay;
       }
     }
 
