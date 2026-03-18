@@ -496,18 +496,18 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       ctx.font = 'bold 12px monospace';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(DROPPER_LABELS[e.dropType] || '★', 0, 1);
-    } else if (e.type === 'bomb') {
-      const mad = e.hp < e.maxHp; // hit once = mad/charging
+    } else if (e.type === 'mine') {
+      const damaged = e.hp < e.maxHp;
       const isCharging = e._charging;
-      const pulse = 0.7 + Math.sin(Date.now() * (mad ? 0.022 : 0.008)) * 0.3;
-      const bombColor = isCharging ? '#ffffff' : mad ? `rgba(255,${Math.floor(80 + pulse * 80)},0,1)` : '#ff8800';
-      ctx.shadowColor = bombColor; ctx.shadowBlur = isCharging ? 40 : 16 + pulse * 10;
+      const pulse = 0.7 + Math.sin(Date.now() * (damaged ? 0.022 : 0.008)) * 0.3;
+      const mineColor = isCharging ? '#ffffff' : damaged ? `rgba(255,${Math.floor(80 + pulse * 80)},0,1)` : '#ff8800';
+      ctx.shadowColor = mineColor; ctx.shadowBlur = isCharging ? 40 : 16 + pulse * 10;
 
-      // Spiky body — star polygon (inner circle + outer spikes)
+      // Spiky body — star polygon
       const SPIKES = 8;
       const innerR = 12;
-      const outerR = mad ? 20 + pulse * 3 : 18;
-      ctx.fillStyle = isCharging ? 'rgba(255,255,200,0.95)' : mad ? `rgba(255,${Math.floor(60 + pulse * 60)},0,0.9)` : 'rgba(255,120,0,0.9)';
+      const outerR = damaged ? 20 + pulse * 3 : 18;
+      ctx.fillStyle = isCharging ? 'rgba(255,255,200,0.95)' : damaged ? `rgba(255,${Math.floor(60 + pulse * 60)},0,0.9)` : 'rgba(255,120,0,0.9)';
       ctx.beginPath();
       for (let i = 0; i < SPIKES * 2; i++) {
         const angle = (i / (SPIKES * 2)) * Math.PI * 2 - Math.PI / 2;
@@ -516,10 +516,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
                 : ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
       }
       ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = bombColor; ctx.lineWidth = 1.5;
+      ctx.strokeStyle = mineColor; ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      // Fuse on top (skip when charging — too fast)
+      // Fuse on top (skip when charging)
       if (!isCharging) {
         ctx.strokeStyle = '#ffdd00'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(2, -18); ctx.quadraticCurveTo(10, -28, 6, -34); ctx.stroke();
@@ -529,11 +529,60 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         ctx.beginPath(); ctx.arc(6, -34, 1.5, 0, Math.PI * 2); ctx.fill();
       }
 
+      // HP pips
+      for (let hi = 0; hi < e.hp; hi++) {
+        const a = (hi / 3) * Math.PI * 2 - Math.PI / 2;
+        ctx.fillStyle = isCharging ? '#ff2200' : '#ff8800';
+        ctx.beginPath(); ctx.arc(Math.cos(a) * 8, Math.sin(a) * 8, 3, 0, Math.PI * 2); ctx.fill();
+      }
+
       // Face / charge indicator
-      ctx.fillStyle = isCharging ? '#ff2200' : mad ? '#fff' : '#330000';
-      ctx.font = `bold ${isCharging ? 13 : mad ? 13 : 11}px sans-serif`;
+      ctx.fillStyle = isCharging ? '#ff2200' : damaged ? '#fff' : '#330000';
+      ctx.font = `bold ${isCharging ? 13 : damaged ? 13 : 11}px sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(isCharging ? '!!!' : mad ? '>_<' : '^_^', 0, 1);
+      ctx.fillText(isCharging ? '!!!' : damaged ? '>_<' : '^_^', 0, 1);
+    } else if (e.type === 'eater') {
+      // Block-eater: green hungry alien that seeks blocks
+      const eatAnim = e._eating ? Math.sin(Date.now() * 0.05) : 0;
+      const pulse = 0.7 + Math.sin(Date.now() * 0.01) * 0.3;
+      const eaterColor = e._eating ? '#00ff44' : '#44ff88';
+      ctx.shadowColor = eaterColor; ctx.shadowBlur = 14 + pulse * 8;
+
+      // Blobby hexagon body
+      ctx.strokeStyle = eaterColor; ctx.lineWidth = 2;
+      ctx.fillStyle = e._eating ? 'rgba(0,255,68,0.25)' : 'rgba(68,255,136,0.15)';
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
+        const r = 18 + Math.sin(Date.now() * 0.008 + i) * 2;
+        i === 0 ? ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r) : ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+      }
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+
+      // Eyes
+      const eyeY = -4 + eatAnim * 2;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(-6, eyeY, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(6, eyeY, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#003300';
+      ctx.beginPath(); ctx.arc(-6, eyeY + 1, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(6, eyeY + 1, 2, 0, Math.PI * 2); ctx.fill();
+
+      // Mouth — open wide when eating
+      ctx.strokeStyle = '#003300'; ctx.lineWidth = 2;
+      ctx.beginPath();
+      if (e._eating) {
+        ctx.arc(0, 6, 8, 0, Math.PI);
+      } else {
+        ctx.arc(0, 8, 5, 0.2, Math.PI - 0.2);
+      }
+      ctx.stroke();
+
+      // HP text
+      ctx.fillStyle = eaterColor;
+      ctx.font = 'bold 8px monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(`♥${e.hp}`, 0, -22);
     } else if (e.type === 'elite') {
       ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14;
       ctx.strokeStyle = '#ff44ff'; ctx.lineWidth = 2;
