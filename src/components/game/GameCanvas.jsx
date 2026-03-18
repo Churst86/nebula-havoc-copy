@@ -1227,7 +1227,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     // Move bullets
     s.bullets = s.bullets.filter(b => {
       b.x += b.vx; b.y += b.vy;
-      if (b.type === 'raygun') b.orbitAngle = ((b.orbitAngle || 0) + 0.25);
+      if (b.type === 'raygun') {
+        b.orbitAngle = ((b.orbitAngle || 0) + 0.25);
+        // Tier 10 super orbit: orbiting mini-orbs that spin around the bullet as it moves forward
+        if (b.isSuperOrbit) b.orbitPhase = ((b.orbitPhase || 0) + 0.18);
+      }
       if (b.type === 'bounce') {
         if (b.x <= 0 || b.x >= W) {
           if (b.bouncesLeft > 0) { b.vx *= -1; b.x = Math.max(1, Math.min(W - 1, b.x)); b.bouncesLeft--; }
