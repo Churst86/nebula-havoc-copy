@@ -53,10 +53,10 @@ export default function CongratulationsScreen({ difficulty, score, onPlayNext, o
                 Ready for the next challenge?
               </p>
               <Button
-                onClick={onPlayNext}
+                onClick={() => setShowSelector(true)}
                 className="w-full bg-primary hover:bg-primary/90 text-lg h-12"
               >
-                Play {difficulty === 'easy' ? 'CHALLENGING' : 'HELL'} Mode
+                Choose Difficulty
               </Button>
             </>
           ) : (
