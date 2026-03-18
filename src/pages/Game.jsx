@@ -93,11 +93,20 @@ export default function Game() {
     const onKey = (e) => {
       if (e.key === 'Enter' && (gameState === 'playing' || gameState === 'resuming')) {
         setIsPaused(p => !p);
+        setShowPauseOptions(false);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [gameState]);
+
+  // Apply master volume to sounds when settings change
+  useEffect(() => {
+    try {
+      const { sounds } = require('../hooks/useSound.js');
+      sounds.setMasterVolume && sounds.setMasterVolume(settings.soundVolume);
+    } catch {}
+  }, [settings.soundVolume]);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black select-none" tabIndex={-1}>
