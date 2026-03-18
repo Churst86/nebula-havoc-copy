@@ -2,8 +2,9 @@ import React from 'react';
 import { Heart, Zap, Shield, RefreshCw, Pause, Play, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+const GUN_POWERUPS = ['shotgun', 'laser', 'bounce'];
 const POWERUP_COLORS = {
-  spread:    '#ffdd00',
+  shotgun:   '#ffdd00',
   laser:     '#ff44ff',
   photon:    '#44ffaa',
   wingman:   '#44aaff',
@@ -13,7 +14,7 @@ const POWERUP_COLORS = {
   reverse:   '#ff6600',
 };
 const POWERUP_LABELS = {
-  spread:    'SPREAD',
+  shotgun:   'SHOTGUN',
   laser:     'LASER',
   photon:    'PHOTON',
   wingman:   'WINGMAN',
