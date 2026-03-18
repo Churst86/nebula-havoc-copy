@@ -427,28 +427,43 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(DROPPER_LABELS[e.dropType] || '★', 0, 1);
     } else if (e.type === 'bomb') {
-      const mad = e.hp < e.maxHp; // hit once = mad
-      const pulse = 0.7 + Math.sin(Date.now() * (mad ? 0.018 : 0.008)) * 0.3;
-      const bombColor = mad ? `rgba(255,${Math.floor(80 + pulse * 80)},0,1)` : '#ff8800';
-      ctx.shadowColor = bombColor; ctx.shadowBlur = 16 + pulse * 10;
-      // Body — circle
-      ctx.fillStyle = mad ? `rgba(255,${Math.floor(60 + pulse * 60)},0,0.85)` : 'rgba(255,136,0,0.85)';
-      ctx.beginPath(); ctx.arc(0, 0, 16, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = bombColor; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(0, 0, 16, 0, Math.PI * 2); ctx.stroke();
-      // Fuse on top
-      ctx.strokeStyle = '#ffdd00'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(2, -16); ctx.quadraticCurveTo(10, -26, 6, -32); ctx.stroke();
-      // Fuse spark
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath(); ctx.arc(6, -32, 2.5, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#ffff00';
-      ctx.beginPath(); ctx.arc(6, -32, 1.5, 0, Math.PI * 2); ctx.fill();
-      // Face
-      ctx.fillStyle = mad ? '#fff' : '#330000';
-      ctx.font = `bold ${mad ? 14 : 12}px sans-serif`;
+      const mad = e.hp < e.maxHp; // hit once = mad/charging
+      const isCharging = e._charging;
+      const pulse = 0.7 + Math.sin(Date.now() * (mad ? 0.022 : 0.008)) * 0.3;
+      const bombColor = isCharging ? '#ffffff' : mad ? `rgba(255,${Math.floor(80 + pulse * 80)},0,1)` : '#ff8800';
+      ctx.shadowColor = bombColor; ctx.shadowBlur = isCharging ? 40 : 16 + pulse * 10;
+
+      // Spiky body — star polygon (inner circle + outer spikes)
+      const SPIKES = 8;
+      const innerR = 12;
+      const outerR = mad ? 20 + pulse * 3 : 18;
+      ctx.fillStyle = isCharging ? 'rgba(255,255,200,0.95)' : mad ? `rgba(255,${Math.floor(60 + pulse * 60)},0,0.9)` : 'rgba(255,120,0,0.9)';
+      ctx.beginPath();
+      for (let i = 0; i < SPIKES * 2; i++) {
+        const angle = (i / (SPIKES * 2)) * Math.PI * 2 - Math.PI / 2;
+        const r = i % 2 === 0 ? outerR : innerR;
+        i === 0 ? ctx.moveTo(Math.cos(angle) * r, Math.sin(angle) * r)
+                : ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+      }
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = bombColor; ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Fuse on top (skip when charging — too fast)
+      if (!isCharging) {
+        ctx.strokeStyle = '#ffdd00'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(2, -18); ctx.quadraticCurveTo(10, -28, 6, -34); ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(6, -34, 2.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ffff00';
+        ctx.beginPath(); ctx.arc(6, -34, 1.5, 0, Math.PI * 2); ctx.fill();
+      }
+
+      // Face / charge indicator
+      ctx.fillStyle = isCharging ? '#ff2200' : mad ? '#fff' : '#330000';
+      ctx.font = `bold ${isCharging ? 13 : mad ? 13 : 11}px sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(mad ? '>_<' : '^_^', 0, 2);
+      ctx.fillText(isCharging ? '!!!' : mad ? '>_<' : '^_^', 0, 1);
     } else if (e.type === 'elite') {
       ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14;
       ctx.strokeStyle = '#ff44ff'; ctx.lineWidth = 2;
