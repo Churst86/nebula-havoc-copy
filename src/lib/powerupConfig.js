@@ -23,7 +23,7 @@ export const POWERUP_LABELS = {
 };
 
 export const DROPPER_COLORS = {
-  spread: '#ffdd00',
+  shotgun: '#ffdd00',
   laser: '#ff44ff',
   photon: '#44ffaa',
   wingman: '#44aaff',
@@ -36,7 +36,7 @@ export const DROPPER_COLORS = {
 };
 
 export const DROPPER_LABELS = {
-  spread: 'S',
+  shotgun: 'S',
   laser: 'L',
   photon: 'P',
   wingman: 'W',
@@ -48,4 +48,4 @@ export const DROPPER_LABELS = {
   star: '★',
 };
 
-export const DROPPER_ROTATION = ['spread', 'laser', 'photon', 'bounce', 'wingman', 'shield', 'speed', 'rapidfire', 'reverse'];
+export const DROPPER_ROTATION = ['shotgun', 'laser', 'photon', 'bounce', 'wingman', 'shield', 'speed', 'rapidfire', 'reverse'];
