@@ -1596,6 +1596,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           if (!isLocked) s.lockedPowerups.push(item.type);
           s.powerups[item.type] = Math.min((s.powerups[item.type] || 0) + 1, 10);
           sounds.powerup();
+          // Check for gun level 10 trophy
+          if (s.powerups[item.type] === 10 && !trackedMilestonesRef.current.gun_level_10) {
+            trackedMilestonesRef.current.gun_level_10 = true;
+            onTrophyEarned?.('gun_level_10');
+          }
         }
         onPowerupChange({ ...s.powerups, shieldHp: s.shieldHp, starInvincible: s.starInvincibleTimer > 0 });
         return false;
