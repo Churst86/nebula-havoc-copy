@@ -50,4 +50,4 @@ export const DROPPER_LABELS = {
   star: '★',
 };
 
-export const DROPPER_ROTATION = ['shotgun', 'laser', 'photon', 'bounce', 'missile', 'wingman', 'shield', 'speed', 'rapidfire', 'reverse'];
+export const DROPPER_ROTATION = ['shotgun', 'laser', 'photon', 'bounce', 'missile', 'wingman', 'shield', 'speed', 'rapidfire'];
