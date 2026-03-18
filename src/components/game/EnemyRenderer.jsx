@@ -28,11 +28,16 @@ export function drawEnemy(ctx, e) {
     ctx.fill();
   } else if (e.type === 'basic') {
     ctx.translate(e.x, e.y);
-    ctx.shadowColor = '#00ff00';
-    ctx.shadowBlur = 8;
-    ctx.fillStyle = '#00ff00';
+    ctx.shadowColor = '#44ff88';
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = '#44ff88';
     ctx.beginPath();
-    ctx.arc(0, 0, e.w / 2, 0, Math.PI * 2);
+    ctx.moveTo(0, -e.h / 2);
+    ctx.lineTo(e.w / 2, e.h / 4);
+    ctx.lineTo(e.w / 4, e.h / 2);
+    ctx.lineTo(-e.w / 4, e.h / 2);
+    ctx.lineTo(-e.w / 2, e.h / 4);
+    ctx.closePath();
     ctx.fill();
   } else if (e.type === 'mine') {
     ctx.translate(e.x, e.y);
