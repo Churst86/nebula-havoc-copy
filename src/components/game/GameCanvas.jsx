@@ -406,9 +406,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     if (e.type === 'boss') {
       const bt = e.tier || 1;
       // Tier color palette
-      const tierColor = ['#ff0066','#ff6600','#aa00ff','#00ccff'][Math.min(bt - 1, 3)];
-      const tierFill = ['rgba(255,0,102,0.12)','rgba(255,100,0,0.12)','rgba(170,0,255,0.12)','rgba(0,200,255,0.12)'][Math.min(bt - 1, 3)];
-      const tierEmoji = ['☠','👁','💀','⬡'][Math.min(bt - 1, 3)];
+      const tierIdx = Math.min(bt - 1, 3);
+      const tierColor = ['#ff0066','#ff6600','#aa00ff','#00ccff'][tierIdx];
+      const tierFill = ['rgba(255,0,102,0.12)','rgba(255,100,0,0.12)','rgba(170,0,255,0.12)','rgba(0,200,255,0.12)'][tierIdx];
+      const tierEmoji = ['☠','👁','💀','⬡'][tierIdx];
 
       ctx.shadowColor = tierColor; ctx.shadowBlur = 30 + bt * 4;
       ctx.strokeStyle = tierColor; ctx.lineWidth = 3;
