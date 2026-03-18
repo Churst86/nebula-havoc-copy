@@ -1,0 +1,51 @@
+// Powerup configuration — colors, labels, and rotation
+export const POWERUP_COLORS = {
+  spread: '#ffdd00',
+  laser: '#ff44ff',
+  photon: '#44ffaa',
+  wingman: '#44aaff',
+  bounce: '#aaff00',
+  speed: '#ff8800',
+  rapidfire: '#ff4488',
+  reverse: '#ff6600',
+  star: '#ffffff',
+};
+
+export const POWERUP_LABELS = {
+  spread: 'SPREAD',
+  laser: 'LASER',
+  photon: 'PHOTON',
+  wingman: 'WINGMAN',
+  bounce: 'BOUNCE',
+  speed: 'SPEED',
+  rapidfire: 'RAPID FIRE',
+  reverse: 'REVERSE',
+};
+
+export const DROPPER_COLORS = {
+  spread: '#ffdd00',
+  laser: '#ff44ff',
+  photon: '#44ffaa',
+  wingman: '#44aaff',
+  shield: '#00ccff',
+  bounce: '#aaff00',
+  speed: '#ff8800',
+  rapidfire: '#ff4488',
+  reverse: '#ff6600',
+  star: '#ffffff',
+};
+
+export const DROPPER_LABELS = {
+  spread: 'S',
+  laser: 'L',
+  photon: 'P',
+  wingman: 'W',
+  shield: '🛡',
+  bounce: 'B',
+  speed: '▶',
+  rapidfire: '⚡',
+  reverse: 'R',
+  star: '★',
+};
+
+export const DROPPER_ROTATION = ['spread', 'laser', 'photon', 'bounce', 'wingman', 'shield', 'speed', 'rapidfire', 'reverse'];
