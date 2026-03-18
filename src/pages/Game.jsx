@@ -80,6 +80,9 @@ export default function Game() {
           localStorage.setItem('completedDifficulties', JSON.stringify(updated));
           return updated;
         });
+        // Award difficulty trophy
+        const trophyMap = { easy: 'easy_complete', challenging: 'challenging_complete', hell: 'hell_complete' };
+        handleTrophyEarned(trophyMap[currentDifficulty]);
         setGameState('congratulations');
       } else {
         setGameState('gameover');
