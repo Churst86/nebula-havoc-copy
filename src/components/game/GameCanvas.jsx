@@ -199,8 +199,21 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     s.enemies = enemies;
   }
 
+  function getNextDropperType(s) {
+    // Cycle through DROPPER_ROTATION, skipping any gun powerup already at tier 10
+    for (let i = 0; i < DROPPER_ROTATION.length; i++) {
+      const idx = (s.dropperRotationIdx + i) % DROPPER_ROTATION.length;
+      const t = DROPPER_ROTATION[idx];
+      if ((s.powerups[t] || 0) >= 10) continue; // skip maxed
+      s.dropperRotationIdx = idx;
+      return t;
+    }
+    // All maxed — fall back to non-offensive specials
+    return DROPPER_ROTATION[s.dropperRotationIdx % DROPPER_ROTATION.length];
+  }
+
   function spawnDropper(W, s, forcedType) {
-    const dropType = forcedType || DROPPER_ROTATION[s.dropperRotationIdx % DROPPER_ROTATION.length];
+    const dropType = forcedType || getNextDropperType(s);
     const dc = DROPPER_COLORS[dropType] || '#ffd700';
     s.enemies.push({
       type: 'dropper',
