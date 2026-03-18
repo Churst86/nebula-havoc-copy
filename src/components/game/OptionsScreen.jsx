@@ -78,11 +78,14 @@ export default function OptionsScreen({ settings, onSettingsChange, onBack }) {
             <Gauge className="w-4 h-4" />
             Game Speed
           </div>
+          <div className="flex items-center justify-between gap-3 mb-2 text-xs text-muted-foreground">
+            <span>Slow</span>
+            <span>Fast</span>
+          </div>
           <Slider color="#44ff88" min={15} max={60} step={1}
             value={gameSpeed}
             onChange={v => update('gameSpeed', v)}
-            label={`${gameSpeed} fps`} />
-          <p className="text-xs text-muted-foreground text-center">Default: 30 fps</p>
+            label="" />
         </div>
 
         {/* Brightness */}
