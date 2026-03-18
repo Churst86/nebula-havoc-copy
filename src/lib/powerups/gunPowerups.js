@@ -1,8 +1,6 @@
 // Gun powerup firing logic
 import { fireMissiles, updateMissiles } from '../missileUtils.js';
 
-const SPREAD_RELOAD_FRAMES = 80;
-
 export function fireSpreadShot(s) {
   const p = s.player;
   const shotgunTier = s.powerups.shotgun || 0;
@@ -18,7 +16,7 @@ export function fireSpreadShot(s) {
     s.bullets.push({ x: p.x + side * 12, y: p.y - 18, vx: side * 2, vy: -10, type: 'spread', spreadTier: shotgunTier, pelletCount, spreadDeg, armed: false });
   }
   s.spreadShotsLeft--;
-  if (s.spreadShotsLeft <= 0) s.spreadReloadTimer = SPREAD_RELOAD_FRAMES;
+  if (s.spreadShotsLeft <= 0) s.spreadReloadTimer = 80;
 }
 
 export function updateGunPowerups(s, keys) {

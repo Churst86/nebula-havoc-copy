@@ -398,10 +398,6 @@ export const sounds = {
       setTimeout(() => playToneSfx({ freq: 440 + i * 220, type: 'sine', duration: 0.15, gain: 0.2 }), t * 1000);
     });
   },
-  enemyExplode() {
-    playToneSfx({ freq: 300, type: 'square', duration: 0.12, gain: 0.25, freqEnd: 100 });
-    playNoiseSfx({ duration: 0.12, gain: 0.2, filterFreq: 2000 });
-  },
 
   // Called by GameCanvas on every wave start
   startWaveMusic(wave) { startWaveMusic(wave); },
