@@ -1524,12 +1524,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         const dx = b.x - e.x, dy = b.y - e.y;
         if (Math.abs(dx) < e.w && Math.abs(dy) < e.h) {
           if (b.type === 'spread') { explodeSpread(b, newSpreadPellets); b.hit = true; return; }
-          // Photon pierce: skip enemies already pierced, consume one pierce count
-          if (b.type === 'photon' && b.pierceCount > 0) {
-            if (b.piercedEnemies && b.piercedEnemies.includes(e)) return;
-            b.piercedEnemies = b.piercedEnemies || [];
-            b.piercedEnemies.push(e);
-            b.pierceCount--;
+          // Photon: pierces if count>0, always damages
+          if (b.type === 'photon') {
+            const canPierce = !b.piercedEnemies?.includes(e) && (b.pierceCount > 0);
+            if (b.piercedEnemies?.includes(e) && b.pierceCount <= 0) return;
+            if (canPierce) { (b.piercedEnemies ||= []).push(e); b.pierceCount--; }
             e.hp--;
             sounds.hit();
             spawnExplosion(s, e.x, e.y, '#44ffaa', 4);
