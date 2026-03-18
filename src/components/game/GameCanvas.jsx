@@ -689,11 +689,23 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(b.x - 1, b.y - 9, 2, 18);
     } else if (b.type === 'bounce') {
-      ctx.shadowColor = '#aaff00'; ctx.shadowBlur = 12;
-      ctx.fillStyle = '#aaff00';
-      ctx.beginPath(); ctx.arc(b.x, b.y, 5, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath(); ctx.arc(b.x, b.y, 2, 0, Math.PI * 2); ctx.fill();
+      if (b.isSuper) {
+        // Tier 10: large invulnerable shot
+        const sz = b.size || 8;
+        ctx.shadowColor = '#ffff00'; ctx.shadowBlur = 20;
+        ctx.fillStyle = '#aaff00';
+        ctx.beginPath(); ctx.arc(b.x, b.y, sz, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#ffff00'; ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(b.x, b.y, sz * 0.4, 0, Math.PI * 2); ctx.fill();
+      } else {
+        ctx.shadowColor = '#aaff00'; ctx.shadowBlur = 12;
+        ctx.fillStyle = '#aaff00';
+        ctx.beginPath(); ctx.arc(b.x, b.y, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(b.x, b.y, 2, 0, Math.PI * 2); ctx.fill();
+      }
     } else if (b.type === 'laser') {
       const w = 3 + (b.fat || 1) * 2;
       ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14 + (b.fat || 1) * 4;
