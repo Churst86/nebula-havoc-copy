@@ -794,12 +794,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       s.laserCharge = 0; s.laserCooldown = 0; s.laserBeamActive = false; s.laserBeamTimer = 0;
     }
 
-    // ── Dropper mid-wave spawn ────────────────────────────────
-    if (s.dropperSpawnTimer > 0) {
-      s.dropperSpawnTimer--;
-      if (s.dropperSpawnTimer <= 0) {
-        spawnDropper(W, s);
-      }
+    // ── Dropper timer-based spawn (independent of wave) ──────
+    s.dropperSpawnTimer--;
+    if (s.dropperSpawnTimer <= 0) {
+      spawnDropper(W, s);
+      s.dropperSpawnTimer = DROPPER_SPAWN_INTERVAL;
     }
 
     // ── Enemy movement ────────────────────────────────────────
