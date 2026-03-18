@@ -73,13 +73,22 @@ export default function HighScores({ score, wave, onRestart, onReturnToTitle, is
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="absolute inset-0 z-30 flex items-center justify-center bg-black/90 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-30 flex items-center justify-center overflow-y-auto"
+      style={{
+        backgroundImage: 'url(https://media.base44.com/images/public/69b94c96f2e7813ac4b009de/4dc774d1a_gameoverscreenfornebulahavok.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+      }}
     >
+      {/* Dark overlay for text legibility */}
+      <div className="absolute inset-0 bg-black/40" />
+      
       <motion.div
         initial={{ scale: 0.85, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.1, type: 'spring', stiffness: 180 }}
-        className="text-center space-y-5 p-8 max-w-sm w-full"
+        className="relative z-10 text-center space-y-5 p-8 max-w-sm w-full"
       >
         <h1 className="text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-red-400 to-red-600">
           GAME OVER
