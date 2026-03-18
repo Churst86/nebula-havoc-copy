@@ -28,8 +28,9 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
   const activePowerupKeys = Object.keys(POWERUP_LABELS).filter(k => (powerups[k] || 0) > 0);
 
   return (
-    <div className="absolute top-0 left-0 right-0 z-20 pointer-events-none">
-      <div className="flex items-center justify-between px-6 py-4">
+    <div className="absolute inset-0 z-20 pointer-events-none">
+      {/* Top bar: Score | Wave+Powerups | Lives */}
+      <div className="flex items-start justify-between px-6 py-4">
 
         {/* Score */}
         <div className="flex items-center gap-3">
@@ -45,14 +46,12 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
             Wave {wave}
           </div>
           <div className="flex flex-wrap justify-center gap-1">
-            {/* Star invincibility */}
             {starInvincible && (
               <div className="text-xs font-bold px-2 py-0.5 rounded-full animate-pulse"
                 style={{ color: '#fff', border: '1px solid #fff', background: 'rgba(255,255,255,0.15)' }}>
                 ★ INVINCIBLE
               </div>
             )}
-            {/* Shield indicator */}
             {shieldHp > 0 && (
               <div className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full"
                 style={{ color: '#00ccff', border: '1px solid #00ccff', background: '#00ccff22' }}>
@@ -60,7 +59,6 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
                 {shieldHp <= 5 ? '●'.repeat(shieldHp) : `×${shieldHp}`}
               </div>
             )}
-            {/* Power-up badges */}
             {activePowerupKeys.map(key => {
               const tier = powerups[key] || 1;
               const color = POWERUP_COLORS[key];
@@ -78,19 +76,9 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
           </div>
         </div>
 
-        {/* Pause Button */}
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={onPauseToggle}
-          className="absolute top-4 right-4 text-primary hover:bg-primary/10"
-        >
-          {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
-        </Button>
-
         {/* Lives + Continues */}
         <div className="flex flex-col items-end gap-1">
-          <div className="flex items-center gap-1.5 flex-wrap justify-end max-w-32">
+          <div className="flex items-center gap-1.5 flex-wrap justify-end max-w-36">
             {Array.from({ length: maxLives || 3 }).map((_, i) => (
               <Heart key={i}
                 className={`w-5 h-5 transition-all duration-300 ${
@@ -107,6 +95,19 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
             </div>
           )}
         </div>
+      </div>
+
+      {/* Pause button — bottom-right, clear of all other UI */}
+      <div className="absolute bottom-6 right-6 pointer-events-auto">
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={onPauseToggle}
+          className="text-primary hover:bg-primary/10 w-12 h-12"
+          title="Pause [Enter]"
+        >
+          {isPaused ? <Play className="w-6 h-6" /> : <Pause className="w-6 h-6" />}
+        </Button>
       </div>
     </div>
   );
