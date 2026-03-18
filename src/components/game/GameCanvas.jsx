@@ -155,17 +155,19 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         });
       }
     }
-    // Spawn block-eater starting wave 4
+    // Spawn block-eater mini-boss starting wave 4
     if (wave >= 4) {
+      const eaterHp = 15 + wave * 3; // mini-boss HP scales with wave
       enemies.push({
         type: 'eater',
-        x: randomBetween(50, W - 50),
-        y: -40,
-        w: 22, h: 22,
-        hp: 4, maxHp: 4,
-        vx: randomBetween(-0.8, 0.8),
-        vy: (0.3 + wave * 0.03),
+        x: randomBetween(80, W - 80),
+        y: -60,
+        w: 30, h: 30, // larger hitbox
+        hp: eaterHp, maxHp: eaterHp,
+        vx: randomBetween(-0.6, 0.6),
+        vy: (0.25 + wave * 0.02),
         fireTimer: 9999, // eater doesn't shoot
+        _chargePlayerTimer: 0,
       });
     }
     s.enemies = enemies;
