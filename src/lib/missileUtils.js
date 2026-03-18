@@ -32,6 +32,12 @@ export function updateMissiles(bullets, enemies) {
   });
 }
 
+export function getMissileHitDamage(missileTier) {
+  if (missileTier >= 10) return 10; // Tier 10: heavy damage
+  if (missileTier >= 5) return 2; // Tier 5+: small explosion, 2 damage
+  return 1;
+}
+
 export function drawMissile(ctx, b) {
   const missileTier = b.missileTier || 1;
   
