@@ -1640,7 +1640,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           return;
         }
         if (e.type === 'mine') {
-          const MINE_RADIUS = 160;
+          const MINE_RADIUS = 120;
           spawnExplosion(s, e.x, e.y, '#ff8800', 60);
           spawnExplosion(s, e.x, e.y, '#ffdd00', 35);
           spawnExplosion(s, e.x, e.y, '#ffffff', 15);
