@@ -19,7 +19,6 @@ export const POWERUP_LABELS = {
   bounce: 'BOUNCE',
   speed: 'SPEED',
   rapidfire: 'RAPID FIRE',
-  reverse: 'REVERSE',
   missile: 'MISSILE',
 };
 
