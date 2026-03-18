@@ -1622,7 +1622,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
          if (b.type === 'reverse' && (s.powerups.reverse || 0) >= 10) {
            block.dead = true;
            s.score += 50; onScoreChange(s.score);
-           spawnExplosion(s, block.x + BLOCK_SIZE, block.y, '#00bbff', 12);/         } else {
+           spawnExplosion(s, block.x + BLOCK_SIZE, block.y, '#00bbff', 12);
+           }
+           } else {
            b.hit = true;
            spawnExplosion(s, b.x, b.y, '#aaaacc', 3);
          }
