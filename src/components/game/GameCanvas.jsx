@@ -185,15 +185,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     s.enemies = enemies;
   }
 
-  function spawnDropper(W, s) {
-    // Build pool from all possible powerup types
-    const gunPool = s.lockedPowerups.length >= 2
-      ? s.lockedPowerups
-      : OFFENSIVE_POWERUPS;
-    const dropPool = [...gunPool, ...AUXILIARY_UPGRADES, 'star'];
-    if (dropPool.length === 0) return;
-
-    const dropType = dropPool[Math.floor(Math.random() * dropPool.length)];
+  function spawnDropper(W, s, forcedType) {
+    const dropType = forcedType || DROPPER_ROTATION[s.dropperRotationIdx % DROPPER_ROTATION.length];
     const dc = DROPPER_COLORS[dropType] || '#ffd700';
     s.enemies.push({
       type: 'dropper',
