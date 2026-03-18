@@ -327,8 +327,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         if (e.x > W - 30) { e.x = W - 30; e.vx = -Math.abs(e.vx); }
         if (e.y < 30) { e.y = 30; e.vy = Math.abs(e.vy); }
         if (e.y > H * 0.7) { e.y = H * 0.7; e.vy = -Math.abs(e.vy); }
+      } else {
+        // Basic enemy movement
+        e.x += e.vx;
+        e.y += e.vy;
       }
     });
+
+    updateEnemyPositions(s, W, H);
 
     s.bullets = s.bullets.filter(b => {
       b.x += b.vx; b.y += b.vy;
