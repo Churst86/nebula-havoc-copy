@@ -1400,6 +1400,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         if (b.x < 0 || b.x > W) { b.vx *= -1; b.x = Math.max(0, Math.min(W, b.x)); b.bouncesLeft--; }
         if (b.y < 0) { b.vy *= -1; b.y = Math.max(0, b.y); b.bouncesLeft--; }
       }
+      // Check collision with invulnerable tetris blocks
+      for (let block of s.blocks) {
+        if (!block.invulnerable) continue;
+        const cells = getBlockCells(block);
+        for (let cell of cells) {
+          if (b.x >= cell.x && b.x <= cell.x + BLOCK_SIZE && b.y >= cell.y && b.y <= cell.y + BLOCK_SIZE) return false;
+        }
+      }
       return b.y < H + 20 && b.x > -20 && b.x < W + 20 && b.y > -20;
     });
 
