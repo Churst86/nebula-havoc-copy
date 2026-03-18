@@ -62,7 +62,7 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
             {activePowerupKeys.map(key => {
               const tier = powerups[key] || 1;
               const color = POWERUP_COLORS[key];
-              const isSuper = key === 'wingman' && tier >= 6;
+              const isSuper = key === 'wingman' && tier >= 5;
               const label = isSuper ? 'SUPER WINGMAN' : POWERUP_LABELS[key];
               const tierLabel = tier > 1 ? ` Lv${tier}` : '';
               return (
