@@ -113,6 +113,14 @@ export default function Game() {
     saveSettings(next);
   }, []);
 
+  const handleTrophyEarned = useCallback((trophyKey) => {
+    const isNew = addTrophy(trophyKey);
+    if (isNew) {
+      const trophy = getTrophyData(trophyKey);
+      setEarnedTrophy(trophy);
+    }
+  }, []);
+
   // Enter key toggles pause during gameplay
   React.useEffect(() => {
     const onKey = (e) => {
