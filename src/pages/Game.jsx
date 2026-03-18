@@ -63,7 +63,7 @@ export default function Game() {
     setGameState('playing');
   }, []);
 
-  // Called by canvas when lives hit 0
+  // Called by canvas when lives hit 0 or wave milestone reached
   const handleSetGameState = useCallback((state) => {
     if (state === 'continue') {
       const earned = Math.min(Math.floor(scoreRef.current / CONTINUE_SCORE_THRESHOLD), MAX_CONTINUES);
@@ -74,10 +74,18 @@ export default function Game() {
         setGameState('gameover');
         return 0;
       });
+    } else if (state === 'congratulations') {
+      // Check if current wave matches difficulty milestone
+      const milestone = DIFFICULTY_MILESTONES[settings.difficulty];
+      if (waveRef.current === milestone && NEXT_DIFFICULTY[settings.difficulty]) {
+        setGameState('congratulations');
+      } else {
+        setGameState('gameover');
+      }
     } else {
       setGameState(state);
     }
-  }, []);
+  }, [settings.difficulty]);
 
   const handleContinue = useCallback(() => {
     scoreRef.current = Math.max(0, scoreRef.current - 5000);
