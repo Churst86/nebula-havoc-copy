@@ -6,7 +6,7 @@ const DEFAULTS = {
   sfxVolume: 0.8,
   brightness: 1.0,
   difficulty: 'normal', // 'easy' | 'normal' | 'hell'
-  gameSpeed: 30, // fps: 15–60
+  gameSpeed: 30, // fps: 15–120
 };
 
 export function loadSettings() {

@@ -82,7 +82,7 @@ export default function OptionsScreen({ settings, onSettingsChange, onBack }) {
             <span>Slow</span>
             <span>Fast</span>
           </div>
-          <Slider color="#44ff88" min={15} max={60} step={1}
+          <Slider color="#44ff88" min={15} max={120} step={1}
             value={gameSpeed}
             onChange={v => update('gameSpeed', v)}
             label="" />
