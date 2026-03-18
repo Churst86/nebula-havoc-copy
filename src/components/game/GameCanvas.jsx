@@ -1688,10 +1688,15 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           spawnExplosion(s, p.x, p.y, '#ff8800', 12);
           e.dead = true;
         } else if (e.type === 'eater') {
-          // Eater bites player
-          spawnExplosion(s, e.x, e.y, '#44ff88', 12);
+          // Eater bites player — mini-boss doesn't die on contact
+          spawnExplosion(s, p.x, p.y, '#44ff88', 12);
           takeDamage(s);
-          e.dead = true;
+          // Push eater away
+          const edx = e.x - p.x, edy = e.y - p.y;
+          const elen = Math.hypot(edx, edy) || 1;
+          e.x += (edx / elen) * 30;
+          e.y += (edy / elen) * 30;
+          e._chargingPlayer = false;
         } else {
           e.dead = true;
           spawnExplosion(s, e.x, e.y, '#ff4444', 12);
