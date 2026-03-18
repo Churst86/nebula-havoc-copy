@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import MobileControls from './MobileControls';
 import { sounds } from '../../hooks/useSound.js';
+import { spawnBerserk, spawnEater } from '../../lib/enemySpawners.js';
+import { updateBerserkMovement, updateBerserkLaser, drawBerserk } from '../../lib/berserkUtils.js';
 
 // Laser beam constants
 const LASER_CHARGE_FRAMES = 90;      // frames to charge before firing (slower = fires less often)
@@ -167,37 +169,31 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       });
     }
     // Spawn 1-2 mine enemies starting wave 2
-    if (wave >= 2) {
-      const mineCount = wave >= 6 ? 2 : 1;
-      const mineHp = Math.round(3 * hpMult);
-      for (let i = 0; i < mineCount; i++) {
-        enemies.push({
-          type: 'mine',
-          x: randomBetween(50, W - 50),
-          y: -50 - i * 40,
-          w: 20, h: 20,
-          hp: mineHp, maxHp: mineHp,
-          vx: randomBetween(-0.6, 0.6),
-          vy: (0.4 + wave * 0.05),
-          fireTimer: 9999, // mines don't shoot
-        });
-      }
-    }
-    // Spawn block-eater mini-boss starting wave 4
-    if (wave >= 4) {
-      const eaterHp = Math.round((15 + wave * 3) * hpMult);
-      enemies.push({
-        type: 'eater',
-        x: randomBetween(80, W - 80),
-        y: -60,
-        w: 30, h: 30, // larger hitbox
-        hp: eaterHp, maxHp: eaterHp,
-        vx: randomBetween(-0.6, 0.6),
-        vy: (0.25 + wave * 0.02),
-        fireTimer: 9999, // eater doesn't shoot
-        _chargePlayerTimer: 0,
-      });
-    }
+     if (wave >= 2) {
+       const mineCount = wave >= 6 ? 2 : 1;
+       const mineHp = Math.round(3 * hpMult);
+       for (let i = 0; i < mineCount; i++) {
+         enemies.push({
+           type: 'mine',
+           x: randomBetween(50, W - 50),
+           y: -50 - i * 40,
+           w: 20, h: 20,
+           hp: mineHp, maxHp: mineHp,
+           vx: randomBetween(-0.6, 0.6),
+           vy: (0.4 + wave * 0.05),
+           fireTimer: 9999,
+         });
+       }
+     }
+     // Eaters: after wave 10, every other level; Hell mode: every level after wave 25
+     const isHell = cfg.maxWave === 100;
+     if (wave > 10 && (wave % 2 === 0 || (isHell && wave > 25))) {
+       spawnEater(enemies, W, wave, hpMult);
+     }
+     // Berserks: after wave 15, every odd level; Hell mode: every level after wave 25
+     if (wave > 15 && (wave % 2 === 1 || (isHell && wave > 25))) {
+       spawnBerserk(enemies, W, wave, hpMult, isHell);
+     }
     s.enemies = enemies;
   }
 
@@ -1683,7 +1679,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           sounds.powerup();
         } else {
           const isLocked = s.lockedPowerups.includes(item.type);
-          const canAdd = s.lockedPowerups.length < 2;
+          const canAdd = s.lockedPowerups.length < 3;
           if (!isLocked && !canAdd) return true;
           if (!isLocked) s.lockedPowerups.push(item.type);
           s.powerups[item.type] = Math.min((s.powerups[item.type] || 0) + 1, 10);
