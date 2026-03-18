@@ -280,11 +280,6 @@ function getSfxGain(ctx) {
   return sfxGainNode;
 }
 
-// Override getMasterGain to route to music gain (for bg music)
-function getMasterGain(ctx) {
-  return getMusicGain(ctx);
-}
-
 // Patch playTone/playNoise to route through SFX gain
 function playToneSfx({ freq = 440, type = 'sine', duration = 0.1, gain = 0.3, freqEnd, detune = 0 }) {
   try {
