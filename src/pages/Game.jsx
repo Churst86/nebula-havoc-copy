@@ -183,7 +183,13 @@ export default function Game() {
       )}
 
       {gameState === 'start' && (
-        <StartScreen onStart={handleStart} settings={settings} onSettingsChange={handleSettingsChange} />
+        <div className="absolute inset-0 z-40 bg-black/90 flex items-center justify-center">
+          <DifficultySelector
+            completedDifficulties={completedDifficulties}
+            onSelectDifficulty={(difficulty) => handleStart(difficulty)}
+            onHome={() => {}} // Keep on start screen if no home option
+          />
+        </div>
       )}
 
       {gameState === 'continue' && (
