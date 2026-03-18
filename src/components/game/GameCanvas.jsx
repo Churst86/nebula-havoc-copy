@@ -608,13 +608,16 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(isCharging ? '!!!' : damaged ? '>_<' : '^_^', 0, 1);
     } else if (e.type === 'eater') {
-      // Block-eater mini-boss: bioluminescent tentacle creature
       const t = Date.now();
       const isCharging = e._chargingPlayer;
+      const isMini = e._mini;
+      const isSuper = e._superEater;
+      const scale = isMini ? 0.5 : 1;
+      ctx.scale(scale, scale);
       const pulse = 0.7 + Math.sin(t * 0.012) * 0.3;
-      const eaterColor = isCharging ? '#ff4400' : e._eating ? '#00ff44' : '#33cc77';
-      const innerColor = isCharging ? 'rgba(255,80,0,0.3)' : e._eating ? 'rgba(0,255,68,0.3)' : 'rgba(51,204,119,0.18)';
-      ctx.shadowColor = eaterColor; ctx.shadowBlur = 20 + pulse * 12;
+      const eaterColor = isSuper ? `hsl(${(t*0.2)%360},100%,65%)` : isCharging ? '#ff4400' : e._eating ? '#00ff44' : '#33cc77';
+      const innerColor = isSuper ? `hsla(${(t*0.2)%360},100%,65%,0.25)` : isCharging ? 'rgba(255,80,0,0.3)' : e._eating ? 'rgba(0,255,68,0.3)' : 'rgba(51,204,119,0.18)';
+      ctx.shadowColor = eaterColor; ctx.shadowBlur = (isSuper ? 35 : 20) + pulse * 12;
 
       // Tentacles (8, wave sinusoidally)
       const TENTACLE_COUNT = 8;
