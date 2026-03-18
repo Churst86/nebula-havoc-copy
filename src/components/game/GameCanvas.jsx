@@ -153,17 +153,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   }
 
   function spawnDropper(W, s) {
-    // Guns: only if not already dropped this wave (one per gun type)
-    const availableGuns = OFFENSIVE_POWERUPS.filter(g => !s.gunDroppedThisWave.includes(g));
+    // Build pool from all possible powerup types
     const gunPool = s.lockedPowerups.length >= 2
-      ? s.lockedPowerups.filter(g => !s.gunDroppedThisWave.includes(g))
-      : availableGuns;
-    // Aux upgrades: only if not already dropped this wave
-    const auxPool = AUXILIARY_UPGRADES.filter(a => !s.auxDroppedThisWave.includes(a));
-    // Star: once per wave
-    const starPool = s.starDroppedThisWave ? [] : ['star'];
-
-    const dropPool = [...gunPool, ...auxPool, ...starPool];
+      ? s.lockedPowerups
+      : OFFENSIVE_POWERUPS;
+    const dropPool = [...gunPool, ...AUXILIARY_UPGRADES, 'star'];
     if (dropPool.length === 0) return;
 
     const dropType = dropPool[Math.floor(Math.random() * dropPool.length)];
