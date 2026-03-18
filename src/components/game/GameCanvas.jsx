@@ -1072,7 +1072,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         } else {
           e.x += e.vx; e.y += e.vy;
         }
-        if (e.x < 20 || e.x > W - 20) e.vx *= -1;
+        if (e.x < 20) { e.x = 20; e.vx = Math.abs(e.vx); }
+        else if (e.x > W - 20) { e.x = W - 20; e.vx = -Math.abs(e.vx); }
         if (e.y < 20) { e.y = 20; e.vy = Math.abs(e.vy); }
         if (e.y > H - 20) { e.y = H - 20; e.vy = -Math.abs(e.vy); }
       }
