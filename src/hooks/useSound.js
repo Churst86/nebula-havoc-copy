@@ -242,7 +242,7 @@ function startBossMusic() {
       bass.frequency.value = bassNotes[step % bassNotes.length];
       bassGain.gain.setValueAtTime(0.5, t);
       bassGain.gain.exponentialRampToValueAtTime(0.001, t + tempo * 0.9);
-      bass.connect(bassGain); bassGain.connect(masterGain);
+      bass.connect(bassGain); bassGain.connect(bossLocalGain);
       bass.start(t); bass.stop(t + tempo);
 
       const lead = ctx.createOscillator();
@@ -251,7 +251,7 @@ function startBossMusic() {
       lead.frequency.value = melNotes[step % melNotes.length];
       leadGain.gain.setValueAtTime(0.25, t);
       leadGain.gain.exponentialRampToValueAtTime(0.001, t + tempo * 0.7);
-      lead.connect(leadGain); leadGain.connect(masterGain);
+      lead.connect(leadGain); leadGain.connect(bossLocalGain);
       lead.start(t); lead.stop(t + tempo);
 
       // Chromatic dissonance layer
@@ -262,11 +262,11 @@ function startBossMusic() {
       chrom.detune.value = 15;
       chromGain.gain.setValueAtTime(0.15, t);
       chromGain.gain.exponentialRampToValueAtTime(0.001, t + tempo * 0.6);
-      chrom.connect(chromGain); chromGain.connect(masterGain);
+      chrom.connect(chromGain); chromGain.connect(bossLocalGain);
       chrom.start(t); chrom.stop(t + tempo);
 
       // 16th hat
-      playNoise({ duration: 0.02, gain: 0.06, filterFreq: 10000 });
+      playNoiseCheap({ duration: 0.02, gain: 0.06, filterFreq: 10000, useMusicBus: true });
 
       step++;
       bgTimeouts.push(setTimeout(tick, tempo * 1000));
