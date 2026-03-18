@@ -43,7 +43,6 @@ export const DROPPER_LABELS = {
   bounce: 'B',
   speed: '▶',
   rapidfire: '⚡',
-  reverse: 'R',
   star: '★',
 };
 
