@@ -24,18 +24,18 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
         backgroundImage: 'url(https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69b94c96f2e7813ac4b009de/107976521_image.png)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-      }}
-    >
+        backgroundAttachment: 'fixed'
+      }}>
+      
       {/* Dark overlay for text legibility */}
       <div className="absolute inset-0 bg-black/50" />
       
       <div className="relative z-10 text-center space-y-8">
         <motion.div
           animate={{ y: [0, -8, 0] }}
-          transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-        >
-          <Crosshair className="w-16 h-16 mx-auto text-primary mb-4" />
+          transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}>
+          
+          
         </motion.div>
 
         <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-cyan-300 to-cyan-600">
@@ -50,8 +50,8 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
           <Button
             onClick={onStart}
             size="lg"
-            className="bg-primary hover:bg-primary/80 text-primary-foreground font-bold text-lg px-10 py-6 rounded-xl w-full"
-          >
+            className="bg-primary hover:bg-primary/80 text-primary-foreground font-bold text-lg px-10 py-6 rounded-xl w-full">
+            
             START GAME
           </Button>
 
@@ -60,8 +60,8 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
               onClick={() => setShowScores(true)}
               variant="outline"
               size="lg"
-              className="font-bold px-6 py-6 rounded-xl gap-2 flex-1"
-            >
+              className="font-bold px-6 py-6 rounded-xl gap-2 flex-1">
+              
               <Trophy className="w-5 h-5" />
               SCORES
             </Button>
@@ -69,8 +69,8 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
               onClick={() => setShowOptions(true)}
               variant="outline"
               size="lg"
-              className="font-bold px-6 py-6 rounded-xl gap-2 flex-1"
-            >
+              className="font-bold px-6 py-6 rounded-xl gap-2 flex-1">
+              
               <Settings className="w-5 h-5" />
               OPTIONS
             </Button>
@@ -82,6 +82,6 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
           </div>
         </div>
       </div>
-    </motion.div>
-  );
+    </motion.div>);
+
 }
