@@ -1238,6 +1238,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           e.hp--;
           sounds.hit();
           b.hit = true;
+          // Bomb: immediately charge at player on first hit
+          if (e.type === 'bomb' && e.hp === 1 && !e._charging) {
+            const dx = p.x - e.x, dy = p.y - e.y;
+            const len = Math.hypot(dx, dy) || 1;
+            e._chargeDx = dx / len; e._chargeDy = dy / len;
+            e._charging = true; e._chargeDuration = 30;
+            e._chargeTimer = randomBetween(150, 280);
+          }
           if (e.hp <= 0) {
             e.dead = true;
             // Bomb AoE explosion on death
