@@ -48,16 +48,17 @@ export default function Game() {
     setWave(w);
   }, []);
 
-  const handleStart = useCallback(() => {
+  const handleStart = useCallback((keepPowerups = false) => {
     scoreRef.current = 0;
     waveRef.current = 1;
     setScore(0);
     setLives(3);
     setMaxLives(3);
     setWave(1);
-    setActivePowerup({});
-    // Earn continues based on score threshold (max MAX_CONTINUES)
-    // Starts fresh — continues earned mid-game based on score
+    // If keeping powerups (progression), preserve them; otherwise reset
+    if (!keepPowerups) {
+      setActivePowerup({});
+    }
     setContinuesLeft(0);
     setGameState('playing');
   }, []);
