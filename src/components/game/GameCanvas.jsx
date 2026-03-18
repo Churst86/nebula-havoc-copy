@@ -1711,11 +1711,21 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     if (combatEnemies.length === 0) {
       s.waveTimer++;
       if (s.waveTimer > 90) {
-        const survivingDroppers = s.enemies.filter(e => e.type === 'dropper');
         s.wave++;
-        s.waveTimer = 0;
         onWaveChange(s.wave);
         sounds.waveComplete();
+        
+        // Check if wave is a difficulty milestone
+        const milestoneLevels = [25, 50, 100];
+        if (milestoneLevels.includes(s.wave)) {
+          sounds.stopAllMusic();
+          s.running = false;
+          setGameState('congratulations');
+          return;
+        }
+        
+        s.waveTimer = 0;
+        const survivingDroppers = s.enemies.filter(e => e.type === 'dropper');
         spawnWave(W, s);
         // Re-add surviving droppers after wave spawn (spawnWave replaces s.enemies)
         s.enemies.push(...survivingDroppers);
