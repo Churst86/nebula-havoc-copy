@@ -6,7 +6,6 @@ import ContinueScreen from '../components/game/ContinueScreen';
 import StartScreen from '../components/game/StartScreen';
 import OptionsScreen from '../components/game/OptionsScreen';
 import CongratulationsScreen from '../components/game/CongratulationsScreen';
-import GameOverScreen from '../components/game/GameOverScreen';
 import { loadSettings, saveSettings, DIFFICULTY_CONFIG } from '../lib/gameSettings';
 import { sounds } from '../hooks/useSound.js';
 
@@ -220,12 +219,6 @@ export default function Game() {
       )}
 
       {gameState === 'gameover' && (
-        <GameOverScreen
-          onTransitionToHighScores={() => setGameState('gameover_scores')}
-        />
-      )}
-
-      {gameState === 'gameover_scores' && (
         <HighScores
           score={score}
           wave={wave}
