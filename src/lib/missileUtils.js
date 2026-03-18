@@ -43,65 +43,12 @@ export function shouldSpawnMissileExplosion(missileTier) {
 }
 
 export function drawMissile(ctx, b) {
-  const missileTier = b.missileTier || 1;
-  
-  if (missileTier >= 10) {
-    // Tier 10: large rocket with tail
-    const sz = 12;
-    ctx.save();
-    const angle = Math.atan2(b.vy, b.vx);
-    ctx.translate(b.x, b.y);
-    ctx.rotate(angle);
-    
-    ctx.shadowColor = '#ff00ff'; ctx.shadowBlur = 25;
-    ctx.fillStyle = '#ff00ff';
-    ctx.beginPath();
-    ctx.moveTo(sz, 0);
-    ctx.lineTo(-sz * 0.7, -sz * 0.6);
-    ctx.lineTo(-sz * 0.3, 0);
-    ctx.lineTo(-sz * 0.7, sz * 0.6);
-    ctx.closePath();
-    ctx.fill();
-    
-    // Flame trail
-    ctx.fillStyle = '#ff6600';
-    ctx.beginPath();
-    ctx.moveTo(-sz * 0.3, 0);
-    ctx.lineTo(-sz * 1.5, -sz * 0.3);
-    ctx.lineTo(-sz * 1.8, 0);
-    ctx.lineTo(-sz * 1.5, sz * 0.3);
-    ctx.closePath();
-    ctx.fill();
-    
-    ctx.restore();
-  } else {
-    // Normal missile
-    const sz = 6;
-    ctx.save();
-    const angle = Math.atan2(b.vy, b.vx);
-    ctx.translate(b.x, b.y);
-    ctx.rotate(angle);
-    
-    ctx.shadowColor = '#ff00ff'; ctx.shadowBlur = 16;
-    ctx.fillStyle = '#ff00ff';
-    ctx.beginPath();
-    ctx.moveTo(sz, 0);
-    ctx.lineTo(-sz * 0.6, -sz * 0.5);
-    ctx.lineTo(-sz * 0.2, 0);
-    ctx.lineTo(-sz * 0.6, sz * 0.5);
-    ctx.closePath();
-    ctx.fill();
-    
-    // Flame
-    ctx.fillStyle = '#ffaa00';
-    ctx.beginPath();
-    ctx.moveTo(-sz * 0.2, 0);
-    ctx.lineTo(-sz * 1.2, -sz * 0.2);
-    ctx.lineTo(-sz * 1.4, 0);
-    ctx.lineTo(-sz * 1.2, sz * 0.2);
-    ctx.closePath();
-    ctx.fill();
-    
-    ctx.restore();
-  }
+  const sz = (b.missileTier || 1) >= 10 ? 12 : 6;
+  const a = Math.atan2(b.vy, b.vx);
+  ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(a);
+  ctx.shadowColor = '#ff00ff'; ctx.shadowBlur = sz >= 10 ? 25 : 16;
+  ctx.fillStyle = '#ff00ff';
+  ctx.beginPath(); ctx.moveTo(sz, 0); ctx.lineTo(-sz * 0.7, -sz * 0.6); ctx.lineTo(-sz * 0.3, 0); ctx.lineTo(-sz * 0.7, sz * 0.6); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#ff6600'; ctx.beginPath(); ctx.moveTo(-sz * 0.3, 0); ctx.lineTo(-sz * 1.5, -sz * 0.3); ctx.lineTo(-sz * 1.8, 0); ctx.lineTo(-sz * 1.5, sz * 0.3); ctx.closePath(); ctx.fill();
+  ctx.restore();
 }
