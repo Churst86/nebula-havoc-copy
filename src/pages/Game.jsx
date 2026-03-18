@@ -55,21 +55,35 @@ export default function Game() {
     setGameState('playing');
   }, [score]);
 
-  // Called by canvas when lives hit 0
+  // Called by canvas when lives hit 0 or level complete
   const handleSetGameState = useCallback((state) => {
     if (state === 'continue') {
       const earned = Math.min(Math.floor(scoreRef.current / CONTINUE_SCORE_THRESHOLD), MAX_CONTINUES);
       setContinuesLeft(prev => {
-        // If we already have continues available, just show the screen
         if (prev > 0) { setGameState('continue'); return prev; }
         if (earned > 0) { setGameState('continue'); return earned; }
         setGameState('gameover');
         return 0;
       });
+    } else if (state === 'gameover') {
+      // Check if player beat level target for current difficulty
+      const levelTargets = { easy: 25, challenging: 50, hell: 100 };
+      const target = levelTargets[currentDifficulty];
+      if (waveRef.current > target) {
+        // Player beat the difficulty!
+        setCompletedDifficulties(prev => {
+          const updated = [...new Set([...prev, currentDifficulty])];
+          localStorage.setItem('completedDifficulties', JSON.stringify(updated));
+          return updated;
+        });
+        setGameState('congratulations');
+      } else {
+        setGameState('gameover');
+      }
     } else {
       setGameState(state);
     }
-  }, []);
+  }, [currentDifficulty]);
 
   const handleContinue = useCallback(() => {
     scoreRef.current = Math.max(0, scoreRef.current - 5000);
