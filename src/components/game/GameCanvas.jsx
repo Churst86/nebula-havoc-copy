@@ -26,6 +26,8 @@ const BLOCK_COLORS = ['#00f0ff', '#ff44ff', '#ffdd00', '#44ffaa', '#ff8800', '#a
 
 function randomBetween(a, b) { return a + Math.random() * (b - a); }
 
+const DROPPER_SPAWN_INTERVAL = 480; // spawn a dropper every ~8 seconds (at 60fps), independent of wave
+
 function initState() {
   return {
     player: null,
@@ -55,15 +57,13 @@ function initState() {
     spreadReloadTimer: 0,
     spreadFireTimer: 10,
     wingmanFireTimer: 0,
+    superWingmanFireTimer: 0,
     powerups: {},
     lockedPowerups: [],
     shieldHp: 0,
     running: false,
     starInvincibleTimer: 0,   // frames of star invincibility
-    dropperSpawnTimer: 0,     // timer to spawn dropper mid-wave
-    gunDroppedThisWave: [],   // gun powerup types already dropped this wave
-    auxDroppedThisWave: [],   // auxiliary upgrade types already dropped this wave
-    starDroppedThisWave: false, // star only drops once per wave
+    dropperSpawnTimer: DROPPER_SPAWN_INTERVAL, // global recurring timer
   };
 }
 
