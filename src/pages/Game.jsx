@@ -80,6 +80,12 @@ export default function Game() {
 
   const handlePauseToggle = useCallback(() => {
     setIsPaused(p => !p);
+    setShowPauseOptions(false);
+  }, []);
+
+  const handleSettingsChange = useCallback((next) => {
+    setSettings(next);
+    saveSettings(next);
   }, []);
 
   // Enter key toggles pause during gameplay
