@@ -797,15 +797,16 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   }
 
   function takeDamage(s) {
+    // Invincibility frames — ignore ALL damage (including shield) while active
+    if (s.invincibleTimer > 0 || s.starInvincibleTimer > 0) return;
     if (s.shieldHp > 0) {
       s.shieldHp--;
       sounds.shieldHit();
       if (s.shieldHp === 0) { sounds.shieldBreak(); delete s.powerups.shield; }
       onPowerupChange({ ...s.powerups, shieldHp: s.shieldHp });
+      s.invincibleTimer = 60; // brief invincibility after shield hit
       return;
     }
-    // Invincibility frames — ignore health damage while active (damage invincibility or star)
-    if (s.invincibleTimer > 0 || s.starInvincibleTimer > 0) return;
     s.lives--;
     s.invincibleTimer = 120; // 2 seconds at 60fps
     onLivesChange(s.lives);
