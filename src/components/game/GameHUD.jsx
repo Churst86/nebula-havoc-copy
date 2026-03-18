@@ -24,6 +24,17 @@ const POWERUP_LABELS = {
   reverse:   'REVERSE',
   missile:   'MISSILE',
 };
+const POWERUP_ICONS = {
+  shotgun:   '⚡',
+  laser:     '║',
+  photon:    '◉',
+  bounce:    '◆',
+  missile:   '→',
+  wingman:   '◀',
+  shield:    '⬟',
+  speed:     '▶',
+  rapidfire: '◇',
+};
 
 export default function GameHUD({ score, lives, maxLives, wave, activePowerup, continuesLeft, isPaused, onPauseToggle, onOpenOptions }) {
   const powerups = activePowerup || {};
