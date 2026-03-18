@@ -220,6 +220,12 @@ export default function Game() {
       )}
 
       {gameState === 'gameover' && (
+        <GameOverScreen
+          onTransitionToHighScores={() => setGameState('gameover_scores')}
+        />
+      )}
+
+      {gameState === 'gameover_scores' && (
         <HighScores
           score={score}
           wave={wave}
