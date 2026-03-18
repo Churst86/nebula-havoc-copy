@@ -207,6 +207,17 @@ export default function Game() {
         />
       )}
 
+      {gameState === 'congratulations' && (
+        <CongratulationsScreen
+          wave={wave}
+          score={score}
+          currentDifficulty={settings.difficulty}
+          nextDifficulty={NEXT_DIFFICULTY[settings.difficulty]}
+          onProgressToDifficulty={handleProgressToDifficulty}
+          onReturnToTitle={() => setGameState('start')}
+        />
+      )}
+
       {gameState === 'gameover' && (
         <HighScores
           score={score}
