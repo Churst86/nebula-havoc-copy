@@ -2,7 +2,7 @@ import React from 'react';
 import { Heart, Zap, Shield, RefreshCw, Pause, Play, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const GUN_POWERUPS = ['shotgun', 'laser', 'bounce'];
+const GUN_POWERUPS = ['shotgun', 'laser', 'bounce', 'missile'];
 const POWERUP_COLORS = {
   shotgun:   '#ffdd00',
   laser:     '#ff44ff',
