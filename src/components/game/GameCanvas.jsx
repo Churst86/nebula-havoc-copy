@@ -1080,7 +1080,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
               s.enemyBullets.push({ x: e.x, y: e.y, vx: (dx / len) * 4 + Math.sin(rad) * 3.5, vy: (dy / len) * 4, boss: true, bouncing: true, bouncesLeft: 3 });
             });
           }
-          e.fireTimer = 35;
+          const bt2 = e.tier || 1;
+          e.fireTimer = Math.max(15, 35 - bt2 * 4);
         } else {
           const bspd = 2;
           s.enemyBullets.push({ x: e.x, y: e.y, vx: (dx / len) * bspd, vy: (dy / len) * bspd });
