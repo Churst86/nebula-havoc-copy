@@ -736,6 +736,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       const hue = isSuperOrbit ? (Date.now() * 0.4) % 360 : 150; // rainbow for tier 10, green otherwise
       const orbColor = isSuperOrbit ? `hsl(${hue},100%,65%)` : '#44ffaa';
       const orbColorA = isSuperOrbit ? `hsla(${hue},100%,65%,0.3)` : 'rgba(68,255,170,0.25)';
+       if ((s.powerups.reverse || 0) > 0) {
+       s.reverseFireTimer--;
+      if (s.reverseFireTimer <= 0) {
+        fireReverseShot(s);
+        const reverseTier = s.powerups.reverse || 0;
+        const rapidfireBonus = (s.powerups.rapidfire || 0) === 1 ? 10 : (s.powerups.rapidfire || 0) * 8;
+        const baseDelay = Math.max(12, 55 - (reverseTier > 3 ? (reverseTier - 3) * 3 : 0) - rapidfireBonus);
+         s.reverseFireTimer = baseDelay;
 
       // Outer glow
       ctx.shadowColor = orbColor; ctx.shadowBlur = sz * 2;
