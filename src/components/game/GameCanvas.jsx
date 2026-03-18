@@ -11,7 +11,6 @@ import { fireSpreadShot, getFireRate } from '../../lib/powerups/gunPowerups.js';
 import { drawPowerupItem } from '../../lib/powerupVisuals.js';
 import { applyUtilityPowerup } from '../../lib/powerups/utilityPowerups.js';
 import { drawEnemy, updateEnemyPositions } from './EnemyRenderer.jsx';
-import { drawBerserk } from '../../lib/berserkUtils.js';
 
 const LASER_CHARGE_FRAMES = 90;
 const LASER_BEAM_FRAMES = 180;
