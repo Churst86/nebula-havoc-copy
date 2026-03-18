@@ -8,10 +8,8 @@ import { fireMissiles, updateMissiles, drawMissile, getMissileHitDamage, shouldS
 import { DROPPER_COLORS, DROPPER_LABELS, DROPPER_ROTATION } from '../../lib/powerupConfig.js';
 import { drawBlock, drawPiledCells, drawParticle } from '../../lib/drawingUtils.js';
 
-// Laser beam constants
-const LASER_CHARGE_FRAMES = 90;      // frames to charge before firing (slower = fires less often)
-const LASER_BEAM_FRAMES = 180;       // frames beam stays active (~3 sec)
-const LASER_COOLDOWN_FRAMES = 180;   // frames of cooldown after beam ends
+// Import laser logic
+import { updateLaserBeam, LASER_CHARGE_FRAMES, LASER_BEAM_FRAMES, LASER_COOLDOWN_FRAMES } from '../../lib/laserLogic.js';
 
 // Spread shotgun constants
 const SPREAD_SHOTS_PER_RELOAD = 2;
