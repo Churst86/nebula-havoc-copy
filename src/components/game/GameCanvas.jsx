@@ -1256,26 +1256,26 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         if (e.y < 30) { e.y = 30; e.vy = Math.abs(e.vy); }
         if (e.y > H * 0.7) { e.y = H * 0.7; e.vy = -Math.abs(e.vy); }
       } else if (e.type === 'elite') {
-        // Elite: aggressive sine-wave weaving toward player, periodically dashes
+        // Elite: aggressive sine-wave weaving, periodic dash — fixed speed (no wall acceleration)
         e.movePhase = (e.movePhase || 0) + 0.07;
         e.dashTimer = (e.dashTimer || 0) - 1;
+        // Init base speed once
+        if (!e._baseSpd) e._baseSpd = Math.hypot(e.vx, e.vy) || 1.5;
         if (e.dashTimer <= 0) {
-          // Dash toward player every ~3 seconds
           const dx = p.x - e.x, dy = p.y - e.y;
           const len = Math.hypot(dx, dy) || 1;
-          const spd = Math.hypot(e.vx, e.vy) || 1.5;
-          e.vx = (dx / len) * spd * 2.5;
-          e.vy = (dy / len) * spd * 1.2;
+          e.vx = (dx / len) * e._baseSpd * 2.5;
+          e.vy = (dy / len) * e._baseSpd * 1.2;
           e.dashTimer = randomBetween(120, 200);
         }
-        // Weave perpendicular to movement direction
         const weaveMag = 2.2;
         e.x += e.vx + Math.sin(e.movePhase) * weaveMag;
         e.y += e.vy;
-        if (e.x < 20) { e.x = 20; e.vx = Math.abs(e.vx); }
-        if (e.x > W - 20) { e.x = W - 20; e.vx = -Math.abs(e.vx); }
-        if (e.y < 20) { e.y = 20; e.vy = Math.abs(e.vy); }
-        if (e.y > H - 20) { e.y = H - 20; e.vy = -Math.abs(e.vy); }
+        // Wall bounce: preserve sign of velocity but reset to base speed (no snowball)
+        if (e.x < 20) { e.x = 20; e.vx = Math.abs(e._baseSpd); }
+        if (e.x > W - 20) { e.x = W - 20; e.vx = -Math.abs(e._baseSpd); }
+        if (e.y < 20) { e.y = 20; e.vy = Math.abs(e._baseSpd); }
+        if (e.y > H - 20) { e.y = H - 20; e.vy = -Math.abs(e._baseSpd); }
       } else {
         // Basic: hide behind blocks, standard movement
         if (!e.hideMode) e.hideMode = Math.random() < 0.20;
