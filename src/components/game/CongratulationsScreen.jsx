@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Trophy, Zap } from 'lucide-react';
+import DifficultySelector from './DifficultySelector';
 
-export default function CongratulationsScreen({ difficulty, score, onPlayNext, onPlayAgain, onHome }) {
+export default function CongratulationsScreen({ difficulty, score, onPlayNext, onPlayAgain, onHome, completedDifficulties }) {
+  const [showSelector, setShowSelector] = useState(false);
   const difficultyName = { easy: 'Easy', challenging: 'Challenging', hell: 'Hell' }[difficulty];
   const levelTarget = { easy: 25, challenging: 50, hell: 100 }[difficulty];
   const nextDifficulty = { easy: 'challenging', challenging: 'hell', hell: null }[difficulty];
