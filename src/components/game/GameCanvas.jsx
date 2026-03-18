@@ -676,16 +676,16 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       }
       ctx.stroke();
 
-      // HP bar above
-      const bw = 60, bh = 5;
-      ctx.fillStyle = '#222'; ctx.fillRect(-bw / 2, -44, bw, bh);
-      ctx.fillStyle = e.hp / e.maxHp > 0.5 ? '#33cc77' : e.hp / e.maxHp > 0.25 ? '#ffaa00' : '#ff2200';
-      ctx.fillRect(-bw / 2, -44, bw * (e.hp / e.maxHp), bh);
-      ctx.strokeStyle = eaterColor; ctx.lineWidth = 1; ctx.strokeRect(-bw / 2, -44, bw, bh);
-      ctx.fillStyle = eaterColor;
-      ctx.font = 'bold 7px monospace';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('EATER', 0, -52);
+      // HP bar above (only for full eaters)
+      if (!isMini) {
+        const bw = 60, bh = 5;
+        ctx.fillStyle = '#222'; ctx.fillRect(-bw/2, -44, bw, bh);
+        ctx.fillStyle = e.hp/e.maxHp>0.5?'#33cc77':e.hp/e.maxHp>0.25?'#ffaa00':'#ff2200';
+        ctx.fillRect(-bw/2, -44, bw*(e.hp/e.maxHp), bh);
+        ctx.strokeStyle=eaterColor; ctx.lineWidth=1; ctx.strokeRect(-bw/2,-44,bw,bh);
+        ctx.fillStyle=eaterColor; ctx.font='bold 7px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(isSuper?'SUPER EATER':'EATER',0,-52);
+      }
     } else if (e.type === 'elite') {
       ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14;
       ctx.strokeStyle = '#ff44ff'; ctx.lineWidth = 2;
