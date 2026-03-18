@@ -282,7 +282,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     // HP scales with number of cells: 2 cells=1hp, 3 cells=2hp, 4 cells=3hp
     const cellCount = shape.length;
     const hp = cellCount <= 2 ? 1 : cellCount === 3 ? 2 : 3;
-    return { shape, color, x: startX, y: -BLOCK_SIZE * 2, vy: 0.6 + Math.random() * 0.4, hp, maxHp: hp, settled: false, invulnerable: isInvulnerable };
+    const blockSpeedMult = (difficultyConfig && difficultyConfig.blockSpeedMult) || 1;
+    return { shape, color, x: startX, y: -BLOCK_SIZE * 2, vy: (0.6 + Math.random() * 0.4) * blockSpeedMult, hp, maxHp: hp, settled: false, invulnerable: isInvulnerable };
   }
 
   function getBlockCells(block) {
