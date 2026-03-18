@@ -1863,7 +1863,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     s.bullets.forEach(b => drawBullet(ctx, b, false));
     s.enemyBullets.forEach(b => drawBullet(ctx, b, true));
     drawPlayer(ctx, p, s.wingmen, s.shieldHp, s.enemies, s.invincibleTimer, keys, s.starInvincibleTimer, s.superWingman, s.superWingmen);
-
+const reverseTier = s.powerups.reverse || 0;
+     if (reverseTier >= 10) {
+       drawReverseFlame(ctx, p, reverseTier, Date.now());
+     }
     // Laser charge indicator + continuous beam draw
     if ((s.powerups.laser || 0) > 0) {
       const laserTier = s.powerups.laser;
