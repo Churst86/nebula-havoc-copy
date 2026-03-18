@@ -132,13 +132,13 @@ function getMusicEra(wave) {
 
 // Wave music: gets faster, more layers, changes style every 10 waves
 function startWaveMusic(wave) {
-  stopAllBg();
-  bgPlaying = true;
-  currentWave = wave;
+   stopAllBg();
+   bgPlaying = true;
+   currentWave = wave;
 
-  try {
-    const ctx = getCtx();
-    const master = getMasterGain(ctx);
+   try {
+     const ctx = getCtx();
+     const master = getMusicGain(ctx);
 
     const intensity = Math.min(wave / 10, 1); // 0..1
     const tempo = Math.max(0.08, 0.22 - intensity * 0.12);
