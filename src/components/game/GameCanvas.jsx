@@ -899,6 +899,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     const s = stateRef.current;
     const keys = keysRef.current;
 
+    ctx.shadowBlur = 0;
     ctx.fillStyle = 'rgba(5,5,20,0.85)';
     ctx.fillRect(0, 0, W, H);
 
