@@ -9,6 +9,18 @@ export default function CongratulationsScreen({ difficulty, score, onPlayNext, o
   const levelTarget = { easy: 25, challenging: 50, hell: 100 }[difficulty];
   const nextDifficulty = { easy: 'challenging', challenging: 'hell', hell: null }[difficulty];
 
+  if (showSelector) {
+    return (
+      <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-50">
+        <DifficultySelector
+          completedDifficulties={completedDifficulties}
+          onSelectDifficulty={onPlayNext}
+          onHome={onHome}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-50">
       <div className="text-center space-y-8 max-w-2xl">
