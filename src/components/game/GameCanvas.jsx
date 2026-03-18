@@ -74,7 +74,7 @@ const SPECIAL_POWERUPS = ['speed', 'shield', 'rapidfire', 'wingman'];
 // Auxiliary upgrades (one per wave each)
 const AUXILIARY_UPGRADES = ['speed', 'rapidfire', 'wingman', 'shield'];
 
-const STAR_INVINCIBLE_FRAMES = 600; // 10 seconds at 60fps
+const STAR_INVINCIBLE_FRAMES = 420; // 7 seconds at 60fps
 
 // Dropper enemy appearance per powerup type
 const DROPPER_COLORS = {
