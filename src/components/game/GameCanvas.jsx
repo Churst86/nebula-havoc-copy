@@ -4,7 +4,7 @@ import { sounds } from '../../hooks/useSound.js';
 import { spawnBerserk, spawnEater } from '../../lib/enemySpawners.js';
 import { updateBerserkMovement, updateBerserkLaser, drawBerserk } from '../../lib/berserkUtils.js';
 import { fireReverseShot, drawReverseFlame } from '../../lib/reverseGunUtils.js';
-import { fireMissiles, updateMissiles, drawMissile } from '../../lib/missileUtils.js';
+import { fireMissiles, updateMissiles, drawMissile, getMissileHitDamage } from '../../lib/missileUtils.js';
 import { DROPPER_COLORS, DROPPER_LABELS, DROPPER_ROTATION } from '../../lib/powerupConfig.js';
 import { drawBlock, drawPiledCells, drawParticle } from '../../lib/drawingUtils.js';
 
