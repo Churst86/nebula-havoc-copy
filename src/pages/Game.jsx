@@ -9,6 +9,7 @@ import CongratulationsScreen from '../components/game/CongratulationsScreen';
 import DifficultySelector from '../components/game/DifficultySelector';
 import TrophyDisplay from '../components/game/TrophyDisplay';
 import TrophyPopup from '../components/game/TrophyPopup';
+import TitleScreen from '../components/game/TitleScreen';
 import { loadSettings, saveSettings, DIFFICULTY_CONFIG } from '../lib/gameSettings';
 import { sounds } from '../hooks/useSound.js';
 import { addTrophy, getTrophyData } from '../lib/trophySystem.js';
