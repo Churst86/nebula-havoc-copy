@@ -214,6 +214,27 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     return DROPPER_ROTATION[s.dropperRotationIdx % DROPPER_ROTATION.length];
   }
 
+  function spawnMiniEaters(W, s, parent) {
+    for (let i = 0; i < 2; i++) {
+      const mini = {
+        type: 'eater',
+        _mini: true,
+        x: parent.x + (i === 0 ? -30 : 30),
+        y: parent.y,
+        w: 15, h: 15,
+        hp: Math.max(1, Math.floor(parent.maxHp / 2)),
+        maxHp: Math.max(1, Math.floor(parent.maxHp / 2)),
+        vx: randomBetween(-0.6, 0.6),
+        vy: randomBetween(-0.4, 0.4),
+        fireTimer: 9999,
+        _chargePlayerTimer: 0,
+        _blocksEaten: 0,
+      };
+      s.enemies.push(mini);
+      spawnExplosion(s, mini.x, mini.y, '#44ff88', 8);
+    }
+  }
+
   function spawnDropper(W, s, forcedType) {
     const dropType = forcedType || getNextDropperType(s);
     const dc = DROPPER_COLORS[dropType] || '#ffd700';
