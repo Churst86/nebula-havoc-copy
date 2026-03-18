@@ -547,9 +547,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       }
     } else if (isEnemy) {
       const isBoss = b.boss;
-      ctx.shadowColor = isBoss ? '#ff0066' : '#ff6600'; ctx.shadowBlur = isBoss ? 14 : 8;
-      ctx.fillStyle = isBoss ? '#ff0066' : '#ff6600';
-      ctx.beginPath(); ctx.arc(b.x, b.y, isBoss ? 6 : 4, 0, Math.PI * 2); ctx.fill();
+      const r = b.big ? 12 : isBoss ? 6 : 4;
+      ctx.shadowColor = isBoss ? '#ff0066' : '#ff6600'; ctx.shadowBlur = b.big ? 24 : isBoss ? 14 : 8;
+      ctx.fillStyle = b.big ? '#ff44aa' : isBoss ? '#ff0066' : '#ff6600';
+      ctx.beginPath(); ctx.arc(b.x, b.y, r, 0, Math.PI * 2); ctx.fill();
+      if (b.big) { ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI * 2); ctx.fill(); }
     } else {
       ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 8;
       ctx.fillStyle = '#00f0ff';
