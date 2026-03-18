@@ -1281,10 +1281,12 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       if (Math.abs(dx) < 18 && Math.abs(dy) < 18) {
         if (e.type === 'bomb') {
           if (!e._dmgCooldown || e._dmgCooldown <= 0) {
-            const BOMB_RADIUS = 80;
-            spawnExplosion(s, e.x, e.y, '#ff8800', 35);
-            spawnExplosion(s, e.x, e.y, '#ffdd00', 20);
+            const BOMB_RADIUS = 140;
+            spawnExplosion(s, e.x, e.y, '#ff8800', 60);
+            spawnExplosion(s, e.x, e.y, '#ffdd00', 35);
+            spawnExplosion(s, e.x, e.y, '#ffffff', 15);
             s.particles.push({ x: e.x, y: e.y, vx: 0, vy: 0, r: 10, alpha: 1, color: '#ff8800', shockwave: true, shockwaveR: 10 });
+            s.particles.push({ x: e.x, y: e.y, vx: 0, vy: 0, r: 10, alpha: 0.7, color: '#ffdd00', shockwave: true, shockwaveR: 5 });
             s.enemies.forEach(ne => {
               if (ne === e || ne.dead) return;
               if (Math.hypot(ne.x - e.x, ne.y - e.y) < BOMB_RADIUS) {
