@@ -211,7 +211,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     ctx.restore();
   }
 
-  function drawEnemy(ctx, e) { /* Simplified */ }
+
 
   function drawBullet(ctx, b, isEnemy) {
     ctx.save();
