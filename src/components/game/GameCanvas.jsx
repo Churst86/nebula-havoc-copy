@@ -1100,10 +1100,31 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     }
 
     // ── Dropper timer-based spawn (independent of wave) ──────
+    // Rotate displayed powerup type every 5 seconds
+    s.dropperRotateTimer--;
+    if (s.dropperRotateTimer <= 0) {
+      s.dropperRotationIdx = (s.dropperRotationIdx + 1) % DROPPER_ROTATION.length;
+      s.dropperRotateTimer = DROPPER_ROTATE_FRAMES;
+      // Update existing droppers to new type
+      s.enemies.forEach(e => {
+        if (e.type === 'dropper' && e.dropType !== 'star') {
+          e.dropType = DROPPER_ROTATION[s.dropperRotationIdx];
+          e.color = DROPPER_COLORS[e.dropType] || '#ffd700';
+        }
+      });
+    }
+
     s.dropperSpawnTimer--;
     if (s.dropperSpawnTimer <= 0) {
       spawnDropper(W, s);
       s.dropperSpawnTimer = DROPPER_SPAWN_INTERVAL;
+    }
+
+    // Rare star dropper on its own independent timer
+    s.starDropperTimer--;
+    if (s.starDropperTimer <= 0) {
+      spawnDropper(W, s, 'star');
+      s.starDropperTimer = STAR_SPAWN_INTERVAL + Math.floor(randomBetween(0, 600));
     }
 
     // ── Enemy movement ────────────────────────────────────────
