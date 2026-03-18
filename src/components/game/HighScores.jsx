@@ -138,6 +138,12 @@ export default function HighScores({ score, wave, onRestart, onReturnToTitle, is
           })}
         </div>
 
+        {countdown !== null && (
+          <p className="text-xs text-muted-foreground">
+            Returning to title in {countdown}s…
+          </p>
+        )}
+
         <Button onClick={onRestart} size="lg"
           className="bg-primary hover:bg-primary/80 text-primary-foreground font-bold text-lg px-8 py-6 rounded-xl gap-2 w-full">
           <RotateCcw className="w-5 h-5" />
