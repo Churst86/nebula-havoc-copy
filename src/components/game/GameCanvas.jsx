@@ -94,7 +94,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   const animRef = useRef(null);
   const lastTimeRef = useRef(0);
   const isPausedRef = useRef(isPaused);
-  useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+    sounds.setPauseVolume(isPaused);
+  }, [isPaused]);
 
   function initStars(W, H) {
     return Array.from({ length: 120 }, () => ({
