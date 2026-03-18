@@ -1362,6 +1362,25 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         const dx = b.x - e.x, dy = b.y - e.y;
         if (Math.abs(dx) < e.w && Math.abs(dy) < e.h) {
           if (b.type === 'spread') { explodeSpread(b, newSpreadPellets); b.hit = true; return; }
+          // Raygun pierce: skip enemies already pierced, consume one pierce count
+          if (b.type === 'raygun' && b.pierceCount > 0) {
+            if (b.piercedEnemies && b.piercedEnemies.includes(e)) return;
+            b.piercedEnemies = b.piercedEnemies || [];
+            b.piercedEnemies.push(e);
+            b.pierceCount--;
+            e.hp--;
+            sounds.hit();
+            spawnExplosion(s, e.x, e.y, '#44ffaa', 4);
+            if (e.hp <= 0) {
+              e.dead = true;
+              const pts = e.type === 'boss' ? 5000 : e.type === 'dropper' ? 500 : e.type === 'elite' ? 300 : e.type === 'mine' ? 300 : e.type === 'eater' ? 800 : 100;
+              s.score += pts; onScoreChange(s.score); sounds.kill();
+              spawnExplosion(s, e.x, e.y, e.type === 'boss' ? '#ff0066' : '#44ffaa', e.type === 'boss' ? 40 : 14);
+              if (e.type === 'dropper') { sounds.killDropper(); s.powerupItems.push({ x: e.x, y: e.y, type: e.dropType, angle: 0 }); }
+              if (e.type === 'boss') { sounds.stopBossMusic(); sounds.waveComplete(); s.maxLives++; s.lives = Math.min(s.lives + 1, s.maxLives); onLivesChange(s.lives); onMaxLivesChange(s.maxLives); }
+            }
+            return; // don't mark b.hit, allow continued travel
+          }
           e.hp--;
           sounds.hit();
           b.hit = true;
