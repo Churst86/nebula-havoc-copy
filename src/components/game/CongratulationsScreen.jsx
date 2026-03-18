@@ -7,8 +7,17 @@ export default function CongratulationsScreen({ wave, score, currentDifficulty, 
   const difficultyEmojis = { easy: '⭐', normal: '🔥', hell: '💀' };
   
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center">
-      <div className="text-center space-y-8 max-w-2xl mx-auto px-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto"
+      style={{
+        backgroundImage: 'url(https://media.base44.com/images/public/69b94c96f2e7813ac4b009de/50ba4ea79_image.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+      }}>
+      {/* Dark overlay for text legibility */}
+      <div className="absolute inset-0 bg-black/50" />
+      
+      <div className="relative z-10 text-center space-y-8 max-w-2xl mx-auto px-6">
         {/* Trophy */}
         <div className="flex justify-center">
           <Trophy className="w-20 h-20 text-yellow-400 animate-bounce" />
