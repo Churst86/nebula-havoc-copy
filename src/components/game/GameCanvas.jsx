@@ -1252,82 +1252,60 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           }
         }
       } else if (e.type === 'eater') {
-        // Block-eater mini-boss: hunts blocks, charges player after eating
         e._eating = false;
-        e._chargePlayerTimer = (e._chargePlayerTimer || 0) - 1;
-
+        const bound = e._mini ? 15 : 25;
         if (e._chargingPlayer) {
-          // Charging across the entire screen — stops only at walls
-          e.x += e._cpDx * 7;
-          e.y += e._cpDy * 7;
-          // Stop at walls and resume wandering
-          if (e.x < 20) { e.x = 20; e._chargingPlayer = false; e.vx = Math.abs(randomBetween(0.4, 0.8)); e.vy = randomBetween(-0.5, 0.5); }
-          if (e.x > W - 20) { e.x = W - 20; e._chargingPlayer = false; e.vx = -Math.abs(randomBetween(0.4, 0.8)); e.vy = randomBetween(-0.5, 0.5); }
-          if (e.y < 20) { e.y = 20; e._chargingPlayer = false; e.vx = randomBetween(-0.5, 0.5); e.vy = Math.abs(randomBetween(0.4, 0.8)); }
-          if (e.y > H - 20) { e.y = H - 20; e._chargingPlayer = false; e.vx = randomBetween(-0.5, 0.5); e.vy = -Math.abs(randomBetween(0.4, 0.8)); }
+          e.x += e._cpDx * (e._mini ? 5 : 7); e.y += e._cpDy * (e._mini ? 5 : 7);
+          if (e.x < bound) { e.x = bound; e._chargingPlayer = false; e.vx = Math.abs(randomBetween(0.4,0.8)); e.vy = randomBetween(-0.5,0.5); }
+          if (e.x > W-bound) { e.x = W-bound; e._chargingPlayer = false; e.vx = -Math.abs(randomBetween(0.4,0.8)); e.vy = randomBetween(-0.5,0.5); }
+          if (e.y < bound) { e.y = bound; e._chargingPlayer = false; e.vx = randomBetween(-0.5,0.5); e.vy = Math.abs(randomBetween(0.4,0.8)); }
+          if (e.y > H-bound) { e.y = H-bound; e._chargingPlayer = false; e.vx = randomBetween(-0.5,0.5); e.vy = -Math.abs(randomBetween(0.4,0.8)); }
         } else {
           let targetX = null, targetY = null, bestDist = Infinity;
-
-          // Look for falling blocks first
           s.blocks.forEach(block => {
-            if (block.invulnerable || block.dead) return;
-            const cells = getBlockCells(block);
-            cells.forEach(cell => {
-              const d = Math.hypot(cell.x + BLOCK_SIZE / 2 - e.x, cell.y + BLOCK_SIZE / 2 - e.y);
-              if (d < bestDist) { bestDist = d; targetX = cell.x + BLOCK_SIZE / 2; targetY = cell.y + BLOCK_SIZE / 2; e._targetBlock = block; e._targetCellIdx = undefined; }
+            if (block.dead) return;
+            if (e._mini && block.invulnerable) return;
+            getBlockCells(block).forEach(cell => {
+              const d = Math.hypot(cell.x+BLOCK_SIZE/2-e.x, cell.y+BLOCK_SIZE/2-e.y);
+              if (d < bestDist) { bestDist=d; targetX=cell.x+BLOCK_SIZE/2; targetY=cell.y+BLOCK_SIZE/2; e._targetBlock=block; e._targetCellIdx=undefined; }
             });
           });
-          // Also look for piled cells
           s.piledCells.forEach((cell, idx) => {
-            const d = Math.hypot(cell.x + BLOCK_SIZE / 2 - e.x, cell.y + BLOCK_SIZE / 2 - e.y);
-            if (d < bestDist) { bestDist = d; targetX = cell.x + BLOCK_SIZE / 2; targetY = cell.y + BLOCK_SIZE / 2; e._targetBlock = null; e._targetCellIdx = idx; }
+            const d = Math.hypot(cell.x+BLOCK_SIZE/2-e.x, cell.y+BLOCK_SIZE/2-e.y);
+            if (d < bestDist) { bestDist=d; targetX=cell.x+BLOCK_SIZE/2; targetY=cell.y+BLOCK_SIZE/2; e._targetBlock=null; e._targetCellIdx=idx; }
           });
-
           if (targetX !== null && bestDist > 10) {
-            const dx2 = targetX - e.x, dy2 = targetY - e.y;
-            const len2 = Math.hypot(dx2, dy2) || 1;
-            const eSpd = 1.2 + (s.wave * 0.04);
-            e.x += (dx2 / len2) * eSpd;
-            e.y += (dy2 / len2) * eSpd;
+            const dx2=targetX-e.x, dy2=targetY-e.y, len2=Math.hypot(dx2,dy2)||1;
+            const eSpd=(e._mini?0.8:1.2)+(s.wave*0.04);
+            e.x+=(dx2/len2)*eSpd; e.y+=(dy2/len2)*eSpd;
           } else if (targetX !== null && bestDist <= 30) {
-            // Eating!
             e._eating = true;
-            let justAte = false;
+            let justAte=false, ateInvuln=false;
             if (e._targetBlock && !e._targetBlock.dead) {
-              e._targetBlock.hp -= 0.06;
+              e._targetBlock.hp -= e._targetBlock.invulnerable ? 0.02 : 0.06;
               if (e._targetBlock.hp <= 0) {
-                e._targetBlock.dead = true;
-                e.hp = Math.min(e.hp + 3, e.maxHp + 5);
-                e.maxHp = Math.max(e.maxHp, e.hp);
-                spawnExplosion(s, e.x, e.y, '#44ff88', 10);
-                justAte = true;
+                ateInvuln=!!e._targetBlock.invulnerable; e._targetBlock.dead=true;
+                e.hp=Math.min(e.hp+3,e.maxHp+5); e.maxHp=Math.max(e.maxHp,e.hp);
+                spawnExplosion(s,e.x,e.y,ateInvuln?'#aaaacc':'#44ff88',10);
+                justAte=true; e._blocksEaten=(e._blocksEaten||0)+1;
               }
-            } else if (e._targetCellIdx !== undefined && s.piledCells[e._targetCellIdx]) {
-              s.piledCells.splice(e._targetCellIdx, 1);
-              e.hp = Math.min(e.hp + 2, e.maxHp + 5);
-              e.maxHp = Math.max(e.maxHp, e.hp);
-              spawnExplosion(s, e.x, e.y, '#44ff88', 6);
-              justAte = true;
+            } else if (e._targetCellIdx!==undefined && s.piledCells[e._targetCellIdx]) {
+              s.piledCells.splice(e._targetCellIdx,1);
+              e.hp=Math.min(e.hp+2,e.maxHp+5); e.maxHp=Math.max(e.maxHp,e.hp);
+              spawnExplosion(s,e.x,e.y,'#44ff88',6);
+              justAte=true; e._blocksEaten=(e._blocksEaten||0)+1;
             }
-            // After eating a block, charge at the player
             if (justAte) {
-              const dxp = p.x - e.x, dyp = p.y - e.y;
-              const lenp = Math.hypot(dxp, dyp) || 1;
-              e._cpDx = dxp / lenp;
-              e._cpDy = dyp / lenp;
-              e._chargingPlayer = true;
-              e._cpDuration = 35;
+              if (ateInvuln && !e._mini && !e._superEater) { e._superEater=true; e._miniSpawnTimer=300; spawnExplosion(s,e.x,e.y,'#ffffff',30); }
+              if (!e._mini && e._blocksEaten>=2) { e._blocksEaten=0; spawnMiniEaters(W,s,e); }
+              const dxp=p.x-e.x, dyp=p.y-e.y, lenp=Math.hypot(dxp,dyp)||1;
+              e._cpDx=dxp/lenp; e._cpDy=dyp/lenp; e._chargingPlayer=true; e._cpDuration=35;
             }
-          } else {
-            // Wander if no blocks
-            e.x += e.vx; e.y += e.vy;
-          }
-          // Keep in bounds
-          if (e.x < 25) { e.x = 25; e.vx = Math.abs(e.vx); }
-          if (e.x > W - 25) { e.x = W - 25; e.vx = -Math.abs(e.vx); }
-          if (e.y < 25) { e.y = 25; e.vy = Math.abs(e.vy); }
-          if (e.y > H - 25) { e.y = H - 25; e.vy = -Math.abs(e.vy); }
+          } else { e.x+=e.vx; e.y+=e.vy; }
+          if (e.x<bound){e.x=bound;e.vx=Math.abs(e.vx);} if (e.x>W-bound){e.x=W-bound;e.vx=-Math.abs(e.vx);}
+          if (e.y<bound){e.y=bound;e.vy=Math.abs(e.vy);} if (e.y>H-bound){e.y=H-bound;e.vy=-Math.abs(e.vy);}
         }
+        if (e._superEater) { e._miniSpawnTimer=(e._miniSpawnTimer||300)-1; if(e._miniSpawnTimer<=0){spawnMiniEaters(W,s,e);e._miniSpawnTimer=300;} }
       } else if (e.type === 'dropper') {
         // Random wander — bounce off all walls, never leave screen
         e.dirTimer = (e.dirTimer || 60) - 1;
