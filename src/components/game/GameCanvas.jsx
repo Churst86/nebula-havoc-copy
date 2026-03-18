@@ -823,23 +823,23 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       }
     }
 
-    // Super wingman fires player's weapon loadout
-    if (s.superWingman) {
+    // Super wingmen fire player's weapon loadout
+    if (s.superWingmen && s.superWingmen.length > 0) {
       s.superWingmanFireTimer = (s.superWingmanFireTimer || 0) - 1;
       if (s.superWingmanFireTimer <= 0) {
-        const sw = s.superWingman;
         const pw = s.powerups;
-        // Mirror player fire from super wingman position
-        if ((pw.raygun || 0) > 0) {
-          const size = 6 + (pw.raygun) * 3;
-          s.bullets.push({ x: sw.x, y: sw.y - 14, vx: 0, vy: -11, type: 'raygun', size, orbitAngle: 0 });
-        }
-        if ((pw.bounce || 0) > 0) {
-          const side = Math.floor(s.spiralAngle * 2) % 2 === 0 ? -1 : 1;
-          s.bullets.push({ x: sw.x + side * 8, y: sw.y - 14, vx: side * 3.5, vy: -10, type: 'bounce', bouncesLeft: (pw.bounce) * 2 });
-        }
-        s.bullets.push({ x: sw.x, y: sw.y - 18, vx: 0, vy: -7, type: 'normal' });
         const rapidfireBonus = (pw.rapidfire || 0) === 1 ? 10 : (pw.rapidfire || 0) * 8;
+        s.superWingmen.forEach(sw => {
+          if ((pw.raygun || 0) > 0) {
+            const size = 6 + (pw.raygun) * 3;
+            s.bullets.push({ x: sw.x, y: sw.y - 14, vx: 0, vy: -11, type: 'raygun', size, orbitAngle: 0 });
+          }
+          if ((pw.bounce || 0) > 0) {
+            const side = Math.floor(s.spiralAngle * 2) % 2 === 0 ? -1 : 1;
+            s.bullets.push({ x: sw.x + side * 8, y: sw.y - 14, vx: side * 3.5, vy: -10, type: 'bounce', bouncesLeft: (pw.bounce) * 2 });
+          }
+          s.bullets.push({ x: sw.x, y: sw.y - 18, vx: 0, vy: -7, type: 'normal' });
+        });
         s.superWingmanFireTimer = Math.max(10, getFireRate(pw) + 5 - rapidfireBonus);
       }
     }
