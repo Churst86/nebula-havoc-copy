@@ -14,7 +14,7 @@ export default function CongratulationsScreen({ difficulty, score, onPlayNext, o
       <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-50">
         <DifficultySelector
           completedDifficulties={completedDifficulties}
-          onSelectDifficulty={onPlayNext}
+          onSelectDifficulty={(diff) => onPlayNext(diff)}
           onHome={onHome}
         />
       </div>
