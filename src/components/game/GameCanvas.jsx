@@ -120,11 +120,22 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   // ── Wave spawner ─────────────────────────────────────────────
   function spawnWave(W, s) {
     const wave = s.wave;
+    const cfg = difficultyConfig || { hpMult: 1, maxWave: 100, blockSpeedMult: 1 };
+    const hpMult = cfg.hpMult || 1;
+
+    // Check max wave cap — trigger game-won state
+    if (cfg.maxWave && wave > cfg.maxWave) {
+      sounds.stopAllMusic();
+      s.running = false;
+      setGameState('gameover');
+      return;
+    }
+
     const count = 5 + wave * 2;
     const enemies = [];
 
     if (wave % 5 === 0) {
-      const bossHp = 20 + wave * 5;
+      const bossHp = Math.round((20 + wave * 5) * hpMult);
       const bossGuns = ['spread', 'laser', 'raygun', 'bounce'];
       const bossGun = bossGuns[Math.floor(Math.random() * bossGuns.length)];
       const bossTier = Math.floor(wave / 5); // 1, 2, 3, 4...
@@ -140,12 +151,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
 
     for (let i = 0; i < count; i++) {
       const isElite = wave > 3 && Math.random() < 0.25;
+      const baseHp = isElite ? 3 : 1;
+      const hp = Math.round(baseHp * hpMult);
       enemies.push({
         type: isElite ? 'elite' : 'basic',
         x: randomBetween(40, W - 40),
         y: -30 - i * 28,
         w: isElite ? 22 : 18, h: isElite ? 22 : 18,
-        hp: isElite ? 3 : 1, maxHp: isElite ? 3 : 1,
+        hp, maxHp: hp,
         vx: randomBetween(-0.5, 0.5) * (1 + wave * 0.04),
         vy: (0.35 + wave * 0.06) * (Math.random() * 0.4 + 0.7),
         fireTimer: randomBetween(60, 120),
@@ -154,13 +167,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     // Spawn 1-2 mine enemies starting wave 2
     if (wave >= 2) {
       const mineCount = wave >= 6 ? 2 : 1;
+      const mineHp = Math.round(3 * hpMult);
       for (let i = 0; i < mineCount; i++) {
         enemies.push({
           type: 'mine',
           x: randomBetween(50, W - 50),
           y: -50 - i * 40,
           w: 20, h: 20,
-          hp: 3, maxHp: 3,
+          hp: mineHp, maxHp: mineHp,
           vx: randomBetween(-0.6, 0.6),
           vy: (0.4 + wave * 0.05),
           fireTimer: 9999, // mines don't shoot
@@ -169,7 +183,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     }
     // Spawn block-eater mini-boss starting wave 4
     if (wave >= 4) {
-      const eaterHp = 15 + wave * 3; // mini-boss HP scales with wave
+      const eaterHp = Math.round((15 + wave * 3) * hpMult);
       enemies.push({
         type: 'eater',
         x: randomBetween(80, W - 80),
