@@ -682,14 +682,17 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         ctx.fillStyle=eaterColor; ctx.font='bold 7px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
         ctx.fillText(isSuper?'SUPER EATER':'EATER',0,-52);
       }
-    } else if (e.type === 'elite') {
-      ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14;
-      ctx.strokeStyle = '#ff44ff'; ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(0, -11); ctx.lineTo(11, 11); ctx.lineTo(-11, 11); ctx.closePath();
-      ctx.stroke();
-      ctx.fillStyle = 'rgba(255,68,255,0.1)'; ctx.fill();
-    } else {
+    } else if (e.type === 'berserk') {
+       const t = Date.now();
+       drawBerserk(ctx, e, t);
+     } else if (e.type === 'elite') {
+       ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14;
+       ctx.strokeStyle = '#ff44ff'; ctx.lineWidth = 2;
+       ctx.beginPath();
+       ctx.moveTo(0, -11); ctx.lineTo(11, 11); ctx.lineTo(-11, 11); ctx.closePath();
+       ctx.stroke();
+       ctx.fillStyle = 'rgba(255,68,255,0.1)'; ctx.fill();
+     } else {
       ctx.shadowColor = '#ff4444'; ctx.shadowBlur = 10;
       ctx.strokeStyle = '#ff4444'; ctx.lineWidth = 1.5;
       ctx.beginPath();
@@ -1323,6 +1326,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         if (e.x > W - 30) { e.x = W - 30; e.vx = -Math.abs(e.vx); }
         if (e.y < 30) { e.y = 30; e.vy = Math.abs(e.vy); }
         if (e.y > H * 0.7) { e.y = H * 0.7; e.vy = -Math.abs(e.vy); }
+      } else if (e.type === 'berserk') {
+        updateBerserkMovement(e, p, W, H);
+        updateBerserkLaser(e, s, p, W, H);
       } else if (e.type === 'elite') {
         // Elite: aggressive sine-wave weaving, periodic dash — fixed speed (no wall acceleration)
         e.movePhase = (e.movePhase || 0) + 0.07;
