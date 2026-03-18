@@ -7,7 +7,6 @@ export const POWERUP_COLORS = {
   bounce: '#aaff00',
   speed: '#ff8800',
   rapidfire: '#ff4488',
-  reverse: '#ff6600',
   missile: '#ff00ff',
   star: '#ffffff',
 };
