@@ -553,15 +553,15 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       const c = e.color || '#ffd700';
       ctx.shadowColor = c; ctx.shadowBlur = 18;
       ctx.strokeStyle = c; ctx.lineWidth = 2;
-      // Diamond shape
+      // Spiky star polygon (8 spikes)
       ctx.beginPath();
-      ctx.moveTo(0, -18); ctx.lineTo(14, 0); ctx.lineTo(0, 18); ctx.lineTo(-14, 0); ctx.closePath();
-      ctx.stroke();
-      ctx.fillStyle = c + '22'; ctx.fill();
-      ctx.fillStyle = c;
-      ctx.font = 'bold 12px monospace';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(DROPPER_LABELS[e.dropType] || '★', 0, 1);
+      for (let i = 0; i < 16; i++) {
+        const a = (i/16)*Math.PI*2-Math.PI/2, r = i%2===0?20:10;
+        i===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);
+      }
+      ctx.closePath(); ctx.fillStyle=c+'22'; ctx.fill(); ctx.stroke();
+      ctx.fillStyle=c; ctx.font='bold 11px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(DROPPER_LABELS[e.dropType]||'★',0,1);
     } else if (e.type === 'mine') {
       const damaged = e.hp < e.maxHp;
       const isCharging = e._charging;
