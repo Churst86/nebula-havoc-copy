@@ -84,19 +84,6 @@ const AUXILIARY_UPGRADES = ['speed', 'rapidfire', 'wingman', 'shield'];
 
 const STAR_INVINCIBLE_FRAMES = 420; // 7 seconds at 60fps
 
-// Dropper enemy appearance per powerup type
-const DROPPER_COLORS = {
-  spread: '#ffdd00', laser: '#ff44ff', raygun: '#44ffaa',
-  wingman: '#44aaff', shield: '#00ccff', bounce: '#aaff00',
-  speed: '#ff8800', rapidfire: '#ff4488', star: '#ffffff',
-};
-const DROPPER_LABELS = {
-  spread: 'S', laser: 'L', raygun: 'R', wingman: 'W',
-  shield: '🛡', bounce: 'B', speed: '▶', rapidfire: '⚡', star: '★',
-};
-
-// All dropper types in rotation order (star excluded — spawned separately at low chance)
-const DROPPER_ROTATION = ['spread', 'laser', 'raygun', 'bounce', 'wingman', 'shield', 'speed', 'rapidfire'];
 const DROPPER_ROTATE_FRAMES = 300; // rotate every 5 seconds at 60fps
 // Star spawns separately with a low independent chance
 const STAR_SPAWN_INTERVAL = 1800; // ~30 seconds between star dropper spawns
