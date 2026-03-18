@@ -34,63 +34,39 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
 
   return (
     <div className="absolute inset-0 z-20 pointer-events-none">
-      {/* Top bar: Score | Wave+Status | Lives */}
-      <div className="flex items-start justify-between px-6 py-4">
-
-        {/* Score */}
-        <div className="flex items-center gap-3">
-          <Zap className="w-5 h-5 text-primary fill-primary" />
-          <span className="text-2xl font-black text-white tracking-wider tabular-nums">
-            {score.toLocaleString()}
-          </span>
+      {/* Wave + Shield + Star — center top */}
+      <div className="flex flex-col items-center gap-1.5 pt-4">
+        <div className="text-sm font-bold uppercase tracking-[0.3em] text-muted-foreground">
+          Wave {wave}
         </div>
-
-        {/* Wave + Shield + Star */}
-        <div className="flex flex-col items-center gap-1.5">
-          <div className="text-sm font-bold uppercase tracking-[0.3em] text-muted-foreground">
-            Wave {wave}
-          </div>
-          <div className="flex flex-wrap justify-center gap-1">
-            {starInvincible && (
-              <div className="text-xs font-bold px-2 py-0.5 rounded-full animate-pulse"
-                style={{ color: '#fff', border: '1px solid #fff', background: 'rgba(255,255,255,0.15)' }}>
-                ★ INVINCIBLE
-              </div>
-            )}
-            {shieldHp > 0 && (
-              <div className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full"
-                style={{ color: '#00ccff', border: '1px solid #00ccff', background: '#00ccff22' }}>
-                <Shield className="w-3 h-3" />
-                {shieldHp <= 5 ? '●'.repeat(shieldHp) : `×${shieldHp}`}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Lives + Continues */}
-        <div className="flex flex-col items-end gap-1">
-          <div className="flex items-center gap-1.5 flex-wrap justify-end max-w-36">
-            {Array.from({ length: maxLives || 3 }).map((_, i) => (
-              <Heart key={i}
-                className={`w-5 h-5 transition-all duration-300 ${
-                  i < lives ? 'text-red-500 fill-red-500 scale-100' : 'text-gray-700 fill-gray-700 scale-75 opacity-40'
-                }`}
-              />
-            ))}
-          </div>
-          {continuesLeft > 0 && (
-            <div className="flex items-center gap-1 text-xs font-bold"
-              style={{ color: '#00f0ff' }}>
-              <RefreshCw className="w-3 h-3" />
-              <span>{continuesLeft}×</span>
+        <div className="flex flex-wrap justify-center gap-1">
+          {starInvincible && (
+            <div className="text-xs font-bold px-2 py-0.5 rounded-full animate-pulse"
+              style={{ color: '#fff', border: '1px solid #fff', background: 'rgba(255,255,255,0.15)' }}>
+              ★ INVINCIBLE
+            </div>
+          )}
+          {shieldHp > 0 && (
+            <div className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full"
+              style={{ color: '#00ccff', border: '1px solid #00ccff', background: '#00ccff22' }}>
+              <Shield className="w-3 h-3" />
+              {shieldHp <= 5 ? '●'.repeat(shieldHp) : `×${shieldHp}`}
             </div>
           )}
         </div>
       </div>
 
-      {/* Gun Upgrades — bottom-left */}
+      {/* Score — bottom-left */}
+      <div className="absolute bottom-6 left-6 flex items-center gap-3">
+        <Zap className="w-5 h-5 text-primary fill-primary" />
+        <span className="text-2xl font-black text-white tracking-wider tabular-nums">
+          {score.toLocaleString()}
+        </span>
+      </div>
+
+      {/* Gun Upgrades — top-left */}
       {gunKeys.length > 0 && (
-        <div className="absolute bottom-6 left-6 flex flex-col gap-1">
+        <div className="absolute top-6 left-6 flex flex-col gap-1">
           {gunKeys.map(key => {
             const tier = powerups[key] || 1;
             const color = POWERUP_COLORS[key];
@@ -105,9 +81,9 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
         </div>
       )}
 
-      {/* Utility Upgrades — bottom-right (before buttons) */}
+      {/* Utility Upgrades — top-right */}
       {utilityKeys.length > 0 && (
-        <div className="absolute bottom-20 right-6 flex flex-col gap-1 items-end">
+        <div className="absolute top-6 right-6 flex flex-col gap-1 items-end">
           {utilityKeys.map(key => {
             const tier = powerups[key] || 1;
             const color = POWERUP_COLORS[key];
@@ -124,8 +100,28 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
         </div>
       )}
 
-      {/* Pause + Options buttons — bottom-right */}
-      <div className="absolute bottom-6 right-6 pointer-events-auto flex gap-2">
+      {/* Lives + Continues — bottom-right */}
+      <div className="absolute bottom-6 right-6 flex flex-col items-end gap-1">
+        <div className="flex items-center gap-1.5 flex-wrap justify-end max-w-36">
+          {Array.from({ length: maxLives || 3 }).map((_, i) => (
+            <Heart key={i}
+              className={`w-5 h-5 transition-all duration-300 ${
+                i < lives ? 'text-red-500 fill-red-500 scale-100' : 'text-gray-700 fill-gray-700 scale-75 opacity-40'
+              }`}
+            />
+          ))}
+        </div>
+        {continuesLeft > 0 && (
+          <div className="flex items-center gap-1 text-xs font-bold"
+            style={{ color: '#00f0ff' }}>
+            <RefreshCw className="w-3 h-3" />
+            <span>{continuesLeft}×</span>
+          </div>
+        )}
+      </div>
+
+      {/* Pause + Options buttons — bottom-center */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto flex gap-2">
         {isPaused && (
           <Button
             size="icon"
