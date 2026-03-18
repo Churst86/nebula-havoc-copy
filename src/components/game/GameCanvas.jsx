@@ -979,10 +979,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
          const rapidfireBonus = (s.powerups.rapidfire || 0) === 1 ? 10 : (s.powerups.rapidfire || 0) * 8;
          const baseDelay = Math.max(12, 55 - (reverseTier > 3 ? (reverseTier - 3) * 3 : 0) - rapidfireBonus);
          s.reverseFireTimer = baseDelay;
-      }
-    }
+         }
+         }
 
-    // Wingmen independent fire timer
+         // Wingmen independent fire timer
     if ((s.powerups.wingman || 0) > 0 && s.wingmen.length > 0) {
       s.wingmanFireTimer--;
       if (s.wingmanFireTimer <= 0) {
