@@ -850,11 +850,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         s.laserCooldown--;
       } else if (s.laserBeamActive) {
         s.laserBeamTimer--;
-        // Beam deals damage each frame to enemies it overlaps
         const laserTier = s.powerups.laser;
-        const beamW = 6 + laserTier * 4; // width of beam
-        // Destroy enemy bullets in the beam path (every frame)
-        const laserBeamW = 6 + laserTier * 4;
+        const beamW = 4 + laserTier * 3; // wider per tier (tier 1=7, tier 10=34)
+        const laserBeamW = beamW;
         s.enemyBullets = s.enemyBullets.filter(eb => {
           if (Math.abs(eb.x - p.x) < laserBeamW + 6 && eb.y < p.y) {
             spawnExplosion(s, eb.x, eb.y, '#ff44ff', 3);
