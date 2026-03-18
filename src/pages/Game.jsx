@@ -130,6 +130,7 @@ export default function Game() {
         onContinueUsed={handleContinueUsed}
         isPaused={isPaused}
         difficultyConfig={difficultyConfig}
+        gameSpeed={settings.gameSpeed ?? 30}
       />
 
       {(gameState === 'playing' || gameState === 'resuming') && (
