@@ -101,11 +101,12 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
             const color = POWERUP_COLORS[key];
             const isSuper = key === 'wingman' && tier >= 5;
             const label = isSuper ? 'SUPER WINGMAN' : POWERUP_LABELS[key];
+            const icon = POWERUP_ICONS[key] || '◉';
             return (
               <div key={key}
                 className="text-xs font-bold px-3 py-1 rounded-full"
                 style={{ color, border: `1px solid ${color}`, background: `${color}22` }}>
-                {label} Lv{tier}
+                {icon} {label} Lv{tier}
               </div>
             );
           })}
