@@ -103,10 +103,7 @@ export default function Game() {
 
   // Apply master volume to sounds when settings change
   useEffect(() => {
-    try {
-      const { sounds } = require('../hooks/useSound.js');
-      sounds.setMasterVolume && sounds.setMasterVolume(settings.soundVolume);
-    } catch {}
+    sounds.setMasterVolume(settings.soundVolume);
   }, [settings.soundVolume]);
 
   const difficultyConfig = DIFFICULTY_CONFIG[settings.difficulty] || DIFFICULTY_CONFIG.normal;
