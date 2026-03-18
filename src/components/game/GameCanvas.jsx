@@ -919,14 +919,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       if (s.fireTimer <= 0) { playerFire(s); s.fireTimer = getFireRate(s.powerups); }
     }
 
-    // Spread timer
-    if ((s.powerups.spread || 0) > 0) {
+    // Shotgun timer
+    if ((s.powerups.shotgun || 0) > 0) {
       s.spreadFireTimer--;
       if (s.spreadFireTimer <= 0) {
         fireSpreadShot(s);
-        const spreadTier = s.powerups.spread || 0;
+        const shotgunTier = s.powerups.shotgun || 0;
         const rapidfireBonus = (s.powerups.rapidfire || 0) === 1 ? 10 : (s.powerups.rapidfire || 0) * 8;
-        s.spreadFireTimer = Math.max(12, 55 - spreadTier * 4 - rapidfireBonus);
+        s.spreadFireTimer = Math.max(12, 55 - shotgunTier * 4 - rapidfireBonus);
         }
         }
 
