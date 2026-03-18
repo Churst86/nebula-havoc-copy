@@ -906,9 +906,26 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     // ── Enemy movement ────────────────────────────────────────
     s.enemies.forEach(e => {
       if (e.type === 'boss') {
-        e.phase = (e.phase || 0) + 0.01;
-        e.x += Math.sin(e.phase) * 2;
-        e.y = Math.min(e.y + 0.15, H * 0.25);
+        const bt = e.tier || 1;
+        e.phase = (e.phase || 0) + (bt >= 4 ? 0.022 : bt >= 3 ? 0.016 : bt >= 2 ? 0.013 : 0.01);
+        const targetY = bt >= 3 ? H * 0.35 : H * 0.25;
+        e.y = Math.min(e.y + 0.15, targetY);
+        if (bt === 1) {
+          // Tier 1: gentle sine wave
+          e.x += Math.sin(e.phase) * 2;
+        } else if (bt === 2) {
+          // Tier 2: figure-8 pattern
+          e.x += Math.sin(e.phase) * 3;
+          e.y = targetY + Math.sin(e.phase * 2) * 30;
+        } else if (bt === 3) {
+          // Tier 3: aggressive zigzag — bounces left/right faster
+          e.x += e.vx * 1.5;
+          if (e.x < 60 || e.x > W - 60) e.vx *= -1;
+        } else {
+          // Tier 4+: circular orbit around center
+          e.x = W / 2 + Math.cos(e.phase) * (W * 0.3);
+          e.y = targetY + Math.sin(e.phase * 2) * 50;
+        }
         if (e.x < 50 || e.x > W - 50) e.vx *= -1;
       } else if (e.type === 'bomb') {
         // Bomb: slow drift normally, periodically charges at player
