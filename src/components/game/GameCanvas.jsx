@@ -1548,8 +1548,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           e.y += (e.y - p.y) * 0.3;
           return;
         }
-        if (e.type === 'bomb') {
-          const BOMB_RADIUS = 140;
+        if (e.type === 'mine') {
+          const MINE_RADIUS = 160;
           spawnExplosion(s, e.x, e.y, '#ff8800', 60);
           spawnExplosion(s, e.x, e.y, '#ffdd00', 35);
           spawnExplosion(s, e.x, e.y, '#ffffff', 15);
@@ -1557,15 +1557,20 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           s.particles.push({ x: e.x, y: e.y, vx: 0, vy: 0, r: 10, alpha: 0.7, color: '#ffdd00', shockwave: true, shockwaveR: 5 });
           s.enemies.forEach(ne => {
             if (ne === e || ne.dead) return;
-            if (Math.hypot(ne.x - e.x, ne.y - e.y) < BOMB_RADIUS) {
+            if (Math.hypot(ne.x - e.x, ne.y - e.y) < MINE_RADIUS) {
               ne.hp -= 2;
               spawnExplosion(s, ne.x, ne.y, '#ff8800', 8);
               if (ne.hp <= 0) ne.dead = true;
             }
           });
-          s.score += 200; onScoreChange(s.score);
+          s.score += 300; onScoreChange(s.score);
           takeDamage(s);
           spawnExplosion(s, p.x, p.y, '#ff8800', 12);
+          e.dead = true;
+        } else if (e.type === 'eater') {
+          // Eater bites player
+          spawnExplosion(s, e.x, e.y, '#44ff88', 12);
+          takeDamage(s);
           e.dead = true;
         } else {
           e.dead = true;
