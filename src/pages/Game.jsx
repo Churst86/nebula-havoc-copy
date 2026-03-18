@@ -12,6 +12,18 @@ import { sounds } from '../hooks/useSound.js';
 const CONTINUE_SCORE_THRESHOLD = 1000; // score needed to earn a continue
 const MAX_CONTINUES = 3;
 
+const DIFFICULTY_MILESTONES = {
+  easy: 25,
+  normal: 50,
+  hell: 100,
+};
+
+const NEXT_DIFFICULTY = {
+  easy: 'normal',
+  normal: 'hell',
+  hell: null,
+};
+
 export default function Game() {
   const [gameState, setGameState] = useState('start');
   const [score, setScore] = useState(0);
