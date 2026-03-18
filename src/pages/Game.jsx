@@ -152,6 +152,12 @@ export default function Game() {
         <OptionsScreen
           settings={settings}
           onSettingsChange={handleSettingsChange}
+          gameState="playing"
+          onExitToTitle={() => {
+            sounds.stopAllMusic();
+            setGameState('start');
+            setShowPauseOptions(false);
+          }}
           onBack={() => setShowPauseOptions(false)}
         />
       )}
