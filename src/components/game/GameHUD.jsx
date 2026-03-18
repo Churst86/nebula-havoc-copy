@@ -44,7 +44,7 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
           </span>
         </div>
 
-        {/* Wave + Power-ups */}
+        {/* Wave + Shield + Star */}
         <div className="flex flex-col items-center gap-1.5">
           <div className="text-sm font-bold uppercase tracking-[0.3em] text-muted-foreground">
             Wave {wave}
@@ -63,7 +63,7 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
                 {shieldHp <= 5 ? '●'.repeat(shieldHp) : `×${shieldHp}`}
               </div>
             )}
-            {activePowerupKeys.map(key => {
+            {otherKeys.map(key => {
               const tier = powerups[key] || 1;
               const color = POWERUP_COLORS[key];
               const isSuper = key === 'wingman' && tier >= 5;
