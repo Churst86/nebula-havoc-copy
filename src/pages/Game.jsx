@@ -124,6 +124,7 @@ export default function Game() {
           score={score}
           wave={wave}
           onRestart={handleStart}
+          onReturnToTitle={() => setGameState('start')}
           isNewScore={isHighScore(score)}
         />
       )}
