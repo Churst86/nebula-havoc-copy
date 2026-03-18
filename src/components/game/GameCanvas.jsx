@@ -540,7 +540,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       const bw = e.type === 'boss' ? 70 : 28, bh = 3;
       const bx = -bw / 2, by = e.type === 'boss' ? 48 : 22;
       ctx.fillStyle = '#333'; ctx.fillRect(bx, by, bw, bh);
-      ctx.fillStyle = e.type === 'boss' ? '#ff0066' : (e.color || '#ff44ff');
+      const bossBarColor = e.type === 'boss' ? (['#ff0066','#ff6600','#aa00ff','#00ccff'][Math.min((e.tier || 1) - 1, 3)]) : (e.color || '#ff44ff');
+      ctx.fillStyle = bossBarColor;
       ctx.fillRect(bx, by, bw * (e.hp / e.maxHp), bh);
     }
     ctx.restore();
