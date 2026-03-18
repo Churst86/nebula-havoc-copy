@@ -24,12 +24,13 @@ export function saveHighScore(name, score, wave) {
   return trimmed;
 }
 
-export default function HighScores({ score, wave, onRestart, isNewScore }) {
+export default function HighScores({ score, wave, onRestart, onReturnToTitle, isNewScore }) {
   const [name, setName] = useState('');
   const [saved, setSaved] = useState(false);
   const [scores, setScores] = useState(getHighScores());
   const inputs = [useRef(), useRef(), useRef()];
   const [letters, setLetters] = useState(['', '', '']);
+  const [countdown, setCountdown] = useState(null);
 
   const handleLetterChange = (i, val) => {
     const char = val.replace(/[^a-zA-Z0-9]/g, '').slice(-1).toUpperCase();
@@ -50,9 +51,21 @@ export default function HighScores({ score, wave, onRestart, isNewScore }) {
     const updated = saveHighScore(n, score, wave);
     setScores(updated);
     setSaved(true);
+    setCountdown(5);
   };
 
-  // Don't auto-return — user clicks "PLAY AGAIN" button to restart
+  // Start countdown immediately if not a new high score
+  useEffect(() => {
+    if (!isNewScore) setCountdown(5);
+  }, [isNewScore]);
+
+  // Tick the countdown
+  useEffect(() => {
+    if (countdown === null) return;
+    if (countdown <= 0) { onReturnToTitle(); return; }
+    const t = setTimeout(() => setCountdown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [countdown, onReturnToTitle]);
 
   const newScoreIndex = saved ? scores.findIndex(s => s.score === score && s.name === letters.join('').padEnd(3,'_').slice(0,3)) : -1;
 
