@@ -597,7 +597,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
 
       // Three large eyes — different expressions
       const eyeGlow = isCharging ? '#ff2200' : '#00ff44';
-      [[-7, -4], [0, -7], [7, -4]].forEach(([ex, ey], i) => {
+      const eyePositions = [[-7, -4], [0, -7], [7, -4]];
+      eyePositions.forEach(([ex, ey], i) => {
         ctx.shadowColor = eyeGlow; ctx.shadowBlur = 12;
         ctx.fillStyle = '#ffffff';
         ctx.beginPath(); ctx.arc(ex, ey, 4.5, 0, Math.PI * 2); ctx.fill();
