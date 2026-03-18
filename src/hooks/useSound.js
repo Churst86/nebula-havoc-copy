@@ -255,6 +255,13 @@ function startBossMusic() {
 }
 
 export const sounds = {
+  setPauseVolume(paused) {
+    try {
+      const ctx = getCtx();
+      const master = getMasterGain(ctx);
+      master.gain.setTargetAtTime(paused ? 0.08 : 1.0, ctx.currentTime, 0.15);
+    } catch {}
+  },
   shoot()        { playTone({ freq: 880, type: 'square', duration: 0.06, gain: 0.08, freqEnd: 440 }); },
   hit()          { playNoise({ duration: 0.08, gain: 0.15, filterFreq: 800 }); },
   kill() {
