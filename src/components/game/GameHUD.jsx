@@ -30,11 +30,11 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
   const shieldHp = powerups.shieldHp || 0;
   const starInvincible = powerups.starInvincible || false;
   const gunKeys = GUN_POWERUPS.filter(k => (powerups[k] || 0) > 0);
-  const otherKeys = Object.keys(POWERUP_LABELS).filter(k => !GUN_POWERUPS.includes(k) && (powerups[k] || 0) > 0);
+  const utilityKeys = ['speed', 'rapidfire', 'wingman', 'shield'].filter(k => (powerups[k] || 0) > 0);
 
   return (
     <div className="absolute inset-0 z-20 pointer-events-none">
-      {/* Top bar: Score | Wave+Powerups | Lives */}
+      {/* Top bar: Score | Wave+Status | Lives */}
       <div className="flex items-start justify-between px-6 py-4">
 
         {/* Score */}
@@ -64,20 +64,6 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
                 {shieldHp <= 5 ? '●'.repeat(shieldHp) : `×${shieldHp}`}
               </div>
             )}
-            {otherKeys.map(key => {
-              const tier = powerups[key] || 1;
-              const color = POWERUP_COLORS[key];
-              const isSuper = key === 'wingman' && tier >= 5;
-              const label = isSuper ? 'SUPER WINGMAN' : POWERUP_LABELS[key];
-              const tierLabel = tier > 1 ? ` Lv${tier}` : '';
-              return (
-                <div key={key}
-                  className="text-xs font-bold px-2 py-0.5 rounded-full"
-                  style={{ color, border: `1px solid ${color}`, background: `${color}22` }}>
-                  ⚡ {label}{tierLabel}
-                </div>
-              );
-            })}
           </div>
         </div>
 
@@ -113,6 +99,25 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
                 className="text-xs font-bold px-3 py-1 rounded-full"
                 style={{ color, border: `1px solid ${color}`, background: `${color}22` }}>
                 🔫 {POWERUP_LABELS[key]} Lv{tier}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Utility Upgrades — bottom-right (before buttons) */}
+      {utilityKeys.length > 0 && (
+        <div className="absolute bottom-20 right-6 flex flex-col gap-1 items-end">
+          {utilityKeys.map(key => {
+            const tier = powerups[key] || 1;
+            const color = POWERUP_COLORS[key];
+            const isSuper = key === 'wingman' && tier >= 5;
+            const label = isSuper ? 'SUPER WINGMAN' : POWERUP_LABELS[key];
+            return (
+              <div key={key}
+                className="text-xs font-bold px-3 py-1 rounded-full"
+                style={{ color, border: `1px solid ${color}`, background: `${color}22` }}>
+                {label} Lv{tier}
               </div>
             );
           })}
