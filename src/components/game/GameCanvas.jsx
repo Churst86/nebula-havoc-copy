@@ -1394,8 +1394,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
             onScoreChange(s.score);
             sounds.kill();
             spawnExplosion(s, e.x, e.y,
-              e.type === 'boss' ? '#ff0066' : e.type === 'dropper' ? (e.color || '#ffd700') : e.type === 'elite' ? '#ff44ff' : e.type === 'bomb' ? '#ff8800' : '#ff4444',
-              e.type === 'boss' ? 40 : e.type === 'bomb' ? 30 : 14
+              e.type === 'boss' ? '#ff0066' : e.type === 'dropper' ? (e.color || '#ffd700') : e.type === 'elite' ? '#ff44ff' : e.type === 'mine' ? '#ff8800' : e.type === 'eater' ? '#44ff88' : '#ff4444',
+              e.type === 'boss' ? 40 : e.type === 'mine' ? 30 : e.type === 'eater' ? 20 : 14
             );
             if (e.type === 'dropper') {
               sounds.killDropper();
