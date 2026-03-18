@@ -24,6 +24,11 @@ export default function Game() {
   const [isPaused, setIsPaused] = useState(false);
   const [settings, setSettings] = useState(() => loadSettings());
   const [showPauseOptions, setShowPauseOptions] = useState(false);
+  const [currentDifficulty, setCurrentDifficulty] = useState('easy');
+  const [completedDifficulties, setCompletedDifficulties] = useState(() => {
+    const saved = localStorage.getItem('completedDifficulties');
+    return saved ? JSON.parse(saved) : [];
+  });
   const scoreRef = useRef(0);
   const waveRef = useRef(1);
 
