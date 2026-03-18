@@ -918,8 +918,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       } else if (s.laserBeamActive) {
         s.laserBeamTimer--;
         const laserTier = s.powerups.laser;
-        const beamW = laserTier >= 10 ? (4 + laserTier * 3) * 2 : 4 + laserTier * 3; // tier 10 = 2x wide
-        const laserBeamW = beamW;
+        const beamW = laserTier >= 10 ? (4 + laserTier * 3) * 2 : 4 + laserTier * 3;
         s.enemyBullets = s.enemyBullets.filter(eb => {
           if (Math.abs(eb.x - p.x) < laserBeamW + 6 && eb.y < p.y) {
             spawnExplosion(s, eb.x, eb.y, '#ff44ff', 3);
