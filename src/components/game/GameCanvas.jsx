@@ -1170,9 +1170,12 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
                   if (ne.hp <= 0) ne.dead = true;
                 }
               });
-              // Damage player if nearby (unless invincible)
+              // Damage player if nearby (unless shield/invincibility frames — star does NOT protect here)
               if (Math.hypot(p.x - e.x, p.y - e.y) < BOMB_RADIUS) {
+                const savedStar = s.starInvincibleTimer;
+                s.starInvincibleTimer = 0; // temporarily disable star for bomb AoE
                 takeDamage(s);
+                s.starInvincibleTimer = savedStar;
                 spawnExplosion(s, p.x, p.y, '#ff8800', 18);
               }
             }
