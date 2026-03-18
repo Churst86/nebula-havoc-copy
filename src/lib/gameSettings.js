@@ -7,6 +7,11 @@ const DEFAULTS = {
   brightness: 1.0,
   difficulty: 'normal', // 'easy' | 'normal' | 'hell'
   gameSpeed: 30, // fps: 15–120
+  saveFiles: [
+    { name: 'Save 1', wave: 0, powerups: {} },
+    { name: 'Save 2', wave: 0, powerups: {} },
+    { name: 'Save 3', wave: 0, powerups: {} },
+  ],
 };
 
 export function loadSettings() {
@@ -33,7 +38,7 @@ export const DIFFICULTY_CONFIG = {
     blockSpeedMult: 1,
   },
   normal: {
-    label: 'Normal',
+    label: 'Challenging',
     color: '#00f0ff',
     desc: 'Enemies have 2× HP. Max wave 50.',
     hpMult: 2,
