@@ -631,7 +631,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
 
   // ── Main loop ────────────────────────────────────────────────
   const loop = useCallback((timestamp) => {
-    if (!stateRef.current.running || isPaused) {
+    if (!stateRef.current.running || isPausedRef.current) {
       animRef.current = requestAnimationFrame(loop);
       return;
     }
