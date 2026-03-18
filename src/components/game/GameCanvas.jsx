@@ -55,7 +55,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   const gameSpeedRef = useRef(gameSpeed);
 
   useEffect(() => { gameSpeedRef.current = gameSpeed; }, [gameSpeed]);
-  useEffect(() => { isPausedRef.current = isPause; sounds.setPauseVolume(isPaused); }, [isPaused]);
+  useEffect(() => { isPausedRef.current = isPaused; sounds.setPauseVolume(isPaused); }, [isPaused]);
 
   function initStars(W, H) {
     return Array.from({ length: 120 }, () => ({
