@@ -1153,7 +1153,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         if (e.x < 50 || e.x > W - 50) e.vx *= -1;
       } else if (e.type === 'mine') {
         // Mine: slow drift, periodically charges far at player, recharges after cooldown
-        e._chargeTimer = (e._chargeTimer === undefined ? randomBetween(60, 120) : e._chargeTimer) - 1;
+        e._chargeTimer = (e._chargeTimer === undefined ? randomBetween(30, 60) : e._chargeTimer) - 1;
         e._rechargeCooldown = Math.max(0, (e._rechargeCooldown || 0) - 1);
         if (e._charging) {
           // Mid-charge: fast rocket toward player
