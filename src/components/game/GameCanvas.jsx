@@ -1105,24 +1105,26 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
             e.dead = true;
             // Bomb AoE explosion on death
             if (e.type === 'bomb') {
-              const BOMB_RADIUS = 80;
-              spawnExplosion(s, e.x, e.y, '#ff8800', 35);
-              spawnExplosion(s, e.x, e.y, '#ffdd00', 20);
-              // Draw shockwave ring via a particle with special flag
+              const BOMB_RADIUS = 140;
+              spawnExplosion(s, e.x, e.y, '#ff8800', 60);
+              spawnExplosion(s, e.x, e.y, '#ffdd00', 35);
+              spawnExplosion(s, e.x, e.y, '#ffffff', 15);
+              // Multiple shockwave rings
               s.particles.push({ x: e.x, y: e.y, vx: 0, vy: 0, r: 10, alpha: 1, color: '#ff8800', shockwave: true, shockwaveR: 10 });
-              // Damage nearby enemies — mark, don't mutate yet
+              s.particles.push({ x: e.x, y: e.y, vx: 0, vy: 0, r: 10, alpha: 0.7, color: '#ffdd00', shockwave: true, shockwaveR: 5 });
+              // Damage nearby enemies
               s.enemies.forEach(ne => {
                 if (ne === e || ne.dead) return;
                 if (Math.hypot(ne.x - e.x, ne.y - e.y) < BOMB_RADIUS) {
-                  ne.hp -= 2;
-                  spawnExplosion(s, ne.x, ne.y, '#ff8800', 8);
+                  ne.hp -= 3;
+                  spawnExplosion(s, ne.x, ne.y, '#ff8800', 12);
                   if (ne.hp <= 0) ne.dead = true;
                 }
               });
               // Damage player if nearby (unless invincible)
               if (Math.hypot(p.x - e.x, p.y - e.y) < BOMB_RADIUS) {
                 takeDamage(s);
-                spawnExplosion(s, p.x, p.y, '#ff8800', 12);
+                spawnExplosion(s, p.x, p.y, '#ff8800', 18);
               }
             }
             const pts = e.type === 'boss' ? 5000 : e.type === 'dropper' ? 500 : e.type === 'elite' ? 300 : e.type === 'bomb' ? 200 : 100;
