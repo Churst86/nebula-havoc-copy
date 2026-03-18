@@ -254,22 +254,101 @@ function startBossMusic() {
   } catch {}
 }
 
-let userVolume = 0.8; // default
+let musicVolume = 0.8;
+let sfxVolume = 0.8;
+let isPausedDucked = false;
+
+// Separate gain nodes for music vs SFX
+let musicGainNode = null;
+let sfxGainNode = null;
+
+function getMusicGain(ctx) {
+  if (!musicGainNode || musicGainNode.context !== ctx) {
+    musicGainNode = ctx.createGain();
+    musicGainNode.gain.value = musicVolume;
+    musicGainNode.connect(ctx.destination);
+  }
+  return musicGainNode;
+}
+
+function getSfxGain(ctx) {
+  if (!sfxGainNode || sfxGainNode.context !== ctx) {
+    sfxGainNode = ctx.createGain();
+    sfxGainNode.gain.value = sfxVolume;
+    sfxGainNode.connect(ctx.destination);
+  }
+  return sfxGainNode;
+}
+
+// Override getMasterGain to route to music gain (for bg music)
+function getMasterGain(ctx) {
+  return getMusicGain(ctx);
+}
+
+// Patch playTone/playNoise to route through SFX gain
+function playToneSfx({ freq = 440, type = 'sine', duration = 0.1, gain = 0.3, freqEnd, detune = 0 }) {
+  try {
+    const ctx = getCtx();
+    const osc = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    osc.connect(gainNode);
+    gainNode.connect(getSfxGain(ctx));
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    osc.detune.setValueAtTime(detune, ctx.currentTime);
+    if (freqEnd !== undefined) osc.frequency.linearRampToValueAtTime(freqEnd, ctx.currentTime + duration);
+    gainNode.gain.setValueAtTime(gain, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+  } catch {}
+}
+
+function playNoiseSfx({ duration = 0.1, gain = 0.2, filterFreq = 1000 }) {
+  try {
+    const ctx = getCtx();
+    const bufferSize = ctx.sampleRate * duration;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = filterFreq;
+    const gainNode = ctx.createGain();
+    gainNode.gain.setValueAtTime(gain, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    source.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(getSfxGain(ctx));
+    source.start();
+    source.stop(ctx.currentTime + duration);
+  } catch {}
+}
 
 export const sounds = {
-  setMasterVolume(vol) {
-    userVolume = Math.max(0, Math.min(1, vol));
+  setMusicVolume(vol) {
+    musicVolume = Math.max(0, Math.min(1, vol));
     try {
       const ctx = getCtx();
-      const master = getMasterGain(ctx);
-      master.gain.setTargetAtTime(userVolume, ctx.currentTime, 0.1);
+      getMusicGain(ctx).gain.setTargetAtTime(isPausedDucked ? musicVolume * 0.1 : musicVolume, ctx.currentTime, 0.1);
     } catch {}
   },
-  setPauseVolume(paused) {
+  setSfxVolume(vol) {
+    sfxVolume = Math.max(0, Math.min(1, vol));
     try {
       const ctx = getCtx();
-      const master = getMasterGain(ctx);
-      master.gain.setTargetAtTime(paused ? userVolume * 0.1 : userVolume, ctx.currentTime, 0.15);
+      getSfxGain(ctx).gain.setTargetAtTime(sfxVolume, ctx.currentTime, 0.1);
+    } catch {}
+  },
+  // Legacy compat
+  setMasterVolume(vol) { this.setMusicVolume(vol); this.setSfxVolume(vol); },
+  setPauseVolume(paused) {
+    isPausedDucked = paused;
+    try {
+      const ctx = getCtx();
+      getMusicGain(ctx).gain.setTargetAtTime(paused ? musicVolume * 0.1 : musicVolume, ctx.currentTime, 0.15);
     } catch {}
   },
   shoot()        { playTone({ freq: 880, type: 'square', duration: 0.06, gain: 0.08, freqEnd: 440 }); },
