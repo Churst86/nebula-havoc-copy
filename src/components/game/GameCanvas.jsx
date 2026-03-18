@@ -552,47 +552,80 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(isCharging ? '!!!' : damaged ? '>_<' : '^_^', 0, 1);
     } else if (e.type === 'eater') {
-      // Block-eater: green hungry alien that seeks blocks
-      const eatAnim = e._eating ? Math.sin(Date.now() * 0.05) : 0;
-      const pulse = 0.7 + Math.sin(Date.now() * 0.01) * 0.3;
-      const eaterColor = e._eating ? '#00ff44' : '#44ff88';
-      ctx.shadowColor = eaterColor; ctx.shadowBlur = 14 + pulse * 8;
+      // Block-eater mini-boss: bioluminescent tentacle creature
+      const t = Date.now();
+      const isCharging = e._chargingPlayer;
+      const pulse = 0.7 + Math.sin(t * 0.012) * 0.3;
+      const eaterColor = isCharging ? '#ff4400' : e._eating ? '#00ff44' : '#33cc77';
+      const innerColor = isCharging ? 'rgba(255,80,0,0.3)' : e._eating ? 'rgba(0,255,68,0.3)' : 'rgba(51,204,119,0.18)';
+      ctx.shadowColor = eaterColor; ctx.shadowBlur = 20 + pulse * 12;
 
-      // Blobby hexagon body
-      ctx.strokeStyle = eaterColor; ctx.lineWidth = 2;
-      ctx.fillStyle = e._eating ? 'rgba(0,255,68,0.25)' : 'rgba(68,255,136,0.15)';
+      // Tentacles (8, wave sinusoidally)
+      const TENTACLE_COUNT = 8;
+      for (let ti = 0; ti < TENTACLE_COUNT; ti++) {
+        const baseAngle = (ti / TENTACLE_COUNT) * Math.PI * 2 + t * 0.001;
+        const waveAmp = 6 + Math.sin(t * 0.009 + ti * 1.2) * 4;
+        const tentLen = 28 + Math.sin(t * 0.007 + ti) * 6;
+        ctx.strokeStyle = eaterColor; ctx.lineWidth = 2.5; ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(baseAngle) * 18, Math.sin(baseAngle) * 18);
+        const cp1x = Math.cos(baseAngle + 0.4) * (tentLen * 0.5) + Math.cos(baseAngle + Math.PI / 2) * waveAmp;
+        const cp1y = Math.sin(baseAngle + 0.4) * (tentLen * 0.5) + Math.sin(baseAngle + Math.PI / 2) * waveAmp;
+        const endX = Math.cos(baseAngle) * tentLen;
+        const endY = Math.sin(baseAngle) * tentLen;
+        ctx.quadraticCurveTo(cp1x, cp1y, endX, endY);
+        ctx.globalAlpha = 0.7; ctx.stroke(); ctx.globalAlpha = 1;
+        // Tentacle tip dot
+        ctx.fillStyle = eaterColor;
+        ctx.beginPath(); ctx.arc(endX, endY, 2.5, 0, Math.PI * 2); ctx.fill();
+      }
+
+      // Blob body — organic irregular shape
+      ctx.shadowColor = eaterColor; ctx.shadowBlur = 20 + pulse * 10;
+      ctx.strokeStyle = eaterColor; ctx.lineWidth = 2.5;
+      ctx.fillStyle = innerColor;
       ctx.beginPath();
-      for (let i = 0; i < 6; i++) {
-        const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
-        const r = 18 + Math.sin(Date.now() * 0.008 + i) * 2;
+      for (let i = 0; i < 10; i++) {
+        const a = (i / 10) * Math.PI * 2;
+        const r = 18 + Math.sin(t * 0.009 + i * 0.8) * 4;
         i === 0 ? ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r) : ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
       }
       ctx.closePath(); ctx.fill(); ctx.stroke();
 
-      // Eyes
-      const eyeY = -4 + eatAnim * 2;
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath(); ctx.arc(-6, eyeY, 4, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(6, eyeY, 4, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#003300';
-      ctx.beginPath(); ctx.arc(-6, eyeY + 1, 2, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(6, eyeY + 1, 2, 0, Math.PI * 2); ctx.fill();
+      // Three large eyes — different expressions
+      const eyeGlow = isCharging ? '#ff2200' : '#00ff44';
+      [[−7, −4], [0, −7], [7, −4]].forEach(([ex, ey], i) => {
+        ctx.shadowColor = eyeGlow; ctx.shadowBlur = 12;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(ex, ey, 4.5, 0, Math.PI * 2); ctx.fill();
+        // Slit pupil — vertical
+        ctx.fillStyle = isCharging ? '#ff0000' : '#003300';
+        ctx.beginPath(); ctx.ellipse(ex, ey + 0.5, 1.2, 3, 0, 0, Math.PI * 2); ctx.fill();
+        // Eye shine
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.beginPath(); ctx.arc(ex - 1.5, ey - 1.5, 1.2, 0, Math.PI * 2); ctx.fill();
+      });
 
-      // Mouth — open wide when eating
-      ctx.strokeStyle = '#003300'; ctx.lineWidth = 2;
+      // Mouth
+      ctx.strokeStyle = isCharging ? '#ff2200' : '#003300'; ctx.lineWidth = 2; ctx.shadowBlur = 0;
       ctx.beginPath();
-      if (e._eating) {
-        ctx.arc(0, 6, 8, 0, Math.PI);
+      if (e._eating || isCharging) {
+        ctx.arc(0, 8, 10, 0, Math.PI); // wide open
       } else {
-        ctx.arc(0, 8, 5, 0.2, Math.PI - 0.2);
+        ctx.arc(0, 9, 6, 0.2, Math.PI - 0.2);
       }
       ctx.stroke();
 
-      // HP text
+      // HP bar above
+      const bw = 60, bh = 5;
+      ctx.fillStyle = '#222'; ctx.fillRect(-bw / 2, -44, bw, bh);
+      ctx.fillStyle = e.hp / e.maxHp > 0.5 ? '#33cc77' : e.hp / e.maxHp > 0.25 ? '#ffaa00' : '#ff2200';
+      ctx.fillRect(-bw / 2, -44, bw * (e.hp / e.maxHp), bh);
+      ctx.strokeStyle = eaterColor; ctx.lineWidth = 1; ctx.strokeRect(-bw / 2, -44, bw, bh);
       ctx.fillStyle = eaterColor;
-      ctx.font = 'bold 8px monospace';
+      ctx.font = 'bold 7px monospace';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(`♥${e.hp}`, 0, -22);
+      ctx.fillText('EATER', 0, -52);
     } else if (e.type === 'elite') {
       ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14;
       ctx.strokeStyle = '#ff44ff'; ctx.lineWidth = 2;
