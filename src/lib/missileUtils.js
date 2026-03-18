@@ -17,17 +17,24 @@ export function updateMissiles(bullets, enemies) {
       enemies.forEach(e => {
         if (e.dead) return;
         const d = Math.hypot(e.x - b.x, e.y - b.y);
-        if (d < bestDist && d < 300) { bestDist = d; b.target = e; }
+        if (d < bestDist && d < 400) { bestDist = d; b.target = e; }
       });
     }
     
-    // Home towards target
+    // Home towards target with smooth curving
     if (b.target && !b.target.dead) {
       const dx = b.target.x - b.x, dy = b.target.y - b.y;
       const len = Math.hypot(dx, dy) || 1;
-      const turnRate = 0.15;
+      const speed = Math.hypot(b.vx, b.vy) || 8;
+      const turnRate = 0.2;
       b.vx += (dx / len) * turnRate;
       b.vy += (dy / len) * turnRate;
+      // Cap speed to prevent runaway acceleration
+      const currentSpeed = Math.hypot(b.vx, b.vy) || 1;
+      if (currentSpeed > speed * 1.5) {
+        b.vx = (b.vx / currentSpeed) * speed;
+        b.vy = (b.vy / currentSpeed) * speed;
+      }
     }
   });
 }
