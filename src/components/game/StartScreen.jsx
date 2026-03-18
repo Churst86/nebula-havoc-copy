@@ -39,10 +39,10 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
         </motion.div>
 
         <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-cyan-300 to-cyan-600">
-          VOID STORM
+          NEBULA HAVOK
         </h1>
         <p className="text-muted-foreground text-lg tracking-widest uppercase">
-          Bullet Hell Shooter
+          Bullet Hell Space Shooter
         </p>
         <p className="text-xs text-muted-foreground/50 font-mono -mt-4">{GAME_VERSION}</p>
 
