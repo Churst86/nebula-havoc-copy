@@ -219,9 +219,9 @@ function startBossMusic() {
 
   try {
     const ctx = getCtx();
-    const masterGain = ctx.createGain();
-    masterGain.gain.value = 0.14;
-    masterGain.connect(ctx.destination);
+    const bossLocalGain = ctx.createGain();
+    bossLocalGain.gain.value = 0.14;
+    bossLocalGain.connect(getMusicGain(ctx));
 
     const bassNotes  = [55, 55, 73.4, 55, 55, 49, 55, 55];
     const melNotes   = [220, 246.9, 261.6, 220, 196, 220, 246.9, 261.6];
@@ -234,7 +234,7 @@ function startBossMusic() {
       const t = ctx.currentTime;
 
       // Heavy kick on every beat
-      playNoise({ duration: 0.12, gain: 0.25, filterFreq: 80 });
+      playNoiseCheap({ duration: 0.12, gain: 0.25, filterFreq: 80, useMusicBus: true });
 
       const bass = ctx.createOscillator();
       const bassGain = ctx.createGain();
