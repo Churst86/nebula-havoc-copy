@@ -90,10 +90,6 @@ export default function HighScores({ score, wave, onRestart, onReturnToTitle, is
         transition={{ delay: 0.1, type: 'spring', stiffness: 180 }}
         className="relative z-10 text-center space-y-5 p-8 max-w-sm w-full"
       >
-        <h1 className="text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-red-400 to-red-600">
-          GAME OVER
-        </h1>
-
         <div className="flex items-center justify-center gap-2">
           <Trophy className="w-5 h-5 text-yellow-400" />
           <span className="text-2xl font-bold text-white">{score.toLocaleString()}</span>
