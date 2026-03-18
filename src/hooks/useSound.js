@@ -351,35 +351,35 @@ export const sounds = {
       getMusicGain(ctx).gain.setTargetAtTime(paused ? musicVolume * 0.1 : musicVolume, ctx.currentTime, 0.15);
     } catch {}
   },
-  shoot()        { playTone({ freq: 880, type: 'square', duration: 0.06, gain: 0.08, freqEnd: 440 }); },
-  hit()          { playNoise({ duration: 0.08, gain: 0.15, filterFreq: 800 }); },
+  shoot()        { playToneSfx({ freq: 880, type: 'square', duration: 0.06, gain: 0.08, freqEnd: 440 }); },
+  hit()          { playNoiseSfx({ duration: 0.08, gain: 0.15, filterFreq: 800 }); },
   kill() {
-    playTone({ freq: 220, type: 'sawtooth', duration: 0.15, gain: 0.2, freqEnd: 80 });
-    playNoise({ duration: 0.15, gain: 0.25, filterFreq: 300 });
+    playToneSfx({ freq: 220, type: 'sawtooth', duration: 0.15, gain: 0.2, freqEnd: 80 });
+    playNoiseSfx({ duration: 0.15, gain: 0.25, filterFreq: 300 });
   },
   killDropper() {
-    playTone({ freq: 440, type: 'sawtooth', duration: 0.2, gain: 0.3, freqEnd: 110 });
-    playTone({ freq: 660, type: 'square', duration: 0.2, gain: 0.2, freqEnd: 220 });
-    playNoise({ duration: 0.25, gain: 0.3, filterFreq: 500 });
+    playToneSfx({ freq: 440, type: 'sawtooth', duration: 0.2, gain: 0.3, freqEnd: 110 });
+    playToneSfx({ freq: 660, type: 'square', duration: 0.2, gain: 0.2, freqEnd: 220 });
+    playNoiseSfx({ duration: 0.25, gain: 0.3, filterFreq: 500 });
   },
   powerup() {
     [0, 0.06, 0.12, 0.18].forEach((t, i) => {
-      setTimeout(() => playTone({ freq: 330 + i * 110, type: 'sine', duration: 0.1, gain: 0.25 }), t * 1000);
+      setTimeout(() => playToneSfx({ freq: 330 + i * 110, type: 'sine', duration: 0.1, gain: 0.25 }), t * 1000);
     });
   },
-  shield()       { playTone({ freq: 200, type: 'sine', duration: 0.3, gain: 0.3, freqEnd: 600 }); },
-  shieldHit()    { playTone({ freq: 600, type: 'triangle', duration: 0.12, gain: 0.3, freqEnd: 200 }); },
+  shield()       { playToneSfx({ freq: 200, type: 'sine', duration: 0.3, gain: 0.3, freqEnd: 600 }); },
+  shieldHit()    { playToneSfx({ freq: 600, type: 'triangle', duration: 0.12, gain: 0.3, freqEnd: 200 }); },
   shieldBreak() {
-    playNoise({ duration: 0.4, gain: 0.4, filterFreq: 400 });
-    playTone({ freq: 150, type: 'sawtooth', duration: 0.4, gain: 0.3, freqEnd: 50 });
+    playNoiseSfx({ duration: 0.4, gain: 0.4, filterFreq: 400 });
+    playToneSfx({ freq: 150, type: 'sawtooth', duration: 0.4, gain: 0.3, freqEnd: 50 });
   },
   playerHit() {
-    playNoise({ duration: 0.3, gain: 0.4, filterFreq: 200 });
-    playTone({ freq: 100, type: 'sawtooth', duration: 0.3, gain: 0.3, freqEnd: 40 });
+    playNoiseSfx({ duration: 0.3, gain: 0.4, filterFreq: 200 });
+    playToneSfx({ freq: 100, type: 'sawtooth', duration: 0.3, gain: 0.3, freqEnd: 40 });
   },
   waveComplete() {
     [0, 0.1, 0.2].forEach((t, i) => {
-      setTimeout(() => playTone({ freq: 440 + i * 220, type: 'sine', duration: 0.15, gain: 0.2 }), t * 1000);
+      setTimeout(() => playToneSfx({ freq: 440 + i * 220, type: 'sine', duration: 0.15, gain: 0.2 }), t * 1000);
     });
   },
 
