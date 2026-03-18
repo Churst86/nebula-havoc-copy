@@ -8,6 +8,7 @@ export const POWERUP_COLORS = {
   speed: '#ff8800',
   rapidfire: '#ff4488',
   reverse: '#ff6600',
+  missile: '#ff00ff',
   star: '#ffffff',
 };
 
@@ -20,6 +21,7 @@ export const POWERUP_LABELS = {
   speed: 'SPEED',
   rapidfire: 'RAPID FIRE',
   reverse: 'REVERSE',
+  missile: 'MISSILE',
 };
 
 export const DROPPER_COLORS = {
