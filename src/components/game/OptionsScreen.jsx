@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Music, Volume2, Sun, Skull, Gauge } from 'lucide-react';
-import { DIFFICULTY_CONFIG, saveSettings } from '../../lib/gameSettings';
+import { ArrowLeft, Music, Volume2, Sun, Skull, Gauge, Save, LogOut } from 'lucide-react';
+import { DIFFICULTY_CONFIG, saveSettings, loadSettings } from '../../lib/gameSettings';
 
 function Slider({ color, min, max, step, value, onChange, label }) {
   const pct = ((value - min) / (max - min)) * 100;
@@ -20,9 +20,18 @@ function Slider({ color, min, max, step, value, onChange, label }) {
   );
 }
 
-export default function OptionsScreen({ settings, onSettingsChange, onBack }) {
+export default function OptionsScreen({ settings, onSettingsChange, onBack, gameState, onExitToTitle }) {
+  const [showSaveMenu, setShowSaveMenu] = useState(false);
+
   function update(key, value) {
     const next = { ...settings, [key]: value };
+    onSettingsChange(next);
+    saveSettings(next);
+  }
+
+  function handleSave(index, score, wave, powerups) {
+    const next = { ...settings };
+    next.saveFiles[index] = { name: `Save ${index + 1}`, wave, powerups, score };
     onSettingsChange(next);
     saveSettings(next);
   }
@@ -126,6 +135,20 @@ export default function OptionsScreen({ settings, onSettingsChange, onBack }) {
             {DIFFICULTY_CONFIG[settings.difficulty ?? 'normal'].desc}
           </p>
         </div>
+
+        {gameState === 'playing' && (
+          <Button onClick={() => setShowSaveMenu(true)} variant="outline" className="w-full gap-2 mt-2">
+            <Save className="w-4 h-4" />
+            Save Game
+          </Button>
+        )}
+
+        {onExitToTitle && (
+          <Button onClick={onExitToTitle} variant="outline" className="w-full gap-2 mt-2 text-red-400 border-red-600 hover:bg-red-900/30">
+            <LogOut className="w-4 h-4" />
+            Exit to Title
+          </Button>
+        )}
 
         <Button onClick={onBack} variant="outline" className="w-full gap-2 mt-2">
           <ArrowLeft className="w-4 h-4" />
