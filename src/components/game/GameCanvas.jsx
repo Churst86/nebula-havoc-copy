@@ -1193,19 +1193,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         e._chargePlayerTimer = (e._chargePlayerTimer || 0) - 1;
 
         if (e._chargingPlayer) {
-          // Charging at player
-          e.x += e._cpDx * 5.5;
-          e.y += e._cpDy * 5.5;
-          e._cpDuration = (e._cpDuration || 0) - 1;
-          if (e._cpDuration <= 0 || Math.hypot(e.x - p.x, e.y - p.y) < 25) {
-            e._chargingPlayer = false;
-            e.vx = randomBetween(-0.8, 0.8);
-            e.vy = randomBetween(0.3, 0.8);
-          }
-          if (e.x < 20) { e.x = 20; e._chargingPlayer = false; }
-          if (e.x > W - 20) { e.x = W - 20; e._chargingPlayer = false; }
-          if (e.y < 20) { e.y = 20; e._chargingPlayer = false; }
-          if (e.y > H - 20) { e.y = H - 20; e._chargingPlayer = false; }
+          // Charging across the entire screen — stops only at walls
+          e.x += e._cpDx * 7;
+          e.y += e._cpDy * 7;
+          // Stop at walls and resume wandering
+          if (e.x < 20) { e.x = 20; e._chargingPlayer = false; e.vx = Math.abs(randomBetween(0.4, 0.8)); e.vy = randomBetween(-0.5, 0.5); }
+          if (e.x > W - 20) { e.x = W - 20; e._chargingPlayer = false; e.vx = -Math.abs(randomBetween(0.4, 0.8)); e.vy = randomBetween(-0.5, 0.5); }
+          if (e.y < 20) { e.y = 20; e._chargingPlayer = false; e.vx = randomBetween(-0.5, 0.5); e.vy = Math.abs(randomBetween(0.4, 0.8)); }
+          if (e.y > H - 20) { e.y = H - 20; e._chargingPlayer = false; e.vx = randomBetween(-0.5, 0.5); e.vy = -Math.abs(randomBetween(0.4, 0.8)); }
         } else {
           let targetX = null, targetY = null, bestDist = Infinity;
 
