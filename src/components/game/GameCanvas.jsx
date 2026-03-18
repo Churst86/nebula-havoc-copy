@@ -1117,23 +1117,23 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           s.starInvincibleTimer = STAR_INVINCIBLE_FRAMES;
           sounds.powerup();
         } else if (item.type === 'shield') {
-          s.shieldHp++;
+          s.shieldHp = Math.min(s.shieldHp + 1, 10);
           sounds.shield();
         } else if (item.type === 'speed') {
-          s.powerups.speed = Math.min((s.powerups.speed || 0) + 1, 5);
+          s.powerups.speed = Math.min((s.powerups.speed || 0) + 1, 10);
           sounds.powerup();
         } else if (item.type === 'rapidfire') {
-          s.powerups.rapidfire = Math.min((s.powerups.rapidfire || 0) + 1, 5);
+          s.powerups.rapidfire = Math.min((s.powerups.rapidfire || 0) + 1, 10);
           sounds.powerup();
         } else if (item.type === 'wingman') {
-          s.powerups.wingman = Math.min((s.powerups.wingman || 0) + 1, 3);
+          s.powerups.wingman = Math.min((s.powerups.wingman || 0) + 1, 6);
           sounds.powerup();
         } else {
           const isLocked = s.lockedPowerups.includes(item.type);
           const canAdd = s.lockedPowerups.length < 2;
           if (!isLocked && !canAdd) return true;
           if (!isLocked) s.lockedPowerups.push(item.type);
-          s.powerups[item.type] = Math.min((s.powerups[item.type] || 0) + 1, 3);
+          s.powerups[item.type] = Math.min((s.powerups[item.type] || 0) + 1, 10);
           sounds.powerup();
         }
         onPowerupChange({ ...s.powerups, shieldHp: s.shieldHp, starInvincible: s.starInvincibleTimer > 0 });
