@@ -52,10 +52,36 @@ let bgTimeouts = [];
 let bgPlaying = false;
 let currentWave = 1;
 let currentIsBoss = false;
-let masterGainNode = null; // global master gain for pause volume ducking
 
-function getMasterGain(ctx) {
-  return getMusicGain(ctx);
+// Pre-baked noise buffer cache to avoid creating buffers every tick
+let cachedNoiseBuffer = null;
+function getNoiseBuffer(ctx) {
+  if (!cachedNoiseBuffer || cachedNoiseBuffer.sampleRate !== ctx.sampleRate) {
+    const bufferSize = ctx.sampleRate * 0.5; // 0.5s reusable noise
+    cachedNoiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = cachedNoiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+  }
+  return cachedNoiseBuffer;
+}
+
+function playNoiseCheap({ duration = 0.1, gain = 0.2, filterFreq = 1000, useMusicBus = false }) {
+  try {
+    const ctx = getCtx();
+    const source = ctx.createBufferSource();
+    source.buffer = getNoiseBuffer(ctx);
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = filterFreq;
+    const gainNode = ctx.createGain();
+    gainNode.gain.setValueAtTime(gain, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    source.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(useMusicBus ? getMusicGain(ctx) : getSfxGain(ctx));
+    source.start();
+    source.stop(ctx.currentTime + duration);
+  } catch {}
 }
 
 function stopAllBg() {
