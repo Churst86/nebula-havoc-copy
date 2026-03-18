@@ -942,7 +942,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         s.laserCharge++;
         if (s.laserCharge >= LASER_CHARGE_FRAMES) {
           s.laserBeamActive = true;
-          s.laserBeamTimer = LASER_BEAM_FRAMES + (s.powerups.laser - 1) * 60;
+          s.laserBeamTimer = LASER_BEAM_FRAMES; // fixed duration regardless of tier
+          s.laserFlareTimer = 12; // brief muzzle flare frames
           sounds.powerup();
         }
       }
