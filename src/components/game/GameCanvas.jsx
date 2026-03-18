@@ -5,6 +5,7 @@ import { spawnBerserk, spawnEater } from '../../lib/enemySpawners.js';
 import { updateBerserkMovement, updateBerserkLaser, drawBerserk } from '../../lib/berserkUtils.js';
 import { fireReverseShot, drawReverseFlame } from '../../lib/reverseGunUtils.js';
 import { DROPPER_COLORS, DROPPER_LABELS, DROPPER_ROTATION } from '../../lib/powerupConfig.js';
+import { drawBlock, drawPiledCells, drawParticle } from '../../lib/drawingUtils.js';
 
 // Laser beam constants
 const LASER_CHARGE_FRAMES = 90;      // frames to charge before firing (slower = fires less often)
