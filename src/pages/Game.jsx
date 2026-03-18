@@ -108,8 +108,14 @@ export default function Game() {
     } catch {}
   }, [settings.soundVolume]);
 
+  const difficultyConfig = DIFFICULTY_CONFIG[settings.difficulty] || DIFFICULTY_CONFIG.normal;
+
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black select-none" tabIndex={-1}>
+    <div
+      className="relative w-full h-screen overflow-hidden bg-black select-none"
+      tabIndex={-1}
+      style={{ filter: `brightness(${settings.brightness})` }}
+    >
       <GameCanvas
         gameState={gameState}
         setGameState={handleSetGameState}
@@ -121,6 +127,7 @@ export default function Game() {
         continuesLeft={continuesLeft}
         onContinueUsed={handleContinueUsed}
         isPaused={isPaused}
+        difficultyConfig={difficultyConfig}
       />
 
       {(gameState === 'playing' || gameState === 'resuming') && (
@@ -133,11 +140,21 @@ export default function Game() {
           continuesLeft={continuesLeft}
           isPaused={isPaused}
           onPauseToggle={handlePauseToggle}
+          onOpenOptions={() => setShowPauseOptions(true)}
+        />
+      )}
+
+      {/* Pause options overlay */}
+      {showPauseOptions && isPaused && (
+        <OptionsScreen
+          settings={settings}
+          onSettingsChange={handleSettingsChange}
+          onBack={() => setShowPauseOptions(false)}
         />
       )}
 
       {gameState === 'start' && (
-        <StartScreen onStart={handleStart} />
+        <StartScreen onStart={handleStart} settings={settings} onSettingsChange={handleSettingsChange} />
       )}
 
       {gameState === 'continue' && (
