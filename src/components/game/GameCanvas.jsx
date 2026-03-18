@@ -277,11 +277,16 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       const bounces = bounceTier * 2 + bounceTier;
       const side = Math.floor(s.spiralAngle * 2) % 2 === 0 ? -1 : 1;
       s.spiralAngle += 0.1;
-      s.bullets.push({ x: p.x + side * 8, y: p.y - 14, vx: side * 3.5, vy: -10, type: 'bounce', bouncesLeft: bounces });
-      // Extra random-direction bullets per tier
-      for (let i = 1; i < bounceTier; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        s.bullets.push({ x: p.x, y: p.y - 14, vx: Math.cos(angle) * 6, vy: Math.sin(angle) * 6 - 2, type: 'bounce', bouncesLeft: bounces });
+      // Tier 10: single large invulnerable shot with 10 bounces
+      if (bounceTier >= 10) {
+        s.bullets.push({ x: p.x, y: p.y - 14, vx: 0, vy: -12, type: 'bounce', bouncesLeft: 10, isSuper: true, size: 8 });
+      } else {
+        s.bullets.push({ x: p.x + side * 8, y: p.y - 14, vx: side * 3.5, vy: -10, type: 'bounce', bouncesLeft: bounces });
+        // Extra random-direction bullets per tier
+        for (let i = 1; i < bounceTier; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          s.bullets.push({ x: p.x, y: p.y - 14, vx: Math.cos(angle) * 6, vy: Math.sin(angle) * 6 - 2, type: 'bounce', bouncesLeft: bounces });
+        }
       }
     }
 
