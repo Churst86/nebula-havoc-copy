@@ -9,7 +9,7 @@ import { DROPPER_COLORS, DROPPER_LABELS, DROPPER_ROTATION } from '../../lib/powe
 import { drawBlock, drawPiledCells, drawParticle } from '../../lib/drawingUtils.js';
 import { fireSpreadShot, getFireRate } from '../../lib/powerups/gunPowerups.js';
 import { drawPowerupItem } from '../../lib/powerupVisuals.js';
-import { drawEnemy, updateEnemyPositions } from './EnemyRenderer.js';
+import { drawEnemy, updateEnemyPositions } from './EnemyRenderer.jsx';
 
 const LASER_CHARGE_FRAMES = 90;
 const LASER_BEAM_FRAMES = 180;
