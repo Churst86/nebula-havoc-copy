@@ -1683,6 +1683,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         } else if (item.type === 'wingman') {
           s.powerups.wingman = Math.min((s.powerups.wingman || 0) + 1, 10);
           sounds.powerup();
+           } else if (item.type === 'reverse') {
+          s.powerups.reverse = Math.min((s.powerups.reverse || 0) + 1, 10);
+           sounds.powerup();
         } else {
           const isLocked = s.lockedPowerups.includes(item.type);
           const canAdd = s.lockedPowerups.length < 3;
