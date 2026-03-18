@@ -1618,18 +1618,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         const cells = getBlockCells(block);
         cells.forEach(cell => {
           if (b.hit) return;
-              if (block.invulnerable) {
-         if (b.type === 'reverse' && (s.powerups.reverse || 0) >= 10) {
-           block.dead = true;
-           s.score += 50; onScoreChange(s.score);
-           spawnExplosion(s, block.x + BLOCK_SIZE, block.y, '#00bbff', 12);
-           }
-           } else {
-           b.hit = true;
-           spawnExplosion(s, b.x, b.y, '#aaaacc', 3);
-         }
-         return;
-       }
           if (b.x >= cell.x && b.x <= cell.x + BLOCK_SIZE && b.y >= cell.y && b.y <= cell.y + BLOCK_SIZE) {
             if (b.type === 'spread') { explodeSpread(b, newSpreadPelletsFromBlocks); b.hit = true; return; }
             if (block.invulnerable) {
