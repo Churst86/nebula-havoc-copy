@@ -52,6 +52,16 @@ let bgTimeouts = [];
 let bgPlaying = false;
 let currentWave = 1;
 let currentIsBoss = false;
+let masterGainNode = null; // global master gain for pause volume ducking
+
+function getMasterGain(ctx) {
+  if (!masterGainNode || masterGainNode.context !== ctx) {
+    masterGainNode = ctx.createGain();
+    masterGainNode.gain.value = 1.0;
+    masterGainNode.connect(ctx.destination);
+  }
+  return masterGainNode;
+}
 
 function stopAllBg() {
   bgPlaying = false;
