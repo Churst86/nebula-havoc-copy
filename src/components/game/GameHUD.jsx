@@ -28,7 +28,8 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
   const powerups = activePowerup || {};
   const shieldHp = powerups.shieldHp || 0;
   const starInvincible = powerups.starInvincible || false;
-  const activePowerupKeys = Object.keys(POWERUP_LABELS).filter(k => (powerups[k] || 0) > 0);
+  const gunKeys = GUN_POWERUPS.filter(k => (powerups[k] || 0) > 0);
+  const otherKeys = Object.keys(POWERUP_LABELS).filter(k => !GUN_POWERUPS.includes(k) && (powerups[k] || 0) > 0);
 
   return (
     <div className="absolute inset-0 z-20 pointer-events-none">
