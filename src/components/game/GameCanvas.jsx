@@ -722,10 +722,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     if (keys['ArrowUp'] || keys['w'] || keys['W']) p.y = Math.max(16, p.y - spd);
     if (keys['ArrowDown'] || keys['s'] || keys['S']) p.y = Math.min(H - 16, p.y + spd);
 
-    // Wingmen follow — tier 1-4 = 1-4 small wingmen, tier 5 = 1st super wingman (no basics), tier 6+ = 2 super wingmen (no basics)
+    // Wingmen follow:
+    // tier 1-4: basic wingmen only (1-4)
+    // tier 5: 1 super wingman, no basics
+    // tier 6-9: 1 super wingman + 1-4 basic wingmen
+    // tier 10: 2 super wingmen, no basics
     const wingmanTier = s.powerups.wingman || 0;
-    const superWingmanCount = wingmanTier >= 5 ? (wingmanTier >= 6 ? 2 : 1) : 0;
-    const basicWingmanCount = superWingmanCount > 0 ? 0 : wingmanTier;
+    const superWingmanCount = wingmanTier >= 10 ? 2 : wingmanTier >= 5 ? 1 : 0;
+    const basicWingmanCount = wingmanTier >= 10 ? 0 : wingmanTier >= 5 ? (wingmanTier - 5) : wingmanTier;
     if (wingmanTier > 0) {
       const allOffsets = [
         { x: -40, y: 10 }, { x: 40, y: 10 }, { x: 0, y: 25 }, { x: -65, y: 20 },
