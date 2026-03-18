@@ -5,20 +5,22 @@ import { Button } from '@/components/ui/button';
 const POWERUP_COLORS = {
   spread:    '#ffdd00',
   laser:     '#ff44ff',
-  raygun:    '#44ffaa',
+  photon:    '#44ffaa',
   wingman:   '#44aaff',
   bounce:    '#aaff00',
   speed:     '#ff8800',
   rapidfire: '#ff4488',
+  reverse:   '#ff6600',
 };
 const POWERUP_LABELS = {
   spread:    'SPREAD',
   laser:     'LASER',
-  raygun:    'RAY GUN',
+  photon:    'PHOTON',
   wingman:   'WINGMAN',
   bounce:    'BOUNCE',
   speed:     'SPEED',
   rapidfire: 'RAPID FIRE',
+  reverse:   'REVERSE',
 };
 
 export default function GameHUD({ score, lives, maxLives, wave, activePowerup, continuesLeft, isPaused, onPauseToggle, onOpenOptions }) {
