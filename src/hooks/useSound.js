@@ -446,4 +446,13 @@ export const sounds = {
   playTitleMusic()   { playExternalAudio('title',    true);  },
   playGameOverMusic(){ playExternalAudio('gameover', false); },
   playWinMusic()     { playExternalAudio('win',      false); },
+
+  // Music on/off toggle
+  setMusicEnabled(enabled) {
+    if (enabled) {
+      if (currentAudio) currentAudio.volume = musicVolume;
+    } else {
+      if (currentAudio) currentAudio.volume = 0;
+    }
+  },
 };
