@@ -450,10 +450,7 @@ export const sounds = {
 
   // Music on/off toggle
   setMusicEnabled(enabled) {
-    if (enabled) {
-      if (currentAudio) currentAudio.volume = musicVolume;
-    } else {
-      if (currentAudio) currentAudio.volume = 0;
-    }
+    musicEnabled = enabled;
+    if (currentAudio) currentAudio.volume = enabled ? musicVolume : 0;
   },
 };
