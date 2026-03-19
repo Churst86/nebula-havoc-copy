@@ -31,6 +31,7 @@ const BLOCK_COLORS = ['#00f0ff', '#ff44ff', '#ffdd00', '#44ffaa', '#ff8800', '#a
 function randomBetween(a, b) { return a + Math.random() * (b - a); }
 
 const DROPPER_SPAWN_INTERVAL = 480; // spawn a dropper every ~8 seconds (at 60fps), independent of wave
+const GUN_TYPES = ['shotgun', 'laser', 'photon', 'bounce', 'missile'];
 
 function initState() {
   return {
