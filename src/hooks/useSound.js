@@ -73,7 +73,6 @@ function playExternalAudio(key, loop = true) {
   if (!url) return;
   const audio = new Audio(url);
   audio.loop = loop;
-  audio.crossOrigin = 'anonymous';
   audio.volume = musicEnabled ? musicVolume : 0;
   currentAudio = audio;
   audio.play().catch(err => console.warn('[Music] play failed:', err));
