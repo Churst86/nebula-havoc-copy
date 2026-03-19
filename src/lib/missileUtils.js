@@ -26,7 +26,7 @@ export function updateMissiles(bullets, enemies, W, H) {
       const dx = b.target.x - b.x, dy = b.target.y - b.y;
       const len = Math.hypot(dx, dy) || 1;
       const speed = Math.hypot(b.vx, b.vy) || 8;
-      const turnRate = 0.32;
+      const turnRate = 0.55;
       b.vx += (dx / len) * turnRate;
       b.vy += (dy / len) * turnRate;
       const currentSpeed = Math.hypot(b.vx, b.vy) || 1;
