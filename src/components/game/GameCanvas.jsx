@@ -1056,10 +1056,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         s.dropperRotationIdx = (s.dropperRotationIdx + 1) % DROPPER_ROTATION.length;
       }
       s.dropperRotateTimer = DROPPER_ROTATE_FRAMES;
-      // Update existing droppers to new type
+      // Update existing droppers to new type (respecting 3-gun limit)
+      const nextType = getNextDropperType(s);
       s.enemies.forEach(e => {
         if (e.type === 'dropper' && e.dropType !== 'star') {
-          e.dropType = DROPPER_ROTATION[s.dropperRotationIdx];
+          e.dropType = nextType;
           e.color = DROPPER_COLORS[e.dropType] || '#ffd700';
         }
       });
