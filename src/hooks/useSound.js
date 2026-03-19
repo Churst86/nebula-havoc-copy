@@ -159,11 +159,14 @@ function getMusicEra(wave) {
   return eras[Math.min(era, eras.length - 1)];
 }
 
-// Wave music: gets faster, more layers, changes style every 10 waves
+// Wave music: plays external SkyFire track
 function startWaveMusic(wave) {
-   stopAllBg();
-   bgPlaying = true;
-   currentWave = wave;
+  stopAllBg();
+  bgPlaying = true;
+  currentWave = wave;
+  playExternalAudio('stage', true);
+  return; // skip synthesized music below
+  bgPlaying = true; // unreachable — kept to avoid removing the block below
 
    try {
      const ctx = getCtx();
