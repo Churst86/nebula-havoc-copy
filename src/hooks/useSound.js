@@ -117,6 +117,7 @@ function stopAllBg() {
   bgPlaying = false;
   bgTimeouts.forEach(t => clearTimeout(t));
   bgTimeouts = [];
+  stopExternalAudio();
 }
 
 // Music era definitions — change style every 10 waves
