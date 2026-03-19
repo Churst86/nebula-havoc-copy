@@ -12,10 +12,21 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
   const [showScores, setShowScores] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [musicStarted, setMusicStarted] = useState(false);
+  const musicEnabled = settings.musicEnabled !== false;
 
-  // Play title music on first user interaction with the start screen
   function ensureTitleMusic() {
     if (!musicStarted) {
+      sounds.playTitleMusic();
+      setMusicStarted(true);
+    }
+  }
+
+  function toggleMusic() {
+    const next = !musicEnabled;
+    const newSettings = { ...settings, musicEnabled: next };
+    onSettingsChange(newSettings);
+    sounds.setMusicEnabled(next);
+    if (next && !musicStarted) {
       sounds.playTitleMusic();
       setMusicStarted(true);
     }
