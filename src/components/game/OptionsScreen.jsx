@@ -58,11 +58,28 @@ export default function OptionsScreen({ settings, onSettingsChange, onBack, game
           OPTIONS
         </h1>
 
-        {/* Music Volume */}
+        {/* Music On/Off + Volume */}
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm font-bold text-cyan-400 uppercase tracking-widest">
-            <Music className="w-4 h-4" />
-            Music Volume
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-bold text-cyan-400 uppercase tracking-widest">
+              <Music className="w-4 h-4" />
+              Music
+            </div>
+            <button
+              onClick={() => {
+                const next = !musicEnabled;
+                update('musicEnabled', next);
+                sounds.setMusicEnabled(next);
+              }}
+              className="flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full border transition-all"
+              style={{
+                borderColor: musicEnabled ? '#00f0ff' : '#444',
+                color: musicEnabled ? '#00f0ff' : '#666',
+                background: musicEnabled ? '#00f0ff22' : 'transparent',
+              }}>
+              {musicEnabled ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
+              {musicEnabled ? 'ON' : 'OFF'}
+            </button>
           </div>
           <Slider color="#00f0ff" min={0} max={1} step={0.05}
             value={musicVol}
