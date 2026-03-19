@@ -593,7 +593,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     } else {
       // basic enemy
       const basicImg = getSprite('BasicEnemy');
-      const bSz = 56;
+      const bSz = 140;
       if (basicImg) {
         ctx.shadowColor = '#ff4444'; ctx.shadowBlur = 10;
         ctx.drawImage(basicImg, -bSz / 2, -bSz / 2, bSz, bSz);
