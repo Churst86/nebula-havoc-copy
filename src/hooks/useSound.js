@@ -67,15 +67,60 @@ function stopExternalAudio() {
   }
 }
 
+let fadeOutInterval = null;
+let fadeInInterval = null;
+
+function clearFades() {
+  if (fadeOutInterval) { clearInterval(fadeOutInterval); fadeOutInterval = null; }
+  if (fadeInInterval) { clearInterval(fadeInInterval); fadeInInterval = null; }
+}
+
 function playExternalAudio(key, loop = true) {
-  stopExternalAudio();
+  clearFades();
   const url = AUDIO_URLS[key];
   if (!url) return;
+
+  const targetVol = musicEnabled ? musicVolume : 0;
+
+  // Fade out current track, then fade in new one
+  if (currentAudio && !currentAudio.paused) {
+    const outAudio = currentAudio;
+    const step = outAudio.volume / 15;
+    fadeOutInterval = setInterval(() => {
+      if (outAudio.volume > step) {
+        outAudio.volume = Math.max(0, outAudio.volume - step);
+      } else {
+        outAudio.pause();
+        outAudio.currentTime = 0;
+        clearInterval(fadeOutInterval);
+        fadeOutInterval = null;
+        startNewTrack(url, loop, targetVol);
+      }
+    }, 40);
+  } else {
+    stopExternalAudio();
+    startNewTrack(url, loop, targetVol);
+  }
+}
+
+function startNewTrack(url, loop, targetVol) {
+  clearFades();
   const audio = new Audio(url);
   audio.loop = loop;
-  audio.volume = musicEnabled ? musicVolume : 0;
+  audio.volume = 0;
   currentAudio = audio;
   audio.play().catch(err => console.warn('[Music] play failed:', err));
+  // Fade in
+  const step = targetVol / 20;
+  fadeInInterval = setInterval(() => {
+    if (audio.volume < targetVol - step) {
+      audio.volume = Math.min(targetVol, audio.volume + step);
+    } else {
+      audio.volume = targetVol;
+      clearInterval(fadeInInterval);
+      fadeInInterval = null;
+    }
+  }, 40);
 }
 
 // ── Background music state ───────────────────────────────────────
