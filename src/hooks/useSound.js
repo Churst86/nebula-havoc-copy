@@ -73,7 +73,14 @@ function playExternalAudio(key, loop = true) {
   const audio = new Audio(AUDIO_URLS[key]);
   audio.loop = loop;
   audio.volume = musicVolume;
-  audio.play().catch(() => {});
+  // Resume AudioContext first (required after browser autoplay policy suspends it)
+  const ctx = getCtx();
+  const doPlay = () => audio.play().catch(e => console.warn('Audio play failed:', e));
+  if (ctx.state === 'suspended') {
+    ctx.resume().then(doPlay);
+  } else {
+    doPlay();
+  }
   currentAudio = audio;
 }
 
