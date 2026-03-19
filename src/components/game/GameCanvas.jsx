@@ -1848,6 +1848,18 @@ const reverseTier = s.powerups.reverse || 0;
       Object.assign(s, initState());
       s.player = { x: W / 2, y: H - 80 };
       s.stars = initStars(W, H);
+
+      // Apply carried-over powerups from previous difficulty
+      if (carryOverPowerups) {
+        const shieldHp = carryOverPowerups.shieldHp || 0;
+        delete carryOverPowerups.shieldHp;
+        delete carryOverPowerups.starInvincible;
+        s.powerups = { ...carryOverPowerups };
+        s.shieldHp = shieldHp;
+        // Re-lock gun powerups that were owned
+        s.lockedPowerups = GUN_TYPES.filter(g => (s.powerups[g] || 0) > 0);
+      }
+
       s.running = true;
       spawnWave(W, s);
       lastTimeRef.current = performance.now();
