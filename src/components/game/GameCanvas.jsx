@@ -1359,7 +1359,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     if (s.blockSpawnTimer <= 0) {
       s.blocks.push(spawnBlock(W));
       const blockSpeedMult = (difficultyConfig && difficultyConfig.blockSpeedMult) || 1;
-      s.blockSpawnTimer = Math.max(40, Math.round((160 - s.wave * 8) / blockSpeedMult));
+      const blockSpawnMult = (difficultyConfig && difficultyConfig.blockSpawnMult) || 1;
+      s.blockSpawnTimer = Math.max(20, Math.round((160 - s.wave * 8) / blockSpawnMult));
     }
 
     // Move blocks, check piling
