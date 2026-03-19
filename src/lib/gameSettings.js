@@ -4,6 +4,7 @@ const LS_KEY = 'voidstorm_settings';
 const DEFAULTS = {
   musicVolume: 0.8,
   sfxVolume: 0.8,
+  musicEnabled: true,
   brightness: 1.0,
   difficulty: 'normal', // 'easy' | 'normal' | 'hell'
   gameSpeed: 30, // fps: 15–120
