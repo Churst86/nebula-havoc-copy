@@ -1227,8 +1227,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           else return false;
         }
       }
-      // Missiles bounce off walls and never despawn by position
-      if (b.type === 'missile') return true;
+      // Missiles despawn if they leave the screen
+      if (b.type === 'missile') return !b._outOfBounds;
       return b.y > -20 && b.y < H + 20 && b.x > -20 && b.x < W + 20;
     });
 
