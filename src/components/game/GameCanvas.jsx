@@ -145,7 +145,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       enemies.push({
         type: 'boss', x: W / 2, y: -60, w: 45, h: 45,
         hp: bossHp, maxHp: bossHp, vx: 1.8, vy: 0.4, fireTimer: 20, phase: 0,
-        gun: bossGun, tier: bossTier,
+        gun: bossGun, tier: bossTier, _wave: wave,
       });
       sounds.startBossMusic();
     } else {
