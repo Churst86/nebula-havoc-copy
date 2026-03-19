@@ -133,6 +133,21 @@ export default function Game() {
     return () => window.removeEventListener('keydown', onKey);
   }, [gameState]);
 
+  // Play title music on start screen
+  useEffect(() => {
+    if (gameState === 'start') sounds.playTitleMusic();
+  }, [gameState]);
+
+  // Play game-over music on game over
+  useEffect(() => {
+    if (gameState === 'gameover') sounds.playGameOverMusic();
+  }, [gameState]);
+
+  // Play win music on congratulations screen
+  useEffect(() => {
+    if (gameState === 'congratulations') sounds.playWinMusic();
+  }, [gameState]);
+
   // Apply separate music/sfx volumes when settings change
   useEffect(() => {
     sounds.setMusicVolume(settings.musicVolume ?? settings.soundVolume ?? 0.8);
