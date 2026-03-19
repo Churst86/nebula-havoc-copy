@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Music, Volume2, Sun, Skull, Gauge, Save, LogOut } from 'lucide-react';
+import { ArrowLeft, Music, Volume2, VolumeX, Sun, Skull, Gauge, Save, LogOut } from 'lucide-react';
 import { DIFFICULTY_CONFIG, saveSettings, loadSettings } from '../../lib/gameSettings';
 
 function Slider({ color, min, max, step, value, onChange, label }) {
