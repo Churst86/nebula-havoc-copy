@@ -1076,7 +1076,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           }
         }
       } else if (e.type === 'eater') {
-        e._eating = false;
+        // Smooth chomp animation: oscillate between open/closed on a timer
+        e._chompTimer = (e._chompTimer || 0) + 1;
+        e._eating = Math.floor(e._chompTimer / 12) % 2 === 0;
         const bound = e._mini ? 15 : 25;
         if (e._chargingPlayer) {
           e.x += e._cpDx * (e._mini ? 5 : 7); e.y += e._cpDy * (e._mini ? 5 : 7);
