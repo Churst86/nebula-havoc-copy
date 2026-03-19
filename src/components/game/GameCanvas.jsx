@@ -95,6 +95,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   const stateRef = useRef(initState());
   const animRef = useRef(null);
   const lastTimeRef = useRef(0);
+  const playerShipImageRef = useRef(null);
+
+  useEffect(() => {
+    const img = new Image();
+    img.src = 'https://raw.githubusercontent.com/Churst86/Sprites/main/PlayerShip.png';
+    img.onload = () => { playerShipImageRef.current = img; };
+  }, []);
   const isPausedRef = useRef(isPaused);
   const gameSpeedRef = useRef(gameSpeed);
   useEffect(() => { gameSpeedRef.current = gameSpeed; }, [gameSpeed]);
