@@ -76,7 +76,7 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
               SCORES
             </Button>
             <Button
-              onClick={() => setShowOptions(true)}
+              onClick={() => { ensureTitleMusic(); setShowOptions(true); }}
               variant="outline"
               size="lg"
               className="font-bold px-6 py-6 rounded-xl gap-2 flex-1">
