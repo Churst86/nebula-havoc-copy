@@ -441,4 +441,9 @@ export const sounds = {
   startBossMusic()     { startBossMusic(); },
   stopBossMusic()      { stopAllBg(); },
   stopAllMusic()       { stopAllBg(); },
+
+  // External track helpers for screens
+  playTitleMusic()   { playExternalAudio('title',    true);  },
+  playGameOverMusic(){ playExternalAudio('gameover', false); },
+  playWinMusic()     { playExternalAudio('win',      false); },
 };
