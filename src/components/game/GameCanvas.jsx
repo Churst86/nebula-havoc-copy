@@ -7,6 +7,7 @@ import { fireReverseShot, drawReverseFlame } from '../../lib/reverseGunUtils.js'
 import { fireMissiles, updateMissiles, drawMissile, getMissileHitDamage, shouldSpawnMissileExplosion } from '../../lib/missileUtils.js';
 import { DROPPER_COLORS, DROPPER_LABELS, DROPPER_ROTATION } from '../../lib/powerupConfig.js';
 import { drawBlock, drawPiledCells, drawParticle } from '../../lib/drawingUtils.js';
+import { loadSprites, getSprite, getBossSpriteKey, BOSS_SPRITE_MAP } from '../../lib/spriteLoader.js';
 
 // Import laser logic
 import { updateLaserBeam, LASER_CHARGE_FRAMES, LASER_BEAM_FRAMES, LASER_COOLDOWN_FRAMES } from '../../lib/laserLogic.js';
