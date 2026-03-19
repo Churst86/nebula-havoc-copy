@@ -542,7 +542,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       const isEating = e._eating;
       const spriteKey = isEating ? 'EaterChomp' : 'Eater';
       const eImg = getSprite(spriteKey);
-      const eSz = isMini ? 56 : 104;
+      const eSz = isMini ? 140 : 260;
       if (eImg) {
         ctx.shadowColor = isEating ? '#00ff44' : '#33cc77';
         ctx.shadowBlur = 16;
