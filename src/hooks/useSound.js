@@ -243,11 +243,14 @@ function startWaveMusic(wave) {
   } catch {}
 }
 
-// Boss music: aggressive, fast, dramatic
+// Boss music: plays external DeathMatch track
 function startBossMusic() {
   stopAllBg();
   bgPlaying = true;
   currentIsBoss = true;
+  playExternalAudio('boss', true);
+  return; // skip synthesized music below
+  bgPlaying = true; // unreachable — kept to avoid removing the block below
 
   try {
     const ctx = getCtx();
