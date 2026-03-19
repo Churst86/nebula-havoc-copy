@@ -58,7 +58,7 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
 
         <div className="space-y-3 pt-2">
           <Button
-            onClick={onStart}
+            onClick={() => { ensureTitleMusic(); onStart(); }}
             size="lg"
             className="bg-primary hover:bg-primary/80 text-primary-foreground font-bold text-lg px-10 py-6 rounded-xl w-full">
             
