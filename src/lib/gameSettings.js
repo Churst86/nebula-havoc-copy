@@ -44,7 +44,8 @@ export const DIFFICULTY_CONFIG = {
     desc: 'Enemies have 2× HP. Max wave 50.',
     hpMult: 2,
     maxWave: 50,
-    blockSpeedMult: 1,
+    blockSpeedMult: 1.8,
+    blockSpawnMult: 1.6,
   },
   hell: {
     label: 'Hell',
@@ -52,6 +53,7 @@ export const DIFFICULTY_CONFIG = {
     desc: 'Enemies have 2× HP. Faster blocks. Max wave 100.',
     hpMult: 2,
     maxWave: 100,
-    blockSpeedMult: 1.8,
+    blockSpeedMult: 2.8,
+    blockSpawnMult: 2.2,
   },
 };

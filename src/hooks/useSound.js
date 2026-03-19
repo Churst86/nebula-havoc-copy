@@ -85,7 +85,7 @@ function playExternalAudio(key, loop = true) {
   // Fade out current track, then fade in new one
   if (currentAudio && !currentAudio.paused) {
     const outAudio = currentAudio;
-    const step = outAudio.volume / 15;
+    const step = outAudio.volume / 30;
     fadeOutInterval = setInterval(() => {
       if (outAudio.volume > step) {
         outAudio.volume = Math.max(0, outAudio.volume - step);
@@ -96,7 +96,7 @@ function playExternalAudio(key, loop = true) {
         fadeOutInterval = null;
         startNewTrack(url, loop, targetVol);
       }
-    }, 40);
+    }, 50);
   } else {
     stopExternalAudio();
     startNewTrack(url, loop, targetVol);
@@ -111,7 +111,7 @@ function startNewTrack(url, loop, targetVol) {
   currentAudio = audio;
   audio.play().catch(err => console.warn('[Music] play failed:', err));
   // Fade in
-  const step = targetVol / 20;
+  const step = targetVol / 35;
   fadeInInterval = setInterval(() => {
     if (audio.volume < targetVol - step) {
       audio.volume = Math.min(targetVol, audio.volume + step);
@@ -120,7 +120,7 @@ function startNewTrack(url, loop, targetVol) {
       clearInterval(fadeInInterval);
       fadeInInterval = null;
     }
-  }, 40);
+  }, 50);
 }
 
 // ── Background music state ───────────────────────────────────────
