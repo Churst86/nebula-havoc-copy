@@ -139,7 +139,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
 
     if (wave % 5 === 0) {
       const bossHp = Math.round((20 + wave * 5) * hpMult);
-      const bossGuns = ['spread', 'laser', 'photon', 'bounce'];
+      const bossGuns = ['spread', 'laser', 'photon', 'bounce', 'missile', 'shotgun'];
       const bossGun = bossGuns[Math.floor(Math.random() * bossGuns.length)];
       const bossTier = Math.floor(wave / 5); // 1, 2, 3, 4...
       enemies.push({
