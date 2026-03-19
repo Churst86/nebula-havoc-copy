@@ -465,7 +465,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       const wave = e._wave || 5;
       const spriteKey = getBossSpriteKey(wave);
       const img = getSprite(spriteKey);
-      const sz = 375;
+      const sz = 440;
       if (img) {
         ctx.shadowColor = '#ff0066'; ctx.shadowBlur = 48;
         ctx.drawImage(img, -sz / 2, -sz / 2, sz, sz);
