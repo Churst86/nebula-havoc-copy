@@ -99,9 +99,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   const playerShipImageRef = useRef(null);
 
   useEffect(() => {
+    // Force reload sprites (cache-bust) so newly uploaded files are picked up
     loadSprites((sprites) => {
       playerShipImageRef.current = sprites['PlayerShip'] || null;
-    });
+    }, true);
   }, []);
   const isPausedRef = useRef(isPaused);
   const gameSpeedRef = useRef(gameSpeed);
