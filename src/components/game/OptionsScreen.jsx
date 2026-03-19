@@ -39,6 +39,7 @@ export default function OptionsScreen({ settings, onSettingsChange, onBack, game
   const musicVol = settings.musicVolume ?? settings.soundVolume ?? 0.8;
   const sfxVol   = settings.sfxVolume   ?? settings.soundVolume ?? 0.8;
   const gameSpeed = settings.gameSpeed ?? 30;
+  const musicEnabled = settings.musicEnabled !== false;
 
   return (
     <motion.div
