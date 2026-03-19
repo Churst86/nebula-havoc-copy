@@ -187,17 +187,24 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     s.enemies = enemies;
   }
 
+  const GUN_TYPES = ['shotgun', 'laser', 'photon', 'bounce', 'missile'];
+
   function getNextDropperType(s) {
-    // Cycle through DROPPER_ROTATION, skipping any gun powerup already at tier 10
+    const lockedGuns = s.lockedPowerups.filter(p => GUN_TYPES.includes(p));
+    const atGunLimit = lockedGuns.length >= 3;
+
     for (let i = 0; i < DROPPER_ROTATION.length; i++) {
       const idx = (s.dropperRotationIdx + i) % DROPPER_ROTATION.length;
       const t = DROPPER_ROTATION[idx];
       if ((s.powerups[t] || 0) >= 10) continue; // skip maxed
+      // If at 3-gun limit, skip guns the player doesn't already own
+      if (atGunLimit && GUN_TYPES.includes(t) && !s.lockedPowerups.includes(t)) continue;
       s.dropperRotationIdx = idx;
       return t;
     }
-    // All maxed — fall back to non-offensive specials
-    return DROPPER_ROTATION[s.dropperRotationIdx % DROPPER_ROTATION.length];
+    // Fallback: only non-gun types
+    const nonGuns = DROPPER_ROTATION.filter(t => !GUN_TYPES.includes(t));
+    return nonGuns[0] || DROPPER_ROTATION[0];
   }
 
   function spawnMiniEaters(W, s, parent) {
