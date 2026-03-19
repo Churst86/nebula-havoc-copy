@@ -1640,7 +1640,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       cell._dmgCooldown = Math.max(0, (cell._dmgCooldown || 0) - 1);
     });
 
-    // Wave clear — only count combat enemies; droppers survive into the next wave
+    // Wave clear — only count combat enemies; droppers and eaters survive into the next wave
     const combatEnemies = s.enemies.filter(e => e.type !== 'dropper' && e.type !== 'eater');
     if (combatEnemies.length === 0) {
       s.waveTimer++;
@@ -1659,10 +1659,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         }
         
         s.waveTimer = 0;
-        const survivingDroppers = s.enemies.filter(e => e.type === 'dropper');
+        const survivingPersistent = s.enemies.filter(e => e.type === 'dropper' || e.type === 'eater');
         spawnWave(W, s);
-        // Re-add surviving droppers after wave spawn (spawnWave replaces s.enemies)
-        s.enemies.push(...survivingDroppers);
+        // Re-add surviving droppers and eaters after wave spawn
+        s.enemies.push(...survivingPersistent);
       }
     } else {
       s.waveTimer = 0;
