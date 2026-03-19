@@ -56,8 +56,8 @@ export default function Game() {
     setLives(3);
     setMaxLives(3);
     setWave(1);
-    // If keeping powerups (progression), preserve them; otherwise reset
     if (!keepPowerups) {
+      setCarryOverPowerups(null);
       setActivePowerup({});
     }
     setContinuesLeft(0);
