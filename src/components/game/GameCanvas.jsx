@@ -330,7 +330,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     const cellCount = shape.length;
     const hp = cellCount <= 2 ? 1 : cellCount === 3 ? 2 : 3;
     const blockSpeedMult = (difficultyConfig && difficultyConfig.blockSpeedMult) || 1;
-    return { shape, color, x: startX, y: -BLOCK_SIZE * 2, vy: (0.6 + Math.random() * 0.4) * blockSpeedMult, hp, maxHp: hp, settled: false, invulnerable: isInvulnerable };
+    return { shape, color, x: startX, y: -BLOCK_SIZE * 2, vy: (0.8 + Math.random() * 0.5) * blockSpeedMult, hp, maxHp: hp, settled: false, invulnerable: isInvulnerable };
   }
 
   function getBlockCells(block) {
