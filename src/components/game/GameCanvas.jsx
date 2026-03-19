@@ -462,72 +462,23 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     ctx.translate(e.x, e.y);
 
     if (e.type === 'boss') {
-      const bt = e.tier || 1;
-      // Tier color palette
-      const tierIdx = Math.min(bt - 1, 3);
-      const tierColor = ['#ff0066','#ff6600','#aa00ff','#00ccff'][tierIdx];
-      const tierFill = ['rgba(255,0,102,0.12)','rgba(255,100,0,0.12)','rgba(170,0,255,0.12)','rgba(0,200,255,0.12)'][tierIdx];
-      const tierEmoji = ['☠','👁','💀','⬡'][tierIdx];
-
-      ctx.shadowColor = tierColor; ctx.shadowBlur = 30 + bt * 4;
-      ctx.strokeStyle = tierColor; ctx.lineWidth = 3;
-
-      if (bt === 1) {
-        // 8-point star
-        ctx.beginPath();
-        for (let i = 0; i < 8; i++) {
-          const a = (i / 8) * Math.PI * 2 - Math.PI / 2;
-          const r = i % 2 === 0 ? 40 : 26;
-          i === 0 ? ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r) : ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-        }
-        ctx.closePath();
-      } else if (bt === 2) {
-        // Hexagon with inner ring
-        ctx.beginPath();
-        for (let i = 0; i < 6; i++) {
-          const a = (i / 6) * Math.PI * 2 - Math.PI / 2;
-          i === 0 ? ctx.moveTo(Math.cos(a) * 40, Math.sin(a) * 40) : ctx.lineTo(Math.cos(a) * 40, Math.sin(a) * 40);
-        }
-        ctx.closePath(); ctx.stroke();
-        ctx.beginPath();
-        for (let i = 0; i < 6; i++) {
-          const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
-          i === 0 ? ctx.moveTo(Math.cos(a) * 25, Math.sin(a) * 25) : ctx.lineTo(Math.cos(a) * 25, Math.sin(a) * 25);
-        }
-        ctx.closePath();
-      } else if (bt === 3) {
-        // Diamond cross (rotated square + square)
-        [0, Math.PI / 4].forEach(rot => {
-          ctx.beginPath();
-          for (let i = 0; i < 4; i++) {
-            const a = (i / 4) * Math.PI * 2 + rot;
-            i === 0 ? ctx.moveTo(Math.cos(a) * 40, Math.sin(a) * 40) : ctx.lineTo(Math.cos(a) * 40, Math.sin(a) * 40);
-          }
-          ctx.closePath(); ctx.stroke();
-        });
-        ctx.beginPath(); // re-open for final stroke below
-        ctx.arc(0, 0, 15, 0, Math.PI * 2);
+      const wave = e._wave || 5;
+      const spriteKey = getBossSpriteKey(wave);
+      const img = getSprite(spriteKey);
+      const sz = 80;
+      if (img) {
+        ctx.shadowColor = '#ff0066'; ctx.shadowBlur = 24;
+        ctx.drawImage(img, -sz / 2, -sz / 2, sz, sz);
       } else {
-        // Tier 4+: concentric rings + spokes
-        ctx.beginPath(); ctx.arc(0, 0, 42, 0, Math.PI * 2); ctx.stroke();
-        ctx.beginPath(); ctx.arc(0, 0, 28, 0, Math.PI * 2); ctx.stroke();
-        for (let i = 0; i < 8; i++) {
-          const a = (i / 8) * Math.PI * 2;
-          ctx.beginPath(); ctx.moveTo(Math.cos(a) * 28, Math.sin(a) * 28); ctx.lineTo(Math.cos(a) * 42, Math.sin(a) * 42); ctx.stroke();
-        }
-        ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI * 2);
+        // Fallback geometric
+        ctx.shadowColor = '#ff0066'; ctx.shadowBlur = 24;
+        ctx.strokeStyle = '#ff0066'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(0, 0, 40, 0, Math.PI * 2); ctx.stroke();
       }
-      ctx.stroke();
-      ctx.fillStyle = tierFill; ctx.fill();
-
-      ctx.fillStyle = tierColor;
-      ctx.font = `bold 15px sans-serif`;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(tierEmoji, 0, -6);
-      const gunLabels = { spread: 'S', laser: 'L', photon: 'R', bounce: 'B' };
-      ctx.font = 'bold 10px monospace';
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(gunLabels[e.gun] || '?', 0, 10);
+      // HP bar
+      const bw = 70, bh = 5, by = sz / 2 + 6;
+      ctx.fillStyle = '#333'; ctx.fillRect(-bw / 2, by, bw, bh);
+      ctx.fillStyle = '#ff0066'; ctx.fillRect(-bw / 2, by, bw * (e.hp / e.maxHp), bh);
     } else if (e.type === 'dropper') {
       const c = e.color || '#ffd700';
       ctx.shadowColor = c; ctx.shadowBlur = 18;
