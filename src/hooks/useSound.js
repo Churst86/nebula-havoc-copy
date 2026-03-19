@@ -49,11 +49,11 @@ function playNoise({ duration = 0.1, gain = 0.2, filterFreq = 1000 }) {
 
 // ── External audio track URLs ────────────────────────────────────
 const AUDIO_URLS = {
-  title:    'https://raw.githubusercontent.com/Churst86/Audio-/main/Brave%20Pilots.mp3',
-  gameover: 'https://raw.githubusercontent.com/Churst86/Audio-/main/Defeated.mp3',
-  boss:     'https://raw.githubusercontent.com/Churst86/Audio-/main/DeathMatch.mp3',
-  win:      'https://raw.githubusercontent.com/Churst86/Audio-/main/Victory%20Tune.mp3',
-  stage:    'https://raw.githubusercontent.com/Churst86/Audio-/main/SkyFire.mp3',
+  title:    'https://raw.githubusercontent.com/Churst86/Audio-/main/Brave%20Pilots%20(Menu%20Screen).wav',
+  gameover: 'https://raw.githubusercontent.com/Churst86/Audio-/main/Defeated%20(Game%20Over).wav',
+  boss:     'https://raw.githubusercontent.com/Churst86/Audio-/main/DeathMatch%20(Boss%20Theme).wav',
+  win:      'https://raw.githubusercontent.com/Churst86/Audio-/main/Victory%20Tune%20(Win%20Screen).wav',
+  stage:    'https://raw.githubusercontent.com/Churst86/Audio-/main/SkyFire%20(Stage%20Theme).wav',
 };
 
 // ── External audio player ────────────────────────────────────────
