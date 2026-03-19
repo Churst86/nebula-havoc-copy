@@ -79,28 +79,43 @@ export function drawBerserk(ctx, e, t) {
     ctx.stroke();
   }
   
-  // Laser spinning — short range, fast spin
+  // Laser spinning — rotates AROUND the unit (orbiting beam)
   if (e._laserActive) {
-    const spinSpeed = e._isHell ? 0.12 : 0.08;
+    const spinSpeed = e._isHell ? 0.12 : 0.07;
     e._spinAngle += spinSpeed;
-    
-    const laserLen = 35;
+
+    const orbitR = 20;          // orbit radius from center
+    const laserLen = e._isHell ? 90 : 65;
     const laserW = e._isHell ? 5 : 3;
-    
-    ctx.strokeStyle = e._isHell ? `rgba(255,${Math.floor(100 + Math.sin(t * 0.02) * 100)},0,0.9)` : 'rgba(255,68,0,0.8)';
-    ctx.lineWidth = laserW;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(Math.cos(e._spinAngle) * laserLen, Math.sin(e._spinAngle) * laserLen);
-    ctx.stroke();
-    
-    // Second laser in hell mode
-    if (e._isHell) {
-      ctx.strokeStyle = `rgba(0,${Math.floor(100 + Math.sin(t * 0.02) * 100)},255,0.7)`;
+
+    const beamCount = e._isHell ? 2 : 1;
+    for (let bi = 0; bi < beamCount; bi++) {
+      const angle = e._spinAngle + (bi / beamCount) * Math.PI * 2;
+      const startX = Math.cos(angle) * orbitR;
+      const startY = Math.sin(angle) * orbitR;
+      const endX = Math.cos(angle) * (orbitR + laserLen);
+      const endY = Math.sin(angle) * (orbitR + laserLen);
+
+      const laserColor = bi === 0
+        ? (e._isHell ? `rgba(255,${Math.floor(100 + Math.sin(t * 0.02) * 100)},0,0.9)` : 'rgba(255,68,0,0.9)')
+        : `rgba(0,${Math.floor(100 + Math.sin(t * 0.02) * 100)},255,0.8)`;
+
+      ctx.shadowColor = laserColor;
+      ctx.shadowBlur = 12;
+      ctx.strokeStyle = laserColor;
+      ctx.lineWidth = laserW;
+      ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(Math.cos(e._spinAngle + Math.PI) * laserLen * 0.8, Math.sin(e._spinAngle + Math.PI) * laserLen * 0.8);
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+
+      // Bright core
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
       ctx.stroke();
     }
   }
