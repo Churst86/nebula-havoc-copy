@@ -14,19 +14,14 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
   const [musicStarted, setMusicStarted] = useState(false);
   const musicEnabled = settings.musicEnabled !== false;
 
+  // Stop any leftover game music when title screen appears
+  useEffect(() => {
+    sounds.stopAllMusic();
+  }, []);
+
   function startMusic() {
     if (!musicStarted) {
       sounds.setMusicEnabled(musicEnabled);
-      sounds.playTitleMusic();
-      setMusicStarted(true);
-    }
-  }
-
-  function toggleMusic() {
-    const next = !musicEnabled;
-    onSettingsChange({ ...settings, musicEnabled: next });
-    sounds.setMusicEnabled(next);
-    if (next && !musicStarted) {
       sounds.playTitleMusic();
       setMusicStarted(true);
     }
