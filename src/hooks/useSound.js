@@ -58,6 +58,13 @@ const AUDIO_URLS = {
 
 // ── External audio player ────────────────────────────────────────
 let currentAudio = null;
+let fadeOutInterval = null;
+let fadeInInterval = null;
+
+function clearFades() {
+  if (fadeOutInterval) { clearInterval(fadeOutInterval); fadeOutInterval = null; }
+  if (fadeInInterval) { clearInterval(fadeInInterval); fadeInInterval = null; }
+}
 
 function stopExternalAudio() {
   clearFades();
@@ -66,14 +73,6 @@ function stopExternalAudio() {
     currentAudio.currentTime = 0;
     currentAudio = null;
   }
-}
-
-let fadeOutInterval = null;
-let fadeInInterval = null;
-
-function clearFades() {
-  if (fadeOutInterval) { clearInterval(fadeOutInterval); fadeOutInterval = null; }
-  if (fadeInInterval) { clearInterval(fadeInInterval); fadeInInterval = null; }
 }
 
 function playExternalAudio(key, loop = true) {
