@@ -71,7 +71,7 @@ function playExternalAudio(key, loop = true) {
   stopExternalAudio();
   const audio = new Audio(AUDIO_URLS[key]);
   audio.loop = loop;
-  audio.volume = musicVolume;
+  audio.volume = musicEnabled ? musicVolume : 0;
   audio.play().catch(() => {});
   currentAudio = audio;
 }
