@@ -164,9 +164,12 @@ function getMusicEra(wave) {
 
 // Wave music: plays external SkyFire track
 function startWaveMusic(wave) {
+  currentWave = wave;
+  // If stage music is already playing (not a boss), just let it continue
+  if (bgPlaying && !currentIsBoss && currentAudio) return;
   stopAllBg();
   bgPlaying = true;
-  currentWave = wave;
+  currentIsBoss = false;
   playExternalAudio('stage', true);
   return; // skip synthesized music below
   bgPlaying = true; // unreachable — kept to avoid removing the block below
