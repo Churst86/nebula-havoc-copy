@@ -11,6 +11,15 @@ export const GAME_VERSION = 'v1.2.0';
 export default function StartScreen({ onStart, settings, onSettingsChange }) {
   const [showScores, setShowScores] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const [musicStarted, setMusicStarted] = useState(false);
+
+  // Play title music on first user interaction with the start screen
+  function ensureTitleMusic() {
+    if (!musicStarted) {
+      sounds.playTitleMusic();
+      setMusicStarted(true);
+    }
+  }
 
   if (showScores) return <HighScoresMenu onBack={() => setShowScores(false)} />;
   if (showOptions) return <OptionsScreen settings={settings} onSettingsChange={onSettingsChange} onBack={() => setShowOptions(false)} />;
