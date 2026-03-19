@@ -1,16 +1,24 @@
 // Berserk enemy utilities
 export function updateBerserkMovement(e, p, W, H) {
+  // Zigzag follow: move toward player with a sine-wave lateral offset
+  e._zigTimer = (e._zigTimer || 0) + 1;
   const dx = p.x - e.x, dy = p.y - e.y;
   const len = Math.hypot(dx, dy) || 1;
-  const followSpeed = 0.8;
-  e.vx = (dx / len) * followSpeed;
-  e.vy = (dy / len) * followSpeed;
-  e.x += e.vx;
-  e.y += e.vy;
-  if (e.x < 20) e.x = 20;
-  if (e.x > W - 20) e.x = W - 20;
-  if (e.y < 20) e.y = 20;
-  if (e.y > H - 20) e.y = H - 20;
+  const followSpeed = e._isHell ? 1.4 : 1.0;
+
+  // Perpendicular direction for zigzag
+  const perpX = -dy / len;
+  const perpY = dx / len;
+  const zigAmp = 3.5;
+  const zigFreq = 0.06;
+  const zigOffset = Math.sin(e._zigTimer * zigFreq) * zigAmp;
+
+  e.x += (dx / len) * followSpeed + perpX * zigOffset;
+  e.y += (dy / len) * followSpeed + perpY * zigOffset;
+
+  // Hard clamp — always stay on screen
+  e.x = Math.max(30, Math.min(W - 30, e.x));
+  e.y = Math.max(30, Math.min(H - 30, e.y));
 }
 
 export function updateBerserkLaser(e, s, p, W, H) {
