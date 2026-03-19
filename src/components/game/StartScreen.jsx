@@ -69,7 +69,7 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
 
         <div className="space-y-3 pt-2">
           <Button
-            onClick={() => { ensureTitleMusic(); onStart(); }}
+            onClick={() => { startMusic(); onStart(); }}
             size="lg"
             className="bg-primary hover:bg-primary/80 text-primary-foreground font-bold text-lg px-10 py-6 rounded-xl w-full">
             
@@ -78,7 +78,7 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
 
           <div className="flex gap-3">
             <Button
-              onClick={() => { ensureTitleMusic(); setShowScores(true); }}
+              onClick={() => { startMusic(); setShowScores(true); }}
               variant="outline"
               size="lg"
               className="font-bold px-6 py-6 rounded-xl gap-2 flex-1">
@@ -87,7 +87,7 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
               SCORES
             </Button>
             <Button
-              onClick={() => { ensureTitleMusic(); setShowOptions(true); }}
+              onClick={() => { startMusic(); setShowOptions(true); }}
               variant="outline"
               size="lg"
               className="font-bold px-6 py-6 rounded-xl gap-2 flex-1">
