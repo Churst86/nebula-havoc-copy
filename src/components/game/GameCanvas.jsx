@@ -547,6 +547,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         ctx.shadowColor = isEating ? '#00ff44' : '#33cc77';
         ctx.shadowBlur = 16;
         ctx.drawImage(eImg, -eSz / 2, -eSz / 2, eSz, eSz);
+        ctx.shadowBlur = 0;
       } else {
         // Fallback circle
         ctx.shadowColor = '#33cc77'; ctx.shadowBlur = 16;
