@@ -69,11 +69,14 @@ function stopExternalAudio() {
 
 function playExternalAudio(key, loop = true) {
   stopExternalAudio();
-  const audio = new Audio(AUDIO_URLS[key]);
+  const url = AUDIO_URLS[key];
+  if (!url) return;
+  const audio = new Audio(url);
   audio.loop = loop;
+  audio.crossOrigin = 'anonymous';
   audio.volume = musicEnabled ? musicVolume : 0;
-  audio.play().catch(() => {});
   currentAudio = audio;
+  audio.play().catch(err => console.warn('[Music] play failed:', err));
 }
 
 // ── Background music state ───────────────────────────────────────
