@@ -569,7 +569,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         ctx.shadowColor = '#ff4400'; ctx.shadowBlur = 14;
         ctx.drawImage(bImg, -bSz / 2, -bSz / 2, bSz, bSz);
         ctx.shadowBlur = 0;
-        // Draw laser on top of sprite
+        // Draw laser on top of sprite (ctx is translated to e.x, e.y)
         if (e._laserActive) {
           const spinSpeed = e._isHell ? 0.12 : 0.07;
           e._spinAngle = (e._spinAngle || 0) + spinSpeed;
@@ -579,20 +579,18 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           const beamCount = e._isHell ? 2 : 1;
           for (let bi = 0; bi < beamCount; bi++) {
             const angle = e._spinAngle + (bi / beamCount) * Math.PI * 2;
-            const startX = e.x + Math.cos(angle) * orbitR;
-            const startY = e.y + Math.sin(angle) * orbitR;
-            const endX = e.x + Math.cos(angle) * (orbitR + laserLen);
-            const endY = e.y + Math.sin(angle) * (orbitR + laserLen);
+            const startX = Math.cos(angle) * orbitR;
+            const startY = Math.sin(angle) * orbitR;
+            const endX = Math.cos(angle) * (orbitR + laserLen);
+            const endY = Math.sin(angle) * (orbitR + laserLen);
             const laserColor = bi === 0
               ? (e._isHell ? `rgba(255,${Math.floor(100 + Math.sin(t * 0.02) * 100)},0,0.9)` : 'rgba(255,68,0,0.9)')
               : `rgba(0,${Math.floor(100 + Math.sin(t * 0.02) * 100)},255,0.8)`;
-            ctx.save();
             ctx.shadowColor = laserColor; ctx.shadowBlur = 18;
             ctx.strokeStyle = laserColor; ctx.lineWidth = laserW; ctx.lineCap = 'round';
             ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(endX, endY); ctx.stroke();
             ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 2;
             ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(endX, endY); ctx.stroke();
-            ctx.restore();
           }
         }
       } else {
