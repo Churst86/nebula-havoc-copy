@@ -133,10 +133,7 @@ export default function Game() {
     return () => window.removeEventListener('keydown', onKey);
   }, [gameState]);
 
-  // Play title music on start screen
-  useEffect(() => {
-    if (gameState === 'start') sounds.playTitleMusic();
-  }, [gameState]);
+  // Title music is triggered by user click in StartScreen (browser requires user gesture)
 
   // Play game-over music on game over
   useEffect(() => {
