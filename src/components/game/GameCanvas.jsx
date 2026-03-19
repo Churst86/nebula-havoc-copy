@@ -1204,7 +1204,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
 
     // Update missile homing
     if ((s.powerups.missile || 0) > 0) {
-      updateMissiles(s.bullets, s.enemies);
+      updateMissiles(s.bullets, s.enemies, W, H);
     }
 
     // Move bullets
