@@ -60,6 +60,7 @@ const AUDIO_URLS = {
 let currentAudio = null;
 
 function stopExternalAudio() {
+  clearFades();
   if (currentAudio) {
     currentAudio.pause();
     currentAudio.currentTime = 0;
