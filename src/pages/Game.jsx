@@ -177,6 +177,7 @@ export default function Game() {
         isPaused={isPaused}
         difficultyConfig={difficultyConfig}
         gameSpeed={settings.gameSpeed ?? 30}
+        carryOverPowerups={carryOverPowerups}
       />
 
       {(gameState === 'playing' || gameState === 'resuming') && (
