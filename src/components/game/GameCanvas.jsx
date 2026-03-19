@@ -617,21 +617,49 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         ctx.fillText(isSuper?'SUPER EATER':'EATER',0,-52);
       }
     } else if (e.type === 'berserk') {
-       const t = Date.now();
-       drawBerserk(ctx, e, t);
-     } else if (e.type === 'elite') {
-       ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14;
-       ctx.strokeStyle = '#ff44ff'; ctx.lineWidth = 2;
-       ctx.beginPath();
-       ctx.moveTo(0, -11); ctx.lineTo(11, 11); ctx.lineTo(-11, 11); ctx.closePath();
-       ctx.stroke();
-       ctx.fillStyle = 'rgba(255,68,255,0.1)'; ctx.fill();
-     } else {
-      ctx.shadowColor = '#ff4444'; ctx.shadowBlur = 10;
-      ctx.strokeStyle = '#ff4444'; ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(0, 9); ctx.lineTo(9, -9); ctx.lineTo(-9, -9); ctx.closePath();
-      ctx.stroke();
+      const bImg = getSprite('Berskerker');
+      const bSz = (e._mini ? 24 : 40);
+      if (bImg) {
+        ctx.shadowColor = '#ff4400'; ctx.shadowBlur = 14;
+        ctx.drawImage(bImg, -bSz / 2, -bSz / 2, bSz, bSz);
+      } else {
+        const t = Date.now();
+        drawBerserk(ctx, e, t);
+      }
+      if (!e._mini) {
+        const bw = 50, bh = 4;
+        ctx.fillStyle = '#222'; ctx.fillRect(-bw / 2, bSz / 2 + 4, bw, bh);
+        ctx.fillStyle = e.hp / e.maxHp > 0.5 ? '#ff6600' : '#ff2200';
+        ctx.fillRect(-bw / 2, bSz / 2 + 4, bw * (e.hp / e.maxHp), bh);
+      }
+    } else if (e.type === 'elite') {
+      const eImg = getSprite('EliteEnemy');
+      const eSz = 36;
+      if (eImg) {
+        ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14;
+        ctx.drawImage(eImg, -eSz / 2, -eSz / 2, eSz, eSz);
+      } else {
+        ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14;
+        ctx.strokeStyle = '#ff44ff'; ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, -11); ctx.lineTo(11, 11); ctx.lineTo(-11, 11); ctx.closePath();
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,68,255,0.1)'; ctx.fill();
+      }
+    } else {
+      // basic enemy
+      const basicImg = getSprite('BasicEnemy');
+      const bSz = 28;
+      if (basicImg) {
+        ctx.shadowColor = '#ff4444'; ctx.shadowBlur = 10;
+        ctx.drawImage(basicImg, -bSz / 2, -bSz / 2, bSz, bSz);
+      } else {
+        ctx.shadowColor = '#ff4444'; ctx.shadowBlur = 10;
+        ctx.strokeStyle = '#ff4444'; ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(0, 9); ctx.lineTo(9, -9); ctx.lineTo(-9, -9); ctx.closePath();
+        ctx.stroke();
+      }
     }
 
     if (e.maxHp > 1 && e.type !== 'mine' && e.type !== 'eater' && e.type !== 'eater') {
