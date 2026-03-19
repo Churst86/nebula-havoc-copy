@@ -1263,6 +1263,19 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
               const rad = (angle * Math.PI) / 180;
               s.enemyBullets.push({ x: e.x, y: e.y, vx: (dx / len) * 4 + Math.sin(rad) * 3.5, vy: (dy / len) * 4, boss: true, bouncing: true, bouncesLeft: 3 });
             });
+          } else if (gun === 'missile') {
+            // Homing missiles — 3 at a time
+            for (let mi = 0; mi < 3; mi++) {
+              const spread = (mi - 1) * 0.4;
+              s.enemyBullets.push({ x: e.x, y: e.y, vx: Math.sin(spread) * 3, vy: (dy / len) * 5 + Math.cos(spread), boss: true, big: true });
+            }
+          } else if (gun === 'shotgun') {
+            // Dense wide burst — lvl 10 shotgun style
+            for (let si = 0; si < 11; si++) {
+              const angleDeg = -75 + si * 15;
+              const rad = (angleDeg * Math.PI) / 180;
+              s.enemyBullets.push({ x: e.x, y: e.y, vx: Math.sin(rad) * 5, vy: Math.cos(rad) * 5, boss: true });
+            }
           }
           const bt2 = e.tier || 1;
           e.fireTimer = Math.max(15, 35 - bt2 * 4);
