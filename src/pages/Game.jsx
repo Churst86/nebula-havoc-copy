@@ -107,10 +107,11 @@ export default function Game() {
     if (nextDifficulty) {
       const newSettings = { ...settings, difficulty: nextDifficulty };
       handleSettingsChange(newSettings);
-      // Start new game with current powerups
+      // Snapshot current powerups to carry over
+      setCarryOverPowerups({ ...activePowerup });
       handleStart(true);
     }
-  }, [settings, handleStart]);
+  }, [settings, handleStart, activePowerup]);
 
   const handlePauseToggle = useCallback(() => {
     setIsPaused(p => !p);
