@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Crosshair, Trophy, Settings } from 'lucide-react';
 import HighScoresMenu from './HighScoresMenu';
 import OptionsScreen from './OptionsScreen';
+import { sounds } from '../../hooks/useSound.js';
 
 export const GAME_VERSION = 'v1.2.0';
 
