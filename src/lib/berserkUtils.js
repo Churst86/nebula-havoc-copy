@@ -84,9 +84,9 @@ export function drawBerserk(ctx, e, t) {
     const spinSpeed = e._isHell ? 0.12 : 0.07;
     e._spinAngle += spinSpeed;
 
-    const orbitR = 20;          // orbit radius from center
-    const laserLen = e._isHell ? 90 : 65;
-    const laserW = e._isHell ? 5 : 3;
+    const orbitR = 60;          // orbit radius from center
+    const laserLen = e._isHell ? 220 : 160;
+    const laserW = e._isHell ? 7 : 5;
 
     const beamCount = e._isHell ? 2 : 1;
     for (let bi = 0; bi < beamCount; bi++) {
