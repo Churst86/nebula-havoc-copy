@@ -187,8 +187,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     s.enemies = enemies;
   }
 
-  const GUN_TYPES = ['shotgun', 'laser', 'photon', 'bounce', 'missile'];
-
   function getNextDropperType(s) {
     const lockedGuns = s.lockedPowerups.filter(p => GUN_TYPES.includes(p));
     const atGunLimit = lockedGuns.length >= 3;
