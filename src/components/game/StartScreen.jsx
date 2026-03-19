@@ -14,8 +14,9 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
   const [musicStarted, setMusicStarted] = useState(false);
   const musicEnabled = settings.musicEnabled !== false;
 
-  function ensureTitleMusic() {
+  function startMusic() {
     if (!musicStarted) {
+      sounds.setMusicEnabled(musicEnabled);
       sounds.playTitleMusic();
       setMusicStarted(true);
     }
@@ -23,8 +24,7 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
 
   function toggleMusic() {
     const next = !musicEnabled;
-    const newSettings = { ...settings, musicEnabled: next };
-    onSettingsChange(newSettings);
+    onSettingsChange({ ...settings, musicEnabled: next });
     sounds.setMusicEnabled(next);
     if (next && !musicStarted) {
       sounds.playTitleMusic();
