@@ -314,6 +314,7 @@ function startBossMusic() {
 let musicVolume = 0.8;
 let sfxVolume = 0.8;
 let isPausedDucked = false;
+let musicEnabled = true;
 
 // Separate gain nodes for music vs SFX
 let musicGainNode = null;
