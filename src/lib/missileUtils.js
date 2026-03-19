@@ -36,12 +36,11 @@ export function updateMissiles(bullets, enemies, W, H) {
       }
     }
 
-    // Bounce off all walls so missiles never leave the screen
+    // Remove missiles that leave the screen
     if (W && H) {
-      if (b.x < 8)      { b.x = 8;      b.vx = Math.abs(b.vx); }
-      if (b.x > W - 8)  { b.x = W - 8;  b.vx = -Math.abs(b.vx); }
-      if (b.y < 8)      { b.y = 8;      b.vy = Math.abs(b.vy); }
-      if (b.y > H - 8)  { b.y = H - 8;  b.vy = -Math.abs(b.vy); }
+      if (b.x < -20 || b.x > W + 20 || b.y < -20 || b.y > H + 20) {
+        b._outOfBounds = true;
+      }
     }
   });
 }
