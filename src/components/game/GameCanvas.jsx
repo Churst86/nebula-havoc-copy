@@ -418,13 +418,19 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
 
     ctx.save();
     ctx.translate(p.x, p.y);
-    ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 18;
-    ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, -18); ctx.lineTo(13, 12); ctx.lineTo(0, 6); ctx.lineTo(-13, 12); ctx.closePath();
-    ctx.stroke();
-    ctx.fillStyle = 'rgba(0,240,255,0.15)';
-    ctx.fill();
+    const playerImage = playerShipImageRef.current;
+    if (playerImage) {
+      ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 18;
+      ctx.drawImage(playerImage, -18, -18, 36, 36);
+    } else {
+      ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 18;
+      ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, -18); ctx.lineTo(13, 12); ctx.lineTo(0, 6); ctx.lineTo(-13, 12); ctx.closePath();
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(0,240,255,0.15)';
+      ctx.fill();
+    }
 
     if (shieldHp > 0) {
       const alpha = 0.3 + shieldHp * 0.2;
