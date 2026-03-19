@@ -47,6 +47,35 @@ function playNoise({ duration = 0.1, gain = 0.2, filterFreq = 1000 }) {
   } catch {}
 }
 
+// ── External audio track URLs ────────────────────────────────────
+const AUDIO_URLS = {
+  title:    'https://raw.githubusercontent.com/Churst86/Audio-/main/Brave%20Pilots.mp3',
+  gameover: 'https://raw.githubusercontent.com/Churst86/Audio-/main/Defeated.mp3',
+  boss:     'https://raw.githubusercontent.com/Churst86/Audio-/main/DeathMatch.mp3',
+  win:      'https://raw.githubusercontent.com/Churst86/Audio-/main/Victory%20Tune.mp3',
+  stage:    'https://raw.githubusercontent.com/Churst86/Audio-/main/SkyFire.mp3',
+};
+
+// ── External audio player ────────────────────────────────────────
+let currentAudio = null;
+
+function stopExternalAudio() {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+    currentAudio = null;
+  }
+}
+
+function playExternalAudio(key, loop = true) {
+  stopExternalAudio();
+  const audio = new Audio(AUDIO_URLS[key]);
+  audio.loop = loop;
+  audio.volume = musicVolume;
+  audio.play().catch(() => {});
+  currentAudio = audio;
+}
+
 // ── Background music state ───────────────────────────────────────
 let bgTimeouts = [];
 let bgPlaying = false;
