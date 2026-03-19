@@ -67,7 +67,7 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
 
           <div className="flex gap-3">
             <Button
-              onClick={() => setShowScores(true)}
+              onClick={() => { ensureTitleMusic(); setShowScores(true); }}
               variant="outline"
               size="lg"
               className="font-bold px-6 py-6 rounded-xl gap-2 flex-1">
