@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { Crosshair, Trophy, Settings, Volume2, VolumeX } from 'lucide-react';
+import { Trophy, Settings } from 'lucide-react';
 import HighScoresMenu from './HighScoresMenu';
 import OptionsScreen from './OptionsScreen';
 import { sounds } from '../../hooks/useSound.js';
