@@ -17,7 +17,8 @@ Deno.serve(async (req) => {
     });
 
     const data = await response.json();
-    return Response.json({ files: data });
+    const names = Array.isArray(data) ? data.map(f => f.name) : data;
+    return Response.json({ names });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
