@@ -386,7 +386,7 @@ function playNoiseSfx({ duration = 0.1, gain = 0.2, filterFreq = 1000 }) {
 export const sounds = {
   setMusicVolume(vol) {
     musicVolume = Math.max(0, Math.min(1, vol));
-    if (currentAudio) currentAudio.volume = musicVolume;
+    if (currentAudio) currentAudio.volume = musicEnabled ? musicVolume : 0;
     try {
       const ctx = getCtx();
       getMusicGain(ctx).gain.setTargetAtTime(isPausedDucked ? musicVolume * 0.1 : musicVolume, ctx.currentTime, 0.1);
