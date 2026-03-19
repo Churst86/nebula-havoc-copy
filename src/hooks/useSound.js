@@ -3,7 +3,6 @@ let audioCtx = null;
 
 function getCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
   return audioCtx;
 }
 
@@ -73,14 +72,7 @@ function playExternalAudio(key, loop = true) {
   const audio = new Audio(AUDIO_URLS[key]);
   audio.loop = loop;
   audio.volume = musicVolume;
-  // Resume AudioContext first (required after browser autoplay policy suspends it)
-  const ctx = getCtx();
-  const doPlay = () => audio.play().catch(e => console.warn('Audio play failed:', e));
-  if (ctx.state === 'suspended') {
-    ctx.resume().then(doPlay);
-  } else {
-    doPlay();
-  }
+  audio.play().catch(() => {});
   currentAudio = audio;
 }
 
