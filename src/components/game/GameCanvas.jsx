@@ -465,18 +465,18 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       const wave = e._wave || 5;
       const spriteKey = getBossSpriteKey(wave);
       const img = getSprite(spriteKey);
-      const sz = 80;
+      const sz = 150;
       if (img) {
-        ctx.shadowColor = '#ff0066'; ctx.shadowBlur = 24;
+        ctx.shadowColor = '#ff0066'; ctx.shadowBlur = 32;
         ctx.drawImage(img, -sz / 2, -sz / 2, sz, sz);
       } else {
         // Fallback geometric
-        ctx.shadowColor = '#ff0066'; ctx.shadowBlur = 24;
+        ctx.shadowColor = '#ff0066'; ctx.shadowBlur = 32;
         ctx.strokeStyle = '#ff0066'; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.arc(0, 0, 40, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, 0, 60, 0, Math.PI * 2); ctx.stroke();
       }
       // HP bar
-      const bw = 70, bh = 5, by = sz / 2 + 6;
+      const bw = 100, bh = 6, by = sz / 2 + 6;
       ctx.fillStyle = '#333'; ctx.fillRect(-bw / 2, by, bw, bh);
       ctx.fillStyle = '#ff0066'; ctx.fillRect(-bw / 2, by, bw * (e.hp / e.maxHp), bh);
     } else if (e.type === 'dropper') {
