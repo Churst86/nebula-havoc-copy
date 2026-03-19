@@ -99,10 +99,25 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   const playerShipImageRef = useRef(null);
 
   useEffect(() => {
-    // Force reload sprites (cache-bust) so newly uploaded files are picked up
     loadSprites((sprites) => {
       playerShipImageRef.current = sprites['PlayerShip'] || null;
-    }, true);
+    });
+    // Also force-load any sprites that may have failed on initial load (e.g. newly uploaded files)
+    const BASE = 'https://raw.githubusercontent.com/Churst86/Sprites/main/';
+    const extraSprites = ['FinalBoss', 'BeholderBoss', 'PirateBoss', 'DreadnoughtBoss', 'FirstBoss'];
+    extraSprites.forEach(name => {
+      const existing = getSprite(name);
+      if (!existing) {
+        const img = new Image();
+        img.src = BASE + name + '.png?t=' + Date.now();
+        img.onload = () => { 
+          // Inject into the shared sprites cache via getSprite pattern
+          img._loaded = true;
+          window.__spriteCache = window.__spriteCache || {};
+          window.__spriteCache[name] = img;
+        };
+      }
+    });
   }, []);
   const isPausedRef = useRef(isPaused);
   const gameSpeedRef = useRef(gameSpeed);
