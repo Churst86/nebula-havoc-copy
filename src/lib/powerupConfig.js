@@ -35,7 +35,7 @@ export const DROPPER_COLORS = {
 };
 
 export const DROPPER_LABELS = {
-  shotgun: 'S',
+  shotgun: '🔫',
   laser: 'L',
   photon: 'P',
   wingman: 'W',

@@ -4,7 +4,7 @@ export function updateBerserkMovement(e, p, W, H) {
   e._zigTimer = (e._zigTimer || 0) + 1;
   const dx = p.x - e.x, dy = p.y - e.y;
   const len = Math.hypot(dx, dy) || 1;
-  const followSpeed = e._isHell ? 1.4 : 1.0;
+  const followSpeed = e._isHell ? 2.2 : 1.7;
 
   // Perpendicular direction for zigzag
   const perpX = -dy / len;

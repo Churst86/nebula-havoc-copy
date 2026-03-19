@@ -6,7 +6,7 @@ import HighScoresMenu from './HighScoresMenu';
 import OptionsScreen from './OptionsScreen';
 import { sounds } from '../../hooks/useSound.js';
 
-export const GAME_VERSION = 'v1.2.0';
+export const GAME_VERSION = 'v1.3.0';
 
 export default function StartScreen({ onStart, settings, onSettingsChange }) {
   const [showScores, setShowScores] = useState(false);
