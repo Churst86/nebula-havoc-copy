@@ -480,7 +480,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     if (e.type === 'boss') {
       const wave = e._wave || 5;
       const spriteKey = getBossSpriteKey(wave);
-      const img = getSprite(spriteKey);
+      const img = getSprite(spriteKey) || (window.__spriteCache && window.__spriteCache[spriteKey]);
       const sz = 440;
       if (img) {
         ctx.shadowColor = '#ff0066'; ctx.shadowBlur = 48;
