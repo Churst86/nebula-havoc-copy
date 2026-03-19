@@ -97,17 +97,6 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
             </Button>
           </div>
 
-          <div className="flex justify-center">
-            <Button
-              onClick={toggleMusic}
-              variant="ghost"
-              size="sm"
-              className="gap-2 text-muted-foreground hover:text-white">
-              {musicEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-              Music {musicEnabled ? 'ON' : 'OFF'}
-            </Button>
-          </div>
-
           <div className="text-sm text-muted-foreground space-y-1 pt-2">
             <p><kbd className="px-2 py-0.5 bg-muted rounded text-xs font-mono">WASD</kbd> or <kbd className="px-2 py-0.5 bg-muted rounded text-xs font-mono">Arrow Keys</kbd> to move</p>
             <p>Auto-fire enabled &bull; <kbd className="px-2 py-0.5 bg-muted rounded text-xs font-mono">Enter</kbd> to pause</p>
