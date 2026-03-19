@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Music, Volume2, VolumeX, Sun, Skull, Gauge, Save, LogOut } from 'lucide-react';
 import { DIFFICULTY_CONFIG, saveSettings, loadSettings } from '../../lib/gameSettings';
+import { sounds } from '../../hooks/useSound.js';
 
 function Slider({ color, min, max, step, value, onChange, label }) {
   const pct = ((value - min) / (max - min)) * 100;
