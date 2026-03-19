@@ -7,34 +7,41 @@ export function fireMissiles(s, source, missileTier) {
   }
 }
 
-export function updateMissiles(bullets, enemies) {
+export function updateMissiles(bullets, enemies, W, H) {
   bullets.forEach(b => {
     if (b.type !== 'missile') return;
-    
-    // Find closest enemy if no target
+
+    // Find closest enemy — no range limit, always seek
     if (!b.target || b.target.dead) {
       let bestDist = Infinity;
       enemies.forEach(e => {
-        if (e.dead) return;
+        if (e.dead || e.type === 'dropper') return;
         const d = Math.hypot(e.x - b.x, e.y - b.y);
-        if (d < bestDist && d < 400) { bestDist = d; b.target = e; }
+        if (d < bestDist) { bestDist = d; b.target = e; }
       });
     }
-    
+
     // Home towards target with smooth curving
     if (b.target && !b.target.dead) {
       const dx = b.target.x - b.x, dy = b.target.y - b.y;
       const len = Math.hypot(dx, dy) || 1;
       const speed = Math.hypot(b.vx, b.vy) || 8;
-      const turnRate = 0.35;
+      const turnRate = 0.32;
       b.vx += (dx / len) * turnRate;
       b.vy += (dy / len) * turnRate;
-      // Cap speed to prevent runaway acceleration
       const currentSpeed = Math.hypot(b.vx, b.vy) || 1;
-      if (currentSpeed > speed * 1.5) {
+      if (currentSpeed > speed * 1.4) {
         b.vx = (b.vx / currentSpeed) * speed;
         b.vy = (b.vy / currentSpeed) * speed;
       }
+    }
+
+    // Bounce off all walls so missiles never leave the screen
+    if (W && H) {
+      if (b.x < 8)      { b.x = 8;      b.vx = Math.abs(b.vx); }
+      if (b.x > W - 8)  { b.x = W - 8;  b.vx = -Math.abs(b.vx); }
+      if (b.y < 8)      { b.y = 8;      b.vy = Math.abs(b.vy); }
+      if (b.y > H - 8)  { b.y = H - 8;  b.vy = -Math.abs(b.vy); }
     }
   });
 }
