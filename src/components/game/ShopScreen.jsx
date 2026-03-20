@@ -4,41 +4,18 @@ import { UPGRADE_DEFS } from '../../lib/shopUpgrades';
 
 const OZMA_GREETING = "Hi, I'm Ozma. I can take your artifacts and exchange them for upgrades! Just let me know what you want.";
 
-// Draw Ozma NPC (no sprite in repo — drawn NPC)
+const SHOPKEEPER_URL = 'https://raw.githubusercontent.com/Churst86/Sprites/main/Shopkeeper.png';
+
 function OzmaPortrait() {
   return (
-    <svg width="120" height="140" viewBox="0 0 120 140" className="drop-shadow-lg">
-      {/* Body */}
-      <ellipse cx="60" cy="110" rx="30" ry="28" fill="#1a2a4a" stroke="#44aaff" strokeWidth="2"/>
-      {/* Suit details */}
-      <rect x="45" y="95" width="30" height="20" rx="4" fill="#223355" stroke="#3366aa" strokeWidth="1"/>
-      <rect x="54" y="98" width="12" height="14" rx="2" fill="#00ccff44" stroke="#00ccff" strokeWidth="1"/>
-      {/* Neck */}
-      <rect x="54" y="78" width="12" height="16" rx="4" fill="#f4c88a"/>
-      {/* Head */}
-      <ellipse cx="60" cy="65" rx="22" ry="24" fill="#f4c88a" stroke="#e8a870" strokeWidth="1.5"/>
-      {/* Helmet ring */}
-      <ellipse cx="60" cy="50" rx="24" ry="8" fill="none" stroke="#44aaff" strokeWidth="2" opacity="0.6"/>
-      {/* Eyes */}
-      <ellipse cx="52" cy="62" rx="4" ry="5" fill="#fff"/>
-      <ellipse cx="68" cy="62" rx="4" ry="5" fill="#fff"/>
-      <ellipse cx="53" cy="63" rx="2.5" ry="3" fill="#1a4a8a"/>
-      <ellipse cx="69" cy="63" rx="2.5" ry="3" fill="#1a4a8a"/>
-      <circle cx="54" cy="62" r="1" fill="#fff"/>
-      <circle cx="70" cy="62" r="1" fill="#fff"/>
-      {/* Smile */}
-      <path d="M52 73 Q60 80 68 73" fill="none" stroke="#c87040" strokeWidth="1.5" strokeLinecap="round"/>
-      {/* Hair */}
-      <path d="M38 60 Q36 44 60 41 Q84 44 82 60" fill="#884422" stroke="none"/>
-      <path d="M38 60 Q34 58 36 52 Q38 48 40 56" fill="#884422"/>
-      <path d="M82 60 Q86 58 84 52 Q82 48 80 56" fill="#884422"/>
-      {/* Shoulder arms */}
-      <ellipse cx="32" cy="105" rx="10" ry="6" fill="#1a2a4a" stroke="#44aaff" strokeWidth="1.5" transform="rotate(-20,32,105)"/>
-      <ellipse cx="88" cy="105" rx="10" ry="6" fill="#1a2a4a" stroke="#44aaff" strokeWidth="1.5" transform="rotate(20,88,105)"/>
-      {/* Badge */}
-      <circle cx="60" cy="106" r="5" fill="#ffdd00" stroke="#cc8800" strokeWidth="1"/>
-      <text x="60" y="109.5" textAnchor="middle" fontSize="6" fill="#553300" fontWeight="bold">★</text>
-    </svg>
+    <div className="relative">
+      <img
+        src={SHOPKEEPER_URL}
+        alt="Ozma the Shopkeeper"
+        className="w-32 h-32 object-contain drop-shadow-lg"
+        style={{ imageRendering: 'pixelated', filter: 'drop-shadow(0 0 12px #44aaff88)' }}
+      />
+    </div>
   );
 }
 

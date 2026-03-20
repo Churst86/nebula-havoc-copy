@@ -14,6 +14,7 @@ const SPRITE_NAMES = [
   'BeholderBoss',
   'PirateBoss',
   'FinalBoss',
+  'Shopkeeper',
 ];
 
 // Map of wave number → boss sprite name
