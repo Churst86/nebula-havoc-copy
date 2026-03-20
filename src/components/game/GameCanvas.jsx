@@ -234,15 +234,16 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   }
 
   function spawnMiniEaters(W, s, parent) {
+    const miniHp = Math.max(1, Math.floor(parent._spawnHp / 2));
     for (let i = 0; i < 2; i++) {
       const mini = {
         type: 'eater',
         _mini: true,
         x: parent.x + (i === 0 ? -30 : 30),
         y: parent.y,
-        w: 15, h: 15,
-        hp: Math.max(1, Math.floor(parent.maxHp / 2)),
-        maxHp: Math.max(1, Math.floor(parent.maxHp / 2)),
+        w: 10, h: 10,
+        hp: miniHp,
+        maxHp: miniHp,
         vx: randomBetween(-0.6, 0.6),
         vy: randomBetween(-0.4, 0.4),
         fireTimer: 9999,
