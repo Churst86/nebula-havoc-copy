@@ -46,10 +46,11 @@ const SHOP_ICONS = {
   armor: '🛡', repair: '🔧', drone: '🤖', harvester: '⛏',
 };
 
-export default function GameHUD({ score, lives, maxLives, wave, activePowerup, continuesLeft, isPaused, onPauseToggle, onOpenOptions, blockScore, shopUpgrades }) {
+export default function GameHUD({ score, lives, maxLives, wave, activePowerup, continuesLeft, isPaused, onPauseToggle, onOpenOptions, blockScore, shopUpgrades, armorHp }) {
   const powerups = activePowerup || {};
   const shieldHp = powerups.shieldHp || 0;
   const starInvincible = powerups.starInvincible || false;
+  const maxArmorHp = (shopUpgrades?.armor || 0) * 3;
   const gunKeys = GUN_POWERUPS.filter(k => (powerups[k] || 0) > 0);
   const utilityKeys = ['speed', 'rapidfire', 'wingman', 'shield'].filter(k => (powerups[k] || 0) > 0);
   const shopKeys = shopUpgrades ? Object.entries(shopUpgrades).filter(([, v]) => v > 0) : [];
