@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import GameCanvas from '../components/game/GameCanvas.jsx';
+import GameCanvas from '../components/game/GameCanvas';
 import BossWarning from '../components/game/BossWarning.jsx';
 import GameHUD from '../components/game/GameHUD';
 import HighScores, { isHighScore } from '../components/game/HighScores';
