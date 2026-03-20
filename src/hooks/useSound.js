@@ -500,15 +500,13 @@ export const sounds = {
   startWaveMusic(wave) { startWaveMusic(wave); },
   startBossMusic()     { startBossMusic(); },
   stopBossMusic()      { /* keep playing through continue screen */ },
-  stopBossMusicOnClear() { stopAllBg(); }, // only stop when boss is actually killed
+  stopBossMusicOnClear() { stopAllBg(); },
   stopAllMusic()       { stopAllBg(); },
 
   // External track helpers for screens
   playTitleMusic()   { playExternalAudio('title', true);  },
   playGameOverMusic(){ playExternalAudio('gameover', false); },
   playWinMusic()     { playExternalAudio('win',      false); },
-  // Boss music continues through continue screen — don't stop on death
-  stopBossMusicOnClear() { stopAllBg(); },
 
   // Music on/off toggle
   setMusicEnabled(enabled) {
