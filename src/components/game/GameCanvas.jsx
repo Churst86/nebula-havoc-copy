@@ -1060,30 +1060,25 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       s.starDropperTimer = STAR_SPAWN_INTERVAL + Math.floor(randomBetween(0, 600));
     }
 
+    // ── Boss warning tick & delayed spawn ────────────────────
+    if (s.bossWarning && s.bossWarning.active) {
+      s.bossWarning.timer--;
+      if (onBossWarning) onBossWarning({ ...s.bossWarning });
+      if (s.bossWarning.timer <= 0) {
+        s.bossWarning.active = false;
+        if (onBossWarning) onBossWarning(null);
+        // Now spawn the boss
+        const wave = s.wave;
+        const cfg = difficultyConfig || { hpMult: 1 };
+        const hpMult = cfg.hpMult || 1;
+        s.enemies.push(spawnBoss(W, wave, hpMult));
+      }
+    }
+
     // ── Enemy movement ────────────────────────────────────────
     s.enemies.forEach(e => {
       if (e.type === 'boss') {
-        const bt = e.tier || 1;
-        e.phase = (e.phase || 0) + (bt >= 4 ? 0.022 : bt >= 3 ? 0.016 : bt >= 2 ? 0.013 : 0.01);
-        const targetY = bt >= 3 ? H * 0.35 : H * 0.25;
-        e.y = Math.min(e.y + 0.15, targetY);
-        if (bt === 1) {
-          // Tier 1: gentle sine wave
-          e.x += Math.sin(e.phase) * 2;
-        } else if (bt === 2) {
-          // Tier 2: figure-8 pattern
-          e.x += Math.sin(e.phase) * 3;
-          e.y = targetY + Math.sin(e.phase * 2) * 30;
-        } else if (bt === 3) {
-          // Tier 3: aggressive zigzag — bounces left/right faster
-          e.x += e.vx * 1.5;
-          if (e.x < 60 || e.x > W - 60) e.vx *= -1;
-        } else {
-          // Tier 4+: circular orbit around center
-          e.x = W / 2 + Math.cos(e.phase) * (W * 0.3);
-          e.y = targetY + Math.sin(e.phase * 2) * 50;
-        }
-        if (e.x < 50 || e.x > W - 50) e.vx *= -1;
+        updateBossMovement(e, W, H);
       } else if (e.type === 'mine') {
         // Mine: slow drift, periodically charges far at player, recharges after cooldown
         e._chargeTimer = (e._chargeTimer === undefined ? randomBetween(30, 60) : e._chargeTimer) - 1;
