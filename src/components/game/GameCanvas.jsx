@@ -623,15 +623,15 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       }
     } else if (e.type === 'elite') {
       const eImg = getSprite('EliteEnemy');
-      const eSz = 180;
+      const eSz = 100;
       if (eImg) {
-        ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14;
+        ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 10;
         ctx.drawImage(eImg, -eSz / 2, -eSz / 2, eSz, eSz);
       } else {
-        ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14;
+        ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 10;
         ctx.strokeStyle = '#ff44ff'; ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(0, -11); ctx.lineTo(11, 11); ctx.lineTo(-11, 11); ctx.closePath();
+        ctx.moveTo(0, -8); ctx.lineTo(8, 8); ctx.lineTo(-8, 8); ctx.closePath();
         ctx.stroke();
         ctx.fillStyle = 'rgba(255,68,255,0.1)'; ctx.fill();
       }
