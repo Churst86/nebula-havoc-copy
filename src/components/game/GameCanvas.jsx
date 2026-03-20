@@ -535,7 +535,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const bSz = (e._mini ? 120 : 200);
       const t = Date.now();
       if (bImg) {
-        ctx.shadowColor = '#ff4400'; ctx.shadowBlur = 14;
+        ctx.shadowColor = '#ff4400'; ctx.shadowBlur = 12;
         ctx.drawImage(bImg, -bSz / 2, -bSz / 2, bSz, bSz);
         ctx.shadowBlur = 0;
         if (e._laserActive) {
@@ -545,21 +545,19 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           const laserLen = e._isHell ? 220 : 160;
           const laserW = e._isHell ? 7 : 5;
           const beamCount = e._isHell ? 2 : 1;
+          // Set shadow once before loop
+          ctx.shadowColor = e._isHell ? '#ff6600' : '#ff4400'; ctx.shadowBlur = 14;
           for (let bi = 0; bi < beamCount; bi++) {
             const angle = e._spinAngle + (bi / beamCount) * Math.PI * 2;
             const startX = Math.cos(angle) * orbitR;
             const startY = Math.sin(angle) * orbitR;
             const endX = Math.cos(angle) * (orbitR + laserLen);
             const endY = Math.sin(angle) * (orbitR + laserLen);
-            const laserColor = bi === 0
-              ? (e._isHell ? `rgba(255,${Math.floor(100 + Math.sin(t * 0.02) * 100)},0,0.9)` : 'rgba(255,68,0,0.9)')
-              : `rgba(0,${Math.floor(100 + Math.sin(t * 0.02) * 100)},255,0.8)`;
-            ctx.shadowColor = laserColor; ctx.shadowBlur = 18;
+            const laserColor = bi === 0 ? 'rgba(255,100,0,0.9)' : 'rgba(0,150,255,0.8)';
             ctx.strokeStyle = laserColor; ctx.lineWidth = laserW; ctx.lineCap = 'round';
             ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(endX, endY); ctx.stroke();
-            ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(endX, endY); ctx.stroke();
           }
+          ctx.shadowBlur = 0;
         }
       } else {
         drawBerserk(ctx, e, t);
