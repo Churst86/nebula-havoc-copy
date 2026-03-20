@@ -13,11 +13,14 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
   const [showOptions, setShowOptions] = useState(false);
   const musicEnabled = settings.musicEnabled !== false;
 
-  // Stop game music and start title music immediately on mount
+  // Stop game music and start title music immediately on mount.
+  // The IntroCrawl requires a user gesture to dismiss, so autoplay is already unblocked by the time StartScreen mounts.
   useEffect(() => {
     sounds.stopAllMusic();
     sounds.setMusicEnabled(musicEnabled);
-    sounds.playTitleMusic();
+    // Small delay ensures any previous audio teardown is complete before starting title music
+    const t = setTimeout(() => sounds.playTitleMusic(), 100);
+    return () => clearTimeout(t);
   }, []);
 
   if (showScores) return <HighScoresMenu onBack={() => setShowScores(false)} />;
