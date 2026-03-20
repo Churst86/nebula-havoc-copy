@@ -10,6 +10,7 @@ import CongratulationsScreen from '../components/game/CongratulationsScreen';
 import { loadSettings, saveSettings, DIFFICULTY_CONFIG } from '../lib/gameSettings';
 import { sounds } from '../hooks/useSound.js';
 import IntroCrawl from '../components/game/IntroCrawl';
+import { loadShopUpgrades } from '../lib/shopUpgrades';
 
 const CONTINUE_SCORE_THRESHOLD = 1000; // score needed to earn a continue
 const MAX_CONTINUES = 3;
@@ -40,6 +41,7 @@ export default function Game() {
   const [isPaused, setIsPaused] = useState(false);
   const [settings, setSettings] = useState(() => loadSettings());
   const [bossWarning, setBossWarning] = useState(null);
+  const [shopUpgrades, setShopUpgrades] = useState(() => loadShopUpgrades());
   const [showPauseOptions, setShowPauseOptions] = useState(false);
   const scoreRef = useRef(0);
   const waveRef = useRef(1);
@@ -206,6 +208,7 @@ export default function Game() {
           isPaused={isPaused}
           onPauseToggle={handlePauseToggle}
           onOpenOptions={() => setShowPauseOptions(true)}
+          shopUpgrades={shopUpgrades}
         />
       )}
 
