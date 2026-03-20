@@ -8,7 +8,7 @@ export function createBossWarning(wave) {
 
 // ─── Boss Spawner ────────────────────────────────────────────────────────────
 export function spawnBoss(W, wave, hpMult) {
-  const bossHp = Math.round((20 + wave * 5) * hpMult);
+  const bossHp = Math.round((50 + wave * 12.5) * hpMult);
   const bossTier = Math.floor(wave / 5); // 1, 2, 3, 4, 5
 
   const boss = {
