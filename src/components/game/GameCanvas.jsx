@@ -1403,6 +1403,27 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       }
     }
 
+    // ── Bullet vs tier-4 boss armor ───────────────────────────
+    s.enemies.forEach(e => {
+      if (e.type !== 'boss' || (e.tier || 1) !== 4 || !e._armorBlocks || e._armorBlocks.length === 0) return;
+      s.bullets.forEach(b => {
+        if (b.hit) return;
+        const armSz = BLOCK_SIZE / 2;
+        for (let i = e._armorBlocks.length - 1; i >= 0; i--) {
+          const piece = e._armorBlocks[i];
+          const ax = e.x + piece.dx, ay = e.y + piece.dy;
+          if (b.x >= ax - armSz && b.x <= ax + armSz && b.y >= ay - armSz && b.y <= ay + armSz) {
+            piece.hp--;
+            sounds.hit();
+            spawnExplosion(s, ax, ay, piece.color, 4);
+            if (piece.hp <= 0) e._armorBlocks.splice(i, 1);
+            if (b.type !== 'photon') b.hit = true;
+            break;
+          }
+        }
+      });
+    });
+
     // ── Bullet vs enemy ───────────────────────────────────────
     const piercingTypes = [];
     const newSpreadPellets = [];
