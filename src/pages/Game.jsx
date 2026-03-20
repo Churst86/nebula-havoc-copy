@@ -239,7 +239,7 @@ export default function Game() {
           isPaused={isPaused}
           onPauseToggle={handlePauseToggle}
           onOpenOptions={() => setShowPauseOptions(true)}
-          shopUpgrades={shopUpgrades}
+          shopUpgrades={gameState === 'playing' ? shopUpgrades : {}}
           armorHp={armorHp}
         />
       )}
