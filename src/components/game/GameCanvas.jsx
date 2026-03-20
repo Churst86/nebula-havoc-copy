@@ -14,6 +14,7 @@ import {
   updateBossTier3Fire, updateBossTier4Fire, updateBossTier5Fire,
   updateHomingBullets,
   drawBossAnchor, drawBossSweepLaser, drawBossSuperLaser,
+  updateBossTier4Armor, drawBossTier4Armor,
 } from '../../lib/bossLogic.js';
 
 // Import laser logic
