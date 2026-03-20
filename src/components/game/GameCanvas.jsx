@@ -1356,7 +1356,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
             if (block.invulnerable) { b.hit = true; spawnExplosion(s, b.x, b.y, '#aaaacc', 3); return; }
             block.hp -= b.type === 'photon' ? 2 : 1;
             if (!piercingTypes.includes(b.type)) b.hit = true;
-            if (block.hp <= 0) { block.dead = true; s.score += 50; onScoreChange(s.score); spawnExplosion(s, block.x + BLOCK_SIZE, block.y, block.color, 8); }
+            if (block.hp <= 0) { block.dead = true; s.blockScore = (s.blockScore || 0) + 50; s.score += 50; onScoreChange(s.score); spawnExplosion(s, block.x + BLOCK_SIZE, block.y, block.color, 8); }
           }
         });
       });

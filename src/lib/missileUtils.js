@@ -11,6 +11,10 @@ export function updateMissiles(bullets, enemies, W, H) {
   bullets.forEach(b => {
     if (b.type !== 'missile') return;
 
+    // Track lifetime — expire after 5 seconds (300 frames at 60fps)
+    b._life = (b._life || 0) + 1;
+    if (b._life > 300) { b._outOfBounds = true; return; }
+
     // Find closest enemy — no range limit, always seek
     if (!b.target || b.target.dead) {
       let bestDist = Infinity;
@@ -19,6 +23,14 @@ export function updateMissiles(bullets, enemies, W, H) {
         const d = Math.hypot(e.x - b.x, e.y - b.y);
         if (d < bestDist) { bestDist = d; b.target = e; }
       });
+    }
+
+    // If no target found at all, fly straight and expire sooner
+    if (!b.target || b.target.dead) {
+      b._noTargetFrames = (b._noTargetFrames || 0) + 1;
+      if (b._noTargetFrames > 120) { b._outOfBounds = true; return; }
+    } else {
+      b._noTargetFrames = 0;
     }
 
     // Home towards target with smooth curving
@@ -38,7 +50,7 @@ export function updateMissiles(bullets, enemies, W, H) {
 
     // Remove missiles that leave the screen
     if (W && H) {
-      if (b.x < -20 || b.x > W + 20 || b.y < -20 || b.y > H + 20) {
+      if (b.x < -40 || b.x > W + 40 || b.y < -40 || b.y > H + 40) {
         b._outOfBounds = true;
       }
     }
