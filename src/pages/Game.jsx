@@ -9,6 +9,7 @@ import OptionsScreen from '../components/game/OptionsScreen';
 import CongratulationsScreen from '../components/game/CongratulationsScreen';
 import { loadSettings, saveSettings, DIFFICULTY_CONFIG } from '../lib/gameSettings';
 import { sounds } from '../hooks/useSound.js';
+import IntroCrawl from '../components/game/IntroCrawl';
 
 const CONTINUE_SCORE_THRESHOLD = 1000; // score needed to earn a continue
 const MAX_CONTINUES = 3;
@@ -26,6 +27,7 @@ const NEXT_DIFFICULTY = {
 };
 
 export default function Game() {
+  const [showIntro, setShowIntro] = useState(true);
   const [gameState, setGameState] = useState('start');
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
@@ -161,6 +163,10 @@ export default function Game() {
   }, [settings.sfxVolume, settings.soundVolume]);
 
   const difficultyConfig = DIFFICULTY_CONFIG[settings.difficulty] || DIFFICULTY_CONFIG.normal;
+
+  if (showIntro) {
+    return <IntroCrawl onDone={() => setShowIntro(false)} />;
+  }
 
   return (
     <div
