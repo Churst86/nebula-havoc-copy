@@ -214,7 +214,7 @@ export default function Game() {
         onLivesChange={setLives}
         onMaxLivesChange={setMaxLives}
         onWaveChange={handleWaveChange}
-        onPowerupChange={setActivePowerup}
+        onPowerupChange={(pw) => { setActivePowerup(pw); if (pw.armorHp !== undefined) setArmorHp(pw.armorHp); }}
         onBossWarning={setBossWarning}
         continuesLeft={continuesLeft}
         onContinueUsed={handleContinueUsed}
