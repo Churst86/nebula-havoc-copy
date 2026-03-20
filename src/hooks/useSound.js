@@ -508,6 +508,15 @@ export const sounds = {
   playGameOverMusic(){ playExternalAudio('gameover', false); },
   playWinMusic()     { playExternalAudio('win',      false); },
 
+  // Preload a track into browser cache without playing it
+  preloadMusic(key) {
+    const url = AUDIO_URLS[key];
+    if (!url) return;
+    const a = new Audio();
+    a.preload = 'auto';
+    a.src = url;
+  },
+
   // Music on/off toggle
   setMusicEnabled(enabled) {
     musicEnabled = enabled;
