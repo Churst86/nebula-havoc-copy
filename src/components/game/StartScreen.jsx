@@ -11,21 +11,14 @@ export const GAME_VERSION = 'v1.3.0';
 export default function StartScreen({ onStart, settings, onSettingsChange }) {
   const [showScores, setShowScores] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
-  const [musicStarted, setMusicStarted] = useState(false);
   const musicEnabled = settings.musicEnabled !== false;
 
-  // Stop any leftover game music when title screen appears
+  // Stop game music and start title music immediately on mount
   useEffect(() => {
     sounds.stopAllMusic();
+    sounds.setMusicEnabled(musicEnabled);
+    sounds.playTitleMusic();
   }, []);
-
-  function startMusic() {
-    if (!musicStarted) {
-      sounds.setMusicEnabled(musicEnabled);
-      sounds.playTitleMusic();
-      setMusicStarted(true);
-    }
-  }
 
   if (showScores) return <HighScoresMenu onBack={() => setShowScores(false)} />;
   if (showOptions) return <OptionsScreen settings={settings} onSettingsChange={onSettingsChange} onBack={() => setShowOptions(false)} />;
@@ -64,29 +57,26 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
 
         <div className="space-y-3 pt-2">
           <Button
-            onClick={() => { startMusic(); onStart(); }}
+            onClick={onStart}
             size="lg"
             className="bg-primary hover:bg-primary/80 text-primary-foreground font-bold text-lg px-10 py-6 rounded-xl w-full">
-            
             START GAME
           </Button>
 
           <div className="flex gap-3">
             <Button
-              onClick={() => { startMusic(); setShowScores(true); }}
+              onClick={() => setShowScores(true)}
               variant="outline"
               size="lg"
               className="font-bold px-6 py-6 rounded-xl gap-2 flex-1">
-              
               <Trophy className="w-5 h-5" />
               SCORES
             </Button>
             <Button
-              onClick={() => { startMusic(); setShowOptions(true); }}
+              onClick={() => setShowOptions(true)}
               variant="outline"
               size="lg"
               className="font-bold px-6 py-6 rounded-xl gap-2 flex-1">
-              
               <Settings className="w-5 h-5" />
               OPTIONS
             </Button>
