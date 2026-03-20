@@ -8,6 +8,7 @@ const SPRITE_NAMES = [
   'Berskerker',   // note: typo in repo filename
   'Eater',
   'EaterChomp',
+  'Mine',
   'FirstBoss',
   'DreadnoughtBoss',
   'BeholderBoss',
