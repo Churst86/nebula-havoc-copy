@@ -346,7 +346,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     }));
   }
 
-  function drawPlayer(ctx, p, wingmen, shieldHp, enemies, invincibleTimer, keys, starInvincibleTimer, superWingman, superWingmen) {
+  function drawPlayer(ctx, p, wingmen, shieldHp, enemies, invincibleTimer, keys, starInvincibleTimer, superWingman, superWingmen, armorHp) {
     const wingmanImg = getSprite('Wingman');
     const superWingmanImg = getSprite('SuperWingman');
 
