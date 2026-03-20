@@ -461,11 +461,28 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.strokeStyle = `hsla(${hue},100%,65%,0.85)`;
       ctx.lineWidth = 4;
       ctx.beginPath(); ctx.arc(0, 0, 46, 0, Math.PI * 2); ctx.stroke();
-      // Second outer glow ring
       ctx.strokeStyle = `hsla(${hue},100%,75%,0.3)`;
       ctx.lineWidth = 10;
       ctx.beginPath(); ctx.arc(0, 0, 46, 0, Math.PI * 2); ctx.stroke();
     }
+
+    // Armor shoulder pads
+    if (armorHp > 0) {
+      const armorAlpha = Math.min(0.4 + (armorHp / 30) * 0.6, 1.0);
+      ctx.shadowColor = '#4488ff'; ctx.shadowBlur = 12 + armorHp;
+      ctx.fillStyle = `rgba(68,136,255,${armorAlpha * 0.7})`;
+      ctx.strokeStyle = `rgba(100,180,255,${armorAlpha})`;
+      ctx.lineWidth = 2;
+      // Left shoulder pad
+      ctx.beginPath();
+      ctx.moveTo(-14, -8); ctx.lineTo(-24, -4); ctx.lineTo(-26, 6); ctx.lineTo(-18, 10); ctx.lineTo(-12, 4); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      // Right shoulder pad
+      ctx.beginPath();
+      ctx.moveTo(14, -8); ctx.lineTo(24, -4); ctx.lineTo(26, 6); ctx.lineTo(18, 10); ctx.lineTo(12, 4); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+    }
+
     ctx.restore();
   }
 
