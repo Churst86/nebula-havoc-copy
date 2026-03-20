@@ -1312,7 +1312,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
               s.score += pts; onScoreChange(s.score); sounds.kill();
               spawnExplosion(s, e.x, e.y, e.type === 'boss' ? '#ff0066' : '#44ffaa', e.type === 'boss' ? 40 : 14);
               if (e.type === 'dropper') { sounds.killDropper(); s.powerupItems.push({ x: e.x, y: e.y, type: e.dropType, angle: 0 }); }
-              if (e.type === 'boss') { sounds.stopBossMusic(); sounds.waveComplete(); s.maxLives++; s.lives = Math.min(s.lives + 1, s.maxLives); onLivesChange(s.lives); onMaxLivesChange(s.maxLives); }
+              if (e.type === 'boss') { sounds.stopBossMusicOnClear(); sounds.waveComplete(); s.maxLives++; s.lives = Math.min(s.lives + 1, s.maxLives); onLivesChange(s.lives); onMaxLivesChange(s.maxLives); }
             }
             return;
           }
@@ -1352,7 +1352,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
               e.type === 'boss' ? 40 : e.type === 'mine' ? 30 : e.type === 'eater' ? 20 : 14
             );
             if (e.type === 'dropper') { sounds.killDropper(); s.powerupItems.push({ x: e.x, y: e.y, type: e.dropType, angle: 0 }); }
-            if (e.type === 'boss') { sounds.stopBossMusic(); sounds.waveComplete(); s.maxLives++; s.lives = Math.min(s.lives + 1, s.maxLives); onLivesChange(s.lives); onMaxLivesChange(s.maxLives); }
+            if (e.type === 'boss') { sounds.stopBossMusicOnClear(); sounds.waveComplete(); s.maxLives++; s.lives = Math.min(s.lives + 1, s.maxLives); onLivesChange(s.lives); onMaxLivesChange(s.maxLives); }
           }
         }
       });
