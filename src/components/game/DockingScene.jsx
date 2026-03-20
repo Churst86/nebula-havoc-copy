@@ -7,6 +7,14 @@ export default function DockingScene({ onDockComplete }) {
   const shipY = useRef(null);
   const docked = useRef(false);
 
+  const stationImgRef = useRef(null);
+
+  useEffect(() => {
+    const img = new Image();
+    img.src = 'https://raw.githubusercontent.com/Churst86/Sprites/main/Spacestation.jpg';
+    img.onload = () => { stationImgRef.current = img; };
+  }, []);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -26,40 +34,27 @@ export default function DockingScene({ onDockComplete }) {
     function drawStation(ctx, cx, sy) {
       ctx.save();
       ctx.translate(cx, sy);
-      // Main ring
-      ctx.strokeStyle = '#88bbff'; ctx.lineWidth = 6;
-      ctx.shadowColor = '#44aaff'; ctx.shadowBlur = 18;
-      ctx.beginPath(); ctx.ellipse(0, 0, 70, 18, 0, 0, Math.PI * 2); ctx.stroke();
-      // Hub
-      ctx.fillStyle = '#223355';
-      ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#44aaff'; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2); ctx.stroke();
-      // Solar panels
-      [[-90, -6], [90, -6]].forEach(([px, py]) => {
-        ctx.fillStyle = '#1144aa';
-        ctx.fillRect(px - 20, py, 40, 12);
-        ctx.strokeStyle = '#3366ff'; ctx.lineWidth = 1;
-        ctx.strokeRect(px - 20, py, 40, 12);
-        // Cells
-        for (let i = 0; i < 4; i++) {
-          ctx.strokeStyle = '#5588ff33';
-          ctx.strokeRect(px - 20 + i * 10, py, 10, 12);
-        }
-      });
-      // Docking port (bottom)
-      ctx.fillStyle = '#00ccff44';
-      ctx.strokeStyle = '#00ccff';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-14, 18); ctx.lineTo(14, 18); ctx.lineTo(10, 34); ctx.lineTo(-10, 34); ctx.closePath();
-      ctx.fill(); ctx.stroke();
-      // Blinking lights
+      const img = stationImgRef.current;
+      if (img) {
+        const sz = 220;
+        ctx.shadowColor = '#44aaff'; ctx.shadowBlur = 24;
+        ctx.drawImage(img, -sz / 2, -sz / 2, sz, sz);
+      } else {
+        // Fallback procedural station
+        ctx.strokeStyle = '#88bbff'; ctx.lineWidth = 6;
+        ctx.shadowColor = '#44aaff'; ctx.shadowBlur = 18;
+        ctx.beginPath(); ctx.ellipse(0, 0, 70, 18, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#223355';
+        ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#44aaff'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2); ctx.stroke();
+      }
+      // Blinking lights always shown
       const blink = Math.floor(frame / 15) % 2 === 0;
       ctx.fillStyle = blink ? '#ff4400' : '#331100';
-      ctx.beginPath(); ctx.arc(-70, 0, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(-80, 0, 5, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = blink ? '#00ff44' : '#001100';
-      ctx.beginPath(); ctx.arc(70, 0, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(80, 0, 5, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
     }
 
