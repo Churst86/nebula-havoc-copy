@@ -109,6 +109,8 @@ function startNewTrack(url, loop, targetVol) {
   audio.loop = loop;
   audio.volume = 0;
   currentAudio = audio;
+  // Skip first 5 seconds for title track
+  if (url.includes('Brave%20Pilots')) audio.currentTime = 5;
   audio.play().catch(err => console.warn('[Music] play failed:', err));
   // Fade in
   const step = targetVol / 35;
