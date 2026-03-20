@@ -174,6 +174,7 @@ export default function Game() {
         onMaxLivesChange={setMaxLives}
         onWaveChange={handleWaveChange}
         onPowerupChange={setActivePowerup}
+        onBossWarning={setBossWarning}
         continuesLeft={continuesLeft}
         onContinueUsed={handleContinueUsed}
         isPaused={isPaused}
