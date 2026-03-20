@@ -1893,7 +1893,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       stateRef.current.running = false;
       if (animRef.current) cancelAnimationFrame(animRef.current);
     };
-  }, [gameState, loop]);
+  }, [gameState]);
 
   useEffect(() => {
     const down = e => { keysRef.current[e.key] = true; };
