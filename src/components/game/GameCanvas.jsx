@@ -60,6 +60,7 @@ function initState() {
     piledCells: [],
     blockSpawnTimer: 120,
     score: 0,
+    blockScore: 0,
     lives: 3,
     maxLives: 3,
     wave: 1,
