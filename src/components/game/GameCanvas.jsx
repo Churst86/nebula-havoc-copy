@@ -1152,7 +1152,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       } else if (e.type === 'eater') {
         // Chomp animation only when near/eating a block or charging player
         e._chompTimer = (e._chompTimer || 0) + 1;
-        // _eating is set true only when actually chomping (near block or charging)
+        e._eating = false; // reset every frame; set true only in specific branches below
         const bound = e._mini ? 15 : 25;
         if (e._chargingPlayer) {
           e._eating = Math.floor(e._chompTimer / 8) % 2 === 0; // chomp while charging player
