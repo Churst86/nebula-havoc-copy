@@ -559,26 +559,25 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     } else if (e.type === 'eater') {
       const isMini = e._mini;
       const isEating = e._eating;
-      const spriteKey = isEating ? 'EaterChomp' : 'Eater';
-      const eImg = getSprite(spriteKey);
-      const eSz = isMini ? 140 : 260;
+      const baseImg = getSprite('Eater');
+      const chompImg = getSprite('EaterChomp');
+      const eImg = (isEating && chompImg) ? chompImg : baseImg;
+      const eSz = isMini ? 80 : 160;
+      ctx.shadowColor = isEating ? '#00ff44' : '#33cc77';
+      ctx.shadowBlur = 12;
       if (eImg) {
-        ctx.shadowColor = isEating ? '#00ff44' : '#33cc77';
-        ctx.shadowBlur = 16;
         ctx.drawImage(eImg, -eSz / 2, -eSz / 2, eSz, eSz);
-        ctx.shadowBlur = 0;
       } else {
-        // Fallback circle
-        ctx.shadowColor = '#33cc77'; ctx.shadowBlur = 16;
         ctx.fillStyle = 'rgba(51,204,119,0.5)';
         ctx.beginPath(); ctx.arc(0, 0, eSz / 2, 0, Math.PI * 2); ctx.fill();
       }
+      ctx.shadowBlur = 0;
       // HP bar (full eaters only)
       if (!isMini) {
-        const bw = 60, bh = 5;
-        ctx.fillStyle = '#222'; ctx.fillRect(-bw / 2, eSz / 2 + 4, bw, bh);
+        const bw = 50, bh = 4;
+        ctx.fillStyle = '#111'; ctx.fillRect(-bw / 2, eSz / 2 + 6, bw, bh);
         ctx.fillStyle = e.hp / e.maxHp > 0.5 ? '#33cc77' : e.hp / e.maxHp > 0.25 ? '#ffaa00' : '#ff2200';
-        ctx.fillRect(-bw / 2, eSz / 2 + 4, bw * (e.hp / e.maxHp), bh);
+        ctx.fillRect(-bw / 2, eSz / 2 + 6, bw * (e.hp / e.maxHp), bh);
       }
     } else if (e.type === 'berserk') {
       const bImg = getSprite('Berskerker');
