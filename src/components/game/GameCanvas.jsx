@@ -342,6 +342,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   }
 
   function drawPlayer(ctx, p, wingmen, shieldHp, enemies, invincibleTimer, keys, starInvincibleTimer, superWingman, superWingmen) {
+    const wingmanImg = getSprite('Wingman');
+    const superWingmanImg = getSprite('SuperWingman');
+
     wingmen.forEach(w => {
       let angle = -Math.PI / 2;
       let bestDist = Infinity;
@@ -352,28 +355,40 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.save();
       ctx.translate(w.x, w.y);
       ctx.rotate(angle);
-      ctx.shadowColor = '#44aaff'; ctx.shadowBlur = 10;
-      ctx.strokeStyle = '#44aaff'; ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(0, -10); ctx.lineTo(8, 8); ctx.lineTo(0, 4); ctx.lineTo(-8, 8); ctx.closePath();
-      ctx.stroke();
+      if (wingmanImg) {
+        ctx.shadowColor = '#44aaff'; ctx.shadowBlur = 10;
+        ctx.drawImage(wingmanImg, -20, -20, 40, 40);
+      } else {
+        ctx.shadowColor = '#44aaff'; ctx.shadowBlur = 10;
+        ctx.strokeStyle = '#44aaff'; ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(0, -10); ctx.lineTo(8, 8); ctx.lineTo(0, 4); ctx.lineTo(-8, 8); ctx.closePath();
+        ctx.stroke();
+      }
       ctx.restore();
     });
 
     (superWingmen || (superWingman ? [superWingman] : [])).forEach(sw => {
+      let angle = -Math.PI / 2;
+      let bestDist = Infinity;
+      (enemies || []).forEach(e => {
+        const d = Math.hypot(e.x - sw.x, e.y - sw.y);
+        if (d < bestDist) { bestDist = d; angle = Math.atan2(e.y - sw.y, e.x - sw.x) + Math.PI / 2; }
+      });
       ctx.save();
       ctx.translate(sw.x, sw.y);
-      ctx.shadowColor = '#ffdd00'; ctx.shadowBlur = 22;
-      ctx.strokeStyle = '#ffdd00'; ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(0, -18); ctx.lineTo(13, 12); ctx.lineTo(0, 6); ctx.lineTo(-13, 12); ctx.closePath();
-      ctx.stroke();
-      ctx.fillStyle = 'rgba(255,221,0,0.12)';
-      ctx.fill();
-      ctx.fillStyle = '#ffdd00';
-      ctx.font = 'bold 9px monospace';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('★', 0, 0);
+      ctx.rotate(angle);
+      if (superWingmanImg) {
+        ctx.shadowColor = '#ffdd00'; ctx.shadowBlur = 22;
+        ctx.drawImage(superWingmanImg, -28, -28, 56, 56);
+      } else {
+        ctx.shadowColor = '#ffdd00'; ctx.shadowBlur = 22;
+        ctx.strokeStyle = '#ffdd00'; ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, -18); ctx.lineTo(13, 12); ctx.lineTo(0, 6); ctx.lineTo(-13, 12); ctx.closePath();
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,221,0,0.12)'; ctx.fill();
+      }
       ctx.restore();
     });
 
@@ -419,24 +434,32 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     }
 
     if (shieldHp > 0) {
-      const alpha = 0.3 + shieldHp * 0.2;
-      ctx.shadowColor = '#00aaff'; ctx.shadowBlur = 20;
+      const alpha = 0.3 + Math.min(shieldHp * 0.15, 0.7);
+      ctx.shadowColor = '#00aaff'; ctx.shadowBlur = 28;
       ctx.strokeStyle = `rgba(0,180,255,${alpha})`;
-      ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(0, 0, 26, 0, Math.PI * 2); ctx.stroke();
-      for (let i = 0; i < shieldHp; i++) {
-        const a = (i / 3) * Math.PI * 2 - Math.PI / 2;
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(0, 0, 38, 0, Math.PI * 2); ctx.stroke();
+      // Outer shimmer ring
+      ctx.strokeStyle = `rgba(0,220,255,${alpha * 0.4})`;
+      ctx.lineWidth = 8;
+      ctx.beginPath(); ctx.arc(0, 0, 38, 0, Math.PI * 2); ctx.stroke();
+      for (let i = 0; i < Math.min(shieldHp, 10); i++) {
+        const a = (i / Math.min(shieldHp, 10)) * Math.PI * 2 - Math.PI / 2;
         ctx.fillStyle = '#00ccff';
-        ctx.beginPath(); ctx.arc(Math.cos(a) * 26, Math.sin(a) * 26, 3, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(Math.cos(a) * 38, Math.sin(a) * 38, 3.5, 0, Math.PI * 2); ctx.fill();
       }
     }
 
     if (starInvincibleTimer > 0) {
       const hue = (Date.now() * 0.3) % 360;
-      ctx.shadowColor = `hsl(${hue},100%,65%)`; ctx.shadowBlur = 30;
-      ctx.strokeStyle = `hsla(${hue},100%,65%,0.8)`;
-      ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(0, 0, 30, 0, Math.PI * 2); ctx.stroke();
+      ctx.shadowColor = `hsl(${hue},100%,65%)`; ctx.shadowBlur = 40;
+      ctx.strokeStyle = `hsla(${hue},100%,65%,0.85)`;
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(0, 0, 46, 0, Math.PI * 2); ctx.stroke();
+      // Second outer glow ring
+      ctx.strokeStyle = `hsla(${hue},100%,75%,0.3)`;
+      ctx.lineWidth = 10;
+      ctx.beginPath(); ctx.arc(0, 0, 46, 0, Math.PI * 2); ctx.stroke();
     }
     ctx.restore();
   }
