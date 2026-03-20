@@ -458,9 +458,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         ctx.strokeStyle = '#ff0066'; ctx.lineWidth = 3;
         ctx.beginPath(); ctx.arc(0, 0, 60, 0, Math.PI * 2); ctx.stroke();
       }
-      const bw = 100, bh = 6, by = sz / 2 + 6;
-      ctx.fillStyle = '#333'; ctx.fillRect(-bw / 2, by, bw, bh);
-      ctx.fillStyle = '#ff0066'; ctx.fillRect(-bw / 2, by, bw * (e.hp / e.maxHp), bh);
+      // Single health bar — no duplicate
+      const bw = 120, bh = 7, by = sz / 2 + 8;
+      ctx.fillStyle = '#222'; ctx.fillRect(-bw / 2, by, bw, bh);
+      const bossBarColor = ['#ff0066','#ff6600','#aa00ff','#00ccff'][Math.min((e.tier || 1) - 1, 3)];
+      ctx.fillStyle = bossBarColor; ctx.fillRect(-bw / 2, by, bw * (e.hp / e.maxHp), bh);
     } else if (e.type === 'dropper') {
       const c = e.color || '#ffd700';
       ctx.shadowColor = c; ctx.shadowBlur = 18;
@@ -597,12 +599,12 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       }
     }
 
-    if (e.maxHp > 1 && e.type !== 'mine' && e.type !== 'eater') {
-      const bw = e.type === 'boss' ? 70 : 28, bh = 3;
-      const bx = -bw / 2, by = e.type === 'boss' ? 48 : 22;
+    // Health bar for non-boss, non-mine, non-eater enemies
+    if (e.maxHp > 1 && e.type !== 'boss' && e.type !== 'mine' && e.type !== 'eater') {
+      const bw = 28, bh = 3;
+      const bx = -bw / 2, by = 22;
       ctx.fillStyle = '#333'; ctx.fillRect(bx, by, bw, bh);
-      const bossBarColor = e.type === 'boss' ? (['#ff0066','#ff6600','#aa00ff','#00ccff'][Math.min((e.tier || 1) - 1, 3)]) : (e.color || '#ff44ff');
-      ctx.fillStyle = bossBarColor;
+      ctx.fillStyle = e.color || '#ff44ff';
       ctx.fillRect(bx, by, bw * (e.hp / e.maxHp), bh);
     }
     ctx.restore();
