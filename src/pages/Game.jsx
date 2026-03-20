@@ -32,6 +32,7 @@ export default function Game() {
   const [maxLives, setMaxLives] = useState(3);
   const [wave, setWave] = useState(1);
   const [activePowerup, setActivePowerup] = useState({});
+  const [blockScore, setBlockScore] = useState(0);
   const [carryOverPowerups, setCarryOverPowerups] = useState(null);
   const [continuesLeft, setContinuesLeft] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -55,6 +56,7 @@ export default function Game() {
     scoreRef.current = 0;
     waveRef.current = 1;
     setScore(0);
+    setBlockScore(0);
     setLives(3);
     setMaxLives(3);
     setWave(1);
@@ -170,6 +172,7 @@ export default function Game() {
         gameState={gameState}
         setGameState={handleSetGameState}
         onScoreChange={handleScoreChange}
+        onBlockScoreChange={setBlockScore}
         onLivesChange={setLives}
         onMaxLivesChange={setMaxLives}
         onWaveChange={handleWaveChange}
@@ -192,6 +195,7 @@ export default function Game() {
           maxLives={maxLives}
           wave={wave}
           activePowerup={activePowerup}
+          blockScore={blockScore}
           continuesLeft={continuesLeft}
           isPaused={isPaused}
           onPauseToggle={handlePauseToggle}
