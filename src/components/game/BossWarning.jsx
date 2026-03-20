@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Plays an alert beep sound using Web Audio API
 function playAlertSound() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -34,33 +33,38 @@ export default function BossWarning({ warning }) {
     if (!warning?.active) played.current = false;
   }, [warning?.active]);
 
-  const visible = warning?.active;
+  const visible = !!(warning?.active);
+  // Flash every 15 frames (~4Hz at 60fps) based on remaining timer
   const flash = warning ? Math.floor(warning.timer / 15) % 2 === 0 : false;
+  // Fade out in last 30 frames
+  const fadingOut = warning ? warning.timer < 30 : false;
+  const opacity = fadingOut ? warning.timer / 30 : 1;
 
   return (
     <AnimatePresence>
       {visible && (
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0, transition: { duration: 0.3 } }}
+          animate={{ opacity }}
+          exit={{ opacity: 0, transition: { duration: 0.2 } }}
           className="fixed inset-0 pointer-events-none z-20 flex items-center justify-center"
         >
           {/* Red vignette flash */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background: flash
-                ? 'radial-gradient(ellipse at center, transparent 40%, rgba(255,0,50,0.45) 100%)'
-                : 'transparent',
-              transition: 'background 0.05s',
-            }}
-          />
+          {flash && (
+            <div
+              className="absolute inset-0"
+              style={{
+                background: 'radial-gradient(ellipse at center, transparent 40%, rgba(255,0,50,0.45) 100%)',
+              }}
+            />
+          )}
+
           {/* Warning text */}
           <motion.div
-            animate={{ scale: flash ? 1.05 : 0.98, opacity: flash ? 1 : 0.6 }}
+            animate={{ scale: flash ? 1.05 : 0.97 }}
             transition={{ duration: 0.1 }}
             className="text-center select-none"
+            style={{ opacity }}
           >
             <div
               className="font-black tracking-widest uppercase"
