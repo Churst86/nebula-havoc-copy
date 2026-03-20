@@ -10,7 +10,9 @@ import CongratulationsScreen from '../components/game/CongratulationsScreen';
 import { loadSettings, saveSettings, DIFFICULTY_CONFIG } from '../lib/gameSettings';
 import { sounds } from '../hooks/useSound.js';
 import IntroCrawl from '../components/game/IntroCrawl';
-import { loadShopUpgrades } from '../lib/shopUpgrades';
+import { loadShopUpgrades, saveShopUpgrades } from '../lib/shopUpgrades';
+import DockingScene from '../components/game/DockingScene';
+import ShopScreen from '../components/game/ShopScreen';
 
 const CONTINUE_SCORE_THRESHOLD = 1000; // score needed to earn a continue
 const MAX_CONTINUES = 3;

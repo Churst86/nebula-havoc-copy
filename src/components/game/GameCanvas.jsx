@@ -1197,15 +1197,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     });
 
     s.enemies.forEach(e => {
-      if (e.type === 'dropper' || e.type === 'mine' || e.type === 'eater' || e.type === 'berserk') return;
+      if (e.type === 'dropper' || e.type === 'mine' || e.type === 'eater' || e.type === 'berserk' || e.type === 'boss') return;
       e.fireTimer--;
       if (e.fireTimer <= 0) {
         const dx = p.x - e.x, dy = p.y - e.y;
         const len = Math.sqrt(dx * dx + dy * dy) || 1;
-        if (e.type !== 'boss') {
-          s.enemyBullets.push({ x: e.x, y: e.y, vx: (dx / len) * 2, vy: (dy / len) * 2 });
-          e.fireTimer = s.wave > 3 ? 50 : 70;
-        }
+        s.enemyBullets.push({ x: e.x, y: e.y, vx: (dx / len) * 2, vy: (dy / len) * 2 });
+        e.fireTimer = s.wave > 3 ? 50 : 70;
       }
     });
 
