@@ -835,7 +835,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     s.invincibleTimer = 120; // 2 seconds at 60fps
     onLivesChange(s.lives);
     sounds.playerHit();
-    if (s.lives <= 0) { sounds.stopAllMusic(); s.running = false; setGameState('continue'); }
+    if (s.lives <= 0) { sounds.stopBossMusic(); sounds.stopAllMusic(); s.running = false; setGameState('continue'); }
   }
 
   // ── Main loop ────────────────────────────────────────────────
