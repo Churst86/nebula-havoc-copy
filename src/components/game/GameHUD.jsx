@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 
 const GUN_POWERUPS = ['shotgun', 'laser', 'photon', 'bounce', 'missile'];
 const POWERUP_COLORS = {
-  shotgun:   '#ffdd00',
+  shotgun:   '#ff6600',
   laser:     '#ff44ff',
   photon:    '#44ffaa',
   wingman:   '#44aaff',
