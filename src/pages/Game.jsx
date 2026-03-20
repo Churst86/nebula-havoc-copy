@@ -183,6 +183,8 @@ export default function Game() {
         carryOverPowerups={carryOverPowerups}
       />
 
+      <BossWarning warning={bossWarning} />
+
       {(gameState === 'playing' || gameState === 'resuming') && (
         <GameHUD
           score={score}
