@@ -18,9 +18,7 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
   useEffect(() => {
     sounds.stopAllMusic();
     sounds.setMusicEnabled(musicEnabled);
-    // Small delay ensures any previous audio teardown is complete before starting title music
-    const t = setTimeout(() => sounds.playTitleMusic(), 100);
-    return () => clearTimeout(t);
+    sounds.playTitleMusic();
   }, []);
 
   if (showScores) return <HighScoresMenu onBack={() => setShowScores(false)} />;
