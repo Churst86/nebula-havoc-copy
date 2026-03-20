@@ -803,6 +803,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
 
   function takeDamage(s) {
     if (s.invincibleTimer > 0 || s.starInvincibleTimer > 0) return;
+    if (s.armorHp > 0) {
+      s.armorHp--;
+      sounds.shieldHit && sounds.shieldHit();
+      s.invincibleTimer = 45;
+      onPowerupChange({ ...s.powerups, shieldHp: s.shieldHp, armorHp: s.armorHp });
+      return;
+    }
     if (s.shieldHp > 0) {
       s.shieldHp--;
       sounds.shieldHit();
