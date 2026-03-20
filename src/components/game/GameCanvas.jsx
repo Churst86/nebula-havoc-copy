@@ -1357,7 +1357,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             if (block.invulnerable) { b.hit = true; spawnExplosion(s, b.x, b.y, '#aaaacc', 3); return; }
             block.hp -= b.type === 'photon' ? 2 : 1;
             if (!piercingTypes.includes(b.type)) b.hit = true;
-            if (block.hp <= 0) { block.dead = true; s.blockScore = (s.blockScore || 0) + 50; s.score += 50; onScoreChange(s.score); spawnExplosion(s, block.x + BLOCK_SIZE, block.y, block.color, 8); }
+            if (block.hp <= 0) { block.dead = true; s.blockScore = (s.blockScore || 0) + 50; s.score += 50; onScoreChange(s.score); if (onBlockScoreChange) onBlockScoreChange(s.blockScore); spawnExplosion(s, block.x + BLOCK_SIZE, block.y, block.color, 8); }
           }
         });
       });
@@ -1373,7 +1373,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           if (b.type === 'spread') { explodeSpread(b, newSpreadPelletsFromPiled); b.hit = true; }
           else if (!piercingTypes.includes(b.type)) b.hit = true;
           s.blockScore = (s.blockScore || 0) + 10;
-          s.score += 10; onScoreChange(s.score);
+          s.score += 10; onScoreChange(s.score); if (onBlockScoreChange) onBlockScoreChange(s.blockScore);
           spawnExplosion(s, cell.x + BLOCK_SIZE / 2, cell.y + BLOCK_SIZE / 2, cell.color, 4);
           return false;
         }
