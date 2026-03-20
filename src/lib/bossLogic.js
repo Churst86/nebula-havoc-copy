@@ -376,31 +376,9 @@ function pointNearLine(px, py, x1, y1, x2, y2, threshold) {
   return Math.hypot(px - nx, py - ny) < threshold;
 }
 
-// ─── Draw boss anchor ─────────────────────────────────────────────────────────
+// ─── Draw boss anchor (stub — anchor removed from tier 4) ─────────────────────
 export function drawBossAnchor(ctx, e) {
-  if (!e._anchorOut) return;
-  ctx.save();
-  // Chain
-  ctx.strokeStyle = 'rgba(200,180,120,0.8)';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([6, 4]);
-  ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e._anchorX, e._anchorY); ctx.stroke();
-  ctx.setLineDash([]);
-  // Anchor head
-  ctx.fillStyle = e._anchorTarget ? '#ffdd00' : '#aaaacc';
-  ctx.shadowColor = '#ffdd00'; ctx.shadowBlur = e._anchorTarget ? 20 : 8;
-  ctx.save();
-  ctx.translate(e._anchorX, e._anchorY);
-  ctx.beginPath();
-  ctx.arc(0, 0, 10, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.shadowBlur = 0;
-  ctx.beginPath(); ctx.moveTo(-8, 0); ctx.lineTo(8, 0); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(0, 8); ctx.stroke();
-  ctx.beginPath(); ctx.arc(-8, 0, 5, Math.PI * 0.5, Math.PI * 1.5); ctx.stroke();
-  ctx.beginPath(); ctx.arc(8, 0, 5, -Math.PI * 0.5, Math.PI * 0.5); ctx.stroke();
-  ctx.restore();
-  ctx.restore();
+  // Anchor weapon removed; stub kept to avoid import errors
 }
 
 // ─── Draw tier 3 sweep laser ──────────────────────────────────────────────────
