@@ -1582,7 +1582,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           s.powerups[item.type] = Math.min((s.powerups[item.type] || 0) + 1, 10);
           sounds.powerup();
         }
-        onPowerupChange({ ...s.powerups, shieldHp: s.shieldHp, starInvincible: s.starInvincibleTimer > 0 });
+        onPowerupChange({ ...s.powerups, shieldHp: s.shieldHp, armorHp: s.armorHp, starInvincible: s.starInvincibleTimer > 0 });
         return false;
       }
       return true;
