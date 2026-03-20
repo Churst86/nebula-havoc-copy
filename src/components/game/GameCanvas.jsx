@@ -1146,6 +1146,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         // _eating is set true only when actually chomping (near block or charging)
         const bound = e._mini ? 15 : 25;
         if (e._chargingPlayer) {
+          e._eating = Math.floor(e._chompTimer / 8) % 2 === 0; // chomp while charging player
           e.x += e._cpDx * (e._mini ? 5 : 7); e.y += e._cpDy * (e._mini ? 5 : 7);
           if (e.x < bound) { e.x = bound; e._chargingPlayer = false; e.vx = Math.abs(randomBetween(0.4,0.8)); e.vy = randomBetween(-0.5,0.5); }
           if (e.x > W-bound) { e.x = W-bound; e._chargingPlayer = false; e.vx = -Math.abs(randomBetween(0.4,0.8)); e.vy = randomBetween(-0.5,0.5); }
