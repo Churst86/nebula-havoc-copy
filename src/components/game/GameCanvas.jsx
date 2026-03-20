@@ -1688,8 +1688,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       cell._dmgCooldown = Math.max(0, (cell._dmgCooldown || 0) - 1);
     });
 
-    // Wave clear — only count combat enemies; droppers and eaters survive into the next wave
+    // Wave clear — only count combat enemies; also wait for boss warning to finish
     const combatEnemies = s.enemies.filter(e => e.type !== 'dropper' && e.type !== 'eater');
+    if (s.bossWarning && s.bossWarning.active) return; // wait for boss to enter
     if (combatEnemies.length === 0) {
       s.waveTimer++;
       if (s.waveTimer > 90) {
