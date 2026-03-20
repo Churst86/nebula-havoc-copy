@@ -181,8 +181,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         y: -30 - i * 28,
         w: isElite ? 14 : 18, h: isElite ? 14 : 18,
         hp, maxHp: hp,
-        vx: randomBetween(-0.5, 0.5) * (1 + wave * 0.04),
-        vy: (0.35 + wave * 0.06) * (Math.random() * 0.4 + 0.7),
+        vx: (isElite ? randomBetween(-1.2, 1.2) : randomBetween(-0.5, 0.5)) * (1 + wave * 0.04),
+        vy: (isElite ? (0.7 + wave * 0.08) : (0.35 + wave * 0.06)) * (Math.random() * 0.4 + 0.7),
         fireTimer: randomBetween(60, 120),
       });
     }
