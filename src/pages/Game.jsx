@@ -37,6 +37,7 @@ export default function Game() {
   const [maxLives, setMaxLives] = useState(3);
   const [wave, setWave] = useState(1);
   const [activePowerup, setActivePowerup] = useState({});
+  const [armorHp, setArmorHp] = useState(0);
   const [blockScore, setBlockScore] = useState(0);
   const [carryOverPowerups, setCarryOverPowerups] = useState(null);
   const [continuesLeft, setContinuesLeft] = useState(0);
