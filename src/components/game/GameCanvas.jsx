@@ -1398,8 +1398,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         if (b.x >= cell.x && b.x <= cell.x + BLOCK_SIZE && b.y >= cell.y && b.y <= cell.y + BLOCK_SIZE) {
           if (b.type === 'spread') { explodeSpread(b, newSpreadPelletsFromPiled); b.hit = true; }
           else if (!piercingTypes.includes(b.type)) b.hit = true;
-          s.blockScore = (s.blockScore || 0) + 10;
-          s.score += 10; onScoreChange(s.score); if (onBlockScoreChange) onBlockScoreChange(s.blockScore);
+          s.blockScore = (s.blockScore || 0) + 3;
+          s.score += 3; onScoreChange(s.score); if (onBlockScoreChange) onBlockScoreChange(s.blockScore);
           spawnExplosion(s, cell.x + BLOCK_SIZE / 2, cell.y + BLOCK_SIZE / 2, cell.color, 4);
           return false;
         }
