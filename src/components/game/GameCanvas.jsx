@@ -1079,6 +1079,21 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     s.enemies.forEach(e => {
       if (e.type === 'boss') {
         updateBossMovement(e, W, H);
+        // Only fire after entering (y is near target)
+        const bossTargetY = (e.tier || 1) >= 3 ? H * 0.30 : H * 0.22;
+        if (e.y >= bossTargetY - 5) {
+          const bt = e.tier || 1;
+          if (bt === 1) updateBossTier1Fire(e, p, s, sounds);
+          else if (bt === 2) updateBossTier2Fire(e, p, s, sounds);
+          else if (bt === 3) updateBossTier3Fire(e, p, s, W, H, spawnExplosion, sounds, onScoreChange, BLOCK_SIZE, getBlockCells);
+          else if (bt === 4) updateBossTier4Fire(e, p, s, sounds, W, H, spawnExplosion);
+          else updateBossTier5Fire(e, p, s, sounds, W, H, spawnExplosion);
+        }
+        // Tier 3: sweep laser damage to player
+        if ((e.tier || 1) === 3 && e._sweepHitsPlayer) takeDamage(s);
+        if ((e.tier || 1) === 3 && e._superHitsPlayer) takeDamage(s);
+        // Tier 4: anchor hit player
+        if ((e.tier || 1) === 4 && e._anchorHitPlayer) { takeDamage(s); e._anchorHitPlayer = false; }
       } else if (e.type === 'mine') {
         // Mine: slow drift, periodically charges far at player, recharges after cooldown
         e._chargeTimer = (e._chargeTimer === undefined ? randomBetween(30, 60) : e._chargeTimer) - 1;
