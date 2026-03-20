@@ -783,7 +783,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   }
 
   function drawPowerupItem(ctx, item) {
-    const colors = { spread: '#ffdd00', laser: '#ff44ff', photon: '#44ffaa', wingman: '#44aaff', shield: '#00ccff', bounce: '#aaff00', speed: '#ff8800', rapidfire: '#ff4488', star: '#ffffff', missile: ' rgba(126, 35, 138, 0.84)ff' };
+    const colors = { spread: '#ff6600', shotgun: '#ff6600', laser: '#ff44ff', photon: '#44ffaa', wingman: '#44aaff', shield: '#00ccff', bounce: '#aaff00', speed: '#ff8800', rapidfire: '#ff4488', star: '#ffffff', missile: '#aa22ff' };
     const labels = { shotgun: 'S', laser: 'L', photon: 'P', wingman: 'W', shield: '🛡', bounce: 'B', speed: '▶', rapidfire: '⚡', star: '★', missile: 'M' };
     ctx.save();
     ctx.translate(item.x, item.y);
