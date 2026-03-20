@@ -1505,8 +1505,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       s.waveTimer++;
       if (s.waveTimer > 90) {
         s.wave++; onWaveChange(s.wave); sounds.waveComplete();
+        // Milestone check: only trigger congratulations if THIS is NOT a boss wave
+        // Boss waves (5,10,15,20,25...) need to fight the boss first
         const milestoneLevels = [25, 50, 100];
-        if (milestoneLevels.includes(s.wave)) {
+        const isBossWave = s.wave % 5 === 0;
+        if (milestoneLevels.includes(s.wave) && !isBossWave) {
           sounds.stopAllMusic(); s.running = false; setGameState('congratulations'); return;
         }
         s.waveTimer = 0;
