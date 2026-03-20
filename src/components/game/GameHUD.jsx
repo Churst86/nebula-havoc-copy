@@ -36,7 +36,7 @@ const POWERUP_ICONS = {
   rapidfire: '◇',
 };
 
-export default function GameHUD({ score, lives, maxLives, wave, activePowerup, continuesLeft, isPaused, onPauseToggle, onOpenOptions }) {
+export default function GameHUD({ score, lives, maxLives, wave, activePowerup, continuesLeft, isPaused, onPauseToggle, onOpenOptions, blockScore }) {
   const powerups = activePowerup || {};
   const shieldHp = powerups.shieldHp || 0;
   const starInvincible = powerups.starInvincible || false;
@@ -68,16 +68,24 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
       </div>
 
       {/* Score — bottom-left */}
-      <div className="absolute bottom-6 left-6 flex items-center gap-3">
-        <Zap className="w-5 h-5 text-primary fill-primary" />
-        <span className="text-2xl font-black text-white tracking-wider tabular-nums">
-          {score.toLocaleString()}
-        </span>
+      <div className="absolute bottom-6 left-6 flex flex-col gap-1">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)', border: '1px solid rgba(0,240,255,0.25)' }}>
+          <Zap className="w-5 h-5 text-primary fill-primary" />
+          <span className="text-2xl font-black text-white tracking-wider tabular-nums">
+            {score.toLocaleString()}
+          </span>
+        </div>
+        {blockScore > 0 && (
+          <div className="flex items-center gap-2 px-3 py-1 rounded-lg" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', border: '1px solid rgba(100,200,255,0.2)' }}>
+            <span className="text-xs font-bold text-cyan-400">BLOCKS</span>
+            <span className="text-sm font-black text-cyan-300 tabular-nums">{blockScore.toLocaleString()}</span>
+          </div>
+        )}
       </div>
 
       {/* Gun Upgrades — top-left */}
       {gunKeys.length > 0 && (
-        <div className="absolute top-6 left-6 flex flex-col gap-1">
+        <div className="absolute top-6 left-6 flex flex-col gap-1" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.8))' }}>
           {gunKeys.map(key => {
             const tier = powerups[key] || 1;
             const color = POWERUP_COLORS[key];
@@ -95,7 +103,7 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
 
       {/* Utility Upgrades — top-right */}
       {utilityKeys.length > 0 && (
-        <div className="absolute top-6 right-6 flex flex-col gap-1 items-end">
+        <div className="absolute top-6 right-6 flex flex-col gap-1 items-end" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.8))' }}>
           {utilityKeys.map(key => {
             const tier = powerups[key] || 1;
             const color = POWERUP_COLORS[key];
@@ -114,8 +122,8 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
       )}
 
       {/* Lives + Continues — bottom-right */}
-      <div className="absolute bottom-6 right-6 flex flex-col items-end gap-1">
-        <div className="flex items-center gap-1.5 flex-wrap justify-end max-w-36">
+      <div className="absolute bottom-6 right-6 flex flex-col items-end gap-2">
+        <div className="flex items-center gap-1.5 flex-wrap justify-end max-w-40 px-3 py-1.5 rounded-lg" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,80,80,0.25)' }}>
           {Array.from({ length: maxLives || 3 }).map((_, i) => (
             <Heart key={i}
               className={`w-5 h-5 transition-all duration-300 ${
@@ -125,10 +133,10 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
           ))}
         </div>
         {continuesLeft > 0 && (
-          <div className="flex items-center gap-1 text-xs font-bold"
-            style={{ color: '#00f0ff' }}>
-            <RefreshCw className="w-3 h-3" />
-            <span>{continuesLeft}×</span>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
+            style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', border: '1px solid rgba(0,240,255,0.4)', color: '#00f0ff' }}>
+            <RefreshCw className="w-4 h-4" />
+            <span className="text-base font-black tracking-wider">{continuesLeft}× CONTINUE</span>
           </div>
         )}
       </div>
