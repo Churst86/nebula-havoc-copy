@@ -564,15 +564,24 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       const chompImg = getSprite('EaterChomp');
       const eImg = (isEating && chompImg) ? chompImg : baseImg;
       const eSz = isMini ? 80 : 160;
-      ctx.shadowColor = isEating ? '#00ff44' : '#33cc77';
-      ctx.shadowBlur = 12;
+      // Reset shadow BEFORE drawImage to prevent green box artifact
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = 'transparent';
       if (eImg) {
         ctx.drawImage(eImg, -eSz / 2, -eSz / 2, eSz, eSz);
+        // Draw a glow ring overlay separately (no shadowBlur on drawImage)
+        ctx.shadowColor = isEating ? '#00ff44' : '#33cc77';
+        ctx.shadowBlur = 12;
+        ctx.strokeStyle = isEating ? 'rgba(0,255,68,0.5)' : 'rgba(51,204,119,0.3)';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(0, 0, eSz / 2 - 4, 0, Math.PI * 2); ctx.stroke();
       } else {
+        ctx.shadowColor = isEating ? '#00ff44' : '#33cc77';
+        ctx.shadowBlur = 12;
         ctx.fillStyle = 'rgba(51,204,119,0.5)';
         ctx.beginPath(); ctx.arc(0, 0, eSz / 2, 0, Math.PI * 2); ctx.fill();
       }
-      ctx.shadowBlur = 0;
+      ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
       // HP bar (full eaters only)
       if (!isMini) {
         const bw = 50, bh = 4;
