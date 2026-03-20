@@ -1310,7 +1310,12 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
               s.score += pts; onScoreChange(s.score); sounds.kill();
               spawnExplosion(s, e.x, e.y, e.type === 'boss' ? '#ff0066' : '#44ffaa', e.type === 'boss' ? 40 : 14);
               if (e.type === 'dropper') { sounds.killDropper(); s.powerupItems.push({ x: e.x, y: e.y, type: e.dropType, angle: 0 }); }
-              if (e.type === 'boss') { sounds.stopBossMusicOnClear(); sounds.waveComplete(); s.maxLives++; s.lives = Math.min(s.lives + 1, s.maxLives); onLivesChange(s.lives); onMaxLivesChange(s.maxLives); }
+              if (e.type === 'boss') {
+                sounds.stopBossMusicOnClear(); sounds.waveComplete();
+                s.maxLives++; s.lives = Math.min(s.lives + 1, s.maxLives); onLivesChange(s.lives); onMaxLivesChange(s.maxLives);
+                const milestoneBossWaves = [25, 50, 100];
+                if (milestoneBossWaves.includes(s.wave)) { sounds.stopAllMusic(); s.running = false; setGameState('congratulations'); return; }
+              }
             }
             return;
           }
