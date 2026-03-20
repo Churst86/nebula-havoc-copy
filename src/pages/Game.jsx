@@ -58,9 +58,8 @@ export default function Game() {
   const handleWaveChange = useCallback((w) => {
     waveRef.current = w;
     setWave(w);
-    // After completing a boss wave (waves 5, 10, 15, 20...), show docking scene
-    const prevWave = waveRef.current;
-    if ((w - 1) % 5 === 0 && w > 1) {
+    // After completing a boss wave (5→6, 10→11, 15→16...), show docking scene
+    if (w > 1 && (w - 1) % 5 === 0) {
       setShowDocking(true);
     }
   }, []);
