@@ -58,8 +58,11 @@ export default function Game() {
   const handleWaveChange = useCallback((w) => {
     waveRef.current = w;
     setWave(w);
-    // After completing a boss wave (5→6, 10→11, 15→16...), show docking scene
-    if (w > 1 && (w - 1) % 5 === 0) {
+    // After completing a boss wave (wave becomes 6, 11, 16...) trigger docking
+    // But not at milestone waves (25, 50, 100) which trigger congratulations instead
+    const milestones = [25, 50, 100];
+    const prevWave = w - 1;
+    if (prevWave > 0 && prevWave % 5 === 0 && !milestones.includes(prevWave)) {
       setShowDocking(true);
     }
   }, []);
