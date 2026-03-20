@@ -275,6 +275,20 @@ export default function Game() {
         />
       )}
 
+      {/* Docking scene → shop flow (after boss waves) */}
+      {showDocking && !showShop && (
+        <DockingScene onDockComplete={() => { setShowDocking(false); setShowShop(true); sounds.playTitleMusic(); }} />
+      )}
+      {showShop && (
+        <ShopScreen
+          blockScore={blockScore}
+          shopUpgrades={shopUpgrades}
+          onBuy={handleShopBuy}
+          onReturn={() => { setShowShop(false); sounds.stopAllMusic(); }}
+          nextWave={wave}
+        />
+      )}
+
       {gameState === 'gameover' && (
         <HighScores
           score={score}
