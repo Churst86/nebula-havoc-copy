@@ -31,10 +31,11 @@ export function spawnEater(enemies, W, wave, hpMult) {
     type: 'eater',
     x: Math.random() * (W - 160) + 80,
     y: -60,
-    w: 30,
-    h: 30,
+    w: 20,
+    h: 20,
     hp: eaterHp,
     maxHp: eaterHp,
+    _spawnHp: eaterHp, // used for mini eater HP calculation
     vx: Math.random() * 1.2 - 0.6,
     vy: 0.25 + wave * 0.02,
     fireTimer: 9999,
