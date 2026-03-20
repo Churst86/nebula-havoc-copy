@@ -1779,7 +1779,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.restore();
     });
 
-    drawPlayer(ctx, p, s.wingmen, s.shieldHp, s.enemies, s.invincibleTimer, keys, s.starInvincibleTimer, s.superWingman, s.superWingmen);
+    drawPlayer(ctx, p, s.wingmen, s.shieldHp, s.enemies, s.invincibleTimer, keys, s.starInvincibleTimer, s.superWingman, s.superWingmen, s.armorHp);
 
     const reverseTier = s.powerups.reverse || 0;
     if (reverseTier >= 10) drawReverseFlame(ctx, p, reverseTier, Date.now());
