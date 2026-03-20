@@ -682,10 +682,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       ctx.fillStyle = '#aaddff';
       ctx.beginPath(); ctx.arc(b.x, b.y, 3, 0, Math.PI * 2); ctx.fill();
     } else if (b.type === 'spread') {
-      ctx.shadowColor = '#ffdd00'; ctx.shadowBlur = 12;
-      ctx.fillStyle = '#ffdd00';
+      ctx.shadowColor = '#ff6600'; ctx.shadowBlur = 12;
+      ctx.fillStyle = '#ff6600';
       ctx.fillRect(b.x - 2, b.y - 9, 4, 18);
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = '#ffcc88';
       ctx.fillRect(b.x - 1, b.y - 9, 2, 18);
     } else if (b.type === 'bounce') {
       if (b.isSuper) {
