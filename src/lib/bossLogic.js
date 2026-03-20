@@ -1,39 +1,37 @@
 // Boss behavior logic — all boss-specific AI, firing patterns, and special weapons
 
 // ─── Boss Warning ────────────────────────────────────────────────────────────
-// Returns a warning state object to be stored on the game state
 export function createBossWarning(wave) {
-  return { active: true, wave, timer: 180 }; // 3 seconds at 60fps
+  return { active: true, wave, timer: 180 };
 }
 
 // ─── Boss Spawner ────────────────────────────────────────────────────────────
 export function spawnBoss(W, wave, hpMult) {
   const bossHp = Math.round((50 + wave * 12.5) * hpMult);
-  const bossTier = Math.floor(wave / 5); // 1, 2, 3, 4, 5
+  const bossTier = Math.floor(wave / 5);
 
   const boss = {
     type: 'boss',
     x: W / 2,
-    y: -80,          // always enter from top center
+    y: -80,
     w: 45, h: 45,
     hp: bossHp, maxHp: bossHp,
     vx: 1.8, vy: 0.4,
-    fireTimer: 60,   // initial delay before first shot
+    fireTimer: 60,
     phase: 0,
     tier: bossTier,
     _wave: wave,
-    // tier-specific state
     _specialTimer: 0,
     _chargeTimer: 0,
     _charging: false,
     _chargeDx: 0,
     _chargeDy: 0,
-    _weaponIdx: 0,      // for tier 5: cycling weapons
+    _weaponIdx: 0,
     _laserCharging: false,
     _laserChargeTimer: 0,
     _laserActive: false,
     _laserAngle: 0,
-    _photonPositions: [-80, -40, 0, 40, 80], // x offsets for photon emitters (tier 4)
+    _photonPositions: [-80, -40, 0, 40, 80],
   };
   return boss;
 }
@@ -41,13 +39,13 @@ export function spawnBoss(W, wave, hpMult) {
 // ─── Boss Movement ────────────────────────────────────────────────────────────
 export function updateBossMovement(e, W, H) {
   const bt = e.tier || 1;
-  e.phase = (e.phase || 0) + (bt >= 4 ? 0.022 : bt >= 3 ? 0.016 : bt >= 2 ? 0.013 : 0.01);
+  e.phase = (e.phase || 0) + (bt >= 4 ? 0.022 : bt >= 3 ? 0.020 : bt >= 2 ? 0.013 : 0.01);
   const targetY = bt >= 3 ? H * 0.30 : H * 0.22;
 
   // Slide down from top smoothly
   if (e.y < targetY) {
     e.y = Math.min(e.y + 1.5, targetY);
-    e.x = W / 2; // stay centered while entering
+    e.x = W / 2;
     return;
   }
 
@@ -62,7 +60,7 @@ export function updateBossMovement(e, W, H) {
     if (e.x < 60) { e.x = 60; e._charging = false; e._chargeTimer = 120; }
     if (e.x > W - 60) { e.x = W - 60; e._charging = false; e._chargeTimer = 120; }
     if (e.y < 20) { e.y = 20; e._charging = false; e._chargeTimer = 120; }
-    if (e.y > H * 0.6) { e.y = H * 0.6; e._charging = false; e._chargeTimer = 120; }
+    if (e.y > H * 0.75) { e.y = H * 0.75; e._charging = false; e._chargeTimer = 120; }
     return;
   }
 
@@ -72,8 +70,12 @@ export function updateBossMovement(e, W, H) {
     e.x += Math.sin(e.phase) * 3;
     e.y = targetY + Math.sin(e.phase * 2) * 30;
   } else if (bt === 3) {
-    e.x += e.vx * 1.5;
-    if (e.x < 60 || e.x > W - 60) e.vx *= -1;
+    // Tier 3: wide sweeping figure-8 across full stage + vertical movement
+    e.x = W / 2 + Math.cos(e.phase) * (W * 0.42);
+    e.y = targetY + Math.sin(e.phase * 2) * (H * 0.28);
+    // Clamp safely
+    e.x = Math.max(60, Math.min(W - 60, e.x));
+    e.y = Math.max(30, Math.min(H * 0.75, e.y));
   } else if (bt === 4) {
     e.x = W / 2 + Math.cos(e.phase) * (W * 0.28);
     e.y = targetY + Math.sin(e.phase * 2) * 40;
@@ -93,13 +95,11 @@ export function updateBossTier1Fire(e, p, s, sounds) {
   if (e.fireTimer <= 0) {
     const dx = p.x - e.x, dy = p.y - e.y;
     const len = Math.hypot(dx, dy) || 1;
-    // Rapid stream of single shots aimed at player
     s.enemyBullets.push({ x: e.x, y: e.y, vx: (dx / len) * 5.5, vy: (dy / len) * 5.5, boss: true });
-    e.fireTimer = 10; // very rapid
+    e.fireTimer = 10;
     e._specialTimer = (e._specialTimer || 0) - 1;
   }
 
-  // Missile salvo every ~4 seconds
   e._specialTimer = (e._specialTimer || 200) - 1;
   if (e._specialTimer <= 0) {
     for (let i = 0; i < 3; i++) {
@@ -124,7 +124,6 @@ export function updateBossTier2Fire(e, p, s, sounds) {
   e._omniCooldown = Math.max(0, (e._omniCooldown || 0) - 1);
 
   if (e._omniTimer <= 0 && e._omniCooldown <= 0) {
-    // Burst of shots in all directions
     const SHOTS = 16;
     for (let i = 0; i < SHOTS; i++) {
       const angle = (i / SHOTS) * Math.PI * 2;
@@ -134,11 +133,10 @@ export function updateBossTier2Fire(e, p, s, sounds) {
         boss: true,
       });
     }
-    e._omniTimer = 90;       // fire every 1.5s
-    e._omniCooldown = 30;    // 0.5s pause after burst
+    e._omniTimer = 90;
+    e._omniCooldown = 30;
   }
 
-  // Large homing missile every ~5 seconds
   e._specialTimer = (e._specialTimer || 300) - 1;
   if (e._specialTimer <= 0) {
     s.enemyBullets.push({
@@ -153,76 +151,108 @@ export function updateBossTier2Fire(e, p, s, sounds) {
   }
 }
 
-// ─── Tier 3 (Wave 15): Sweeping laser + super laser after long charge ─────────
+// ─── Tier 3 (Wave 15): DUAL sweeping lasers with charge/cooldown + super laser ──
 export function updateBossTier3Fire(e, p, s, W, H, spawnExplosion, sounds, onScoreChange, BLOCK_SIZE, getBlockCells) {
-  // Sweeping laser — always active, rotating angle
-  if (!e._laserAngle) e._laserAngle = 0;
-  e._laserAngle += 0.018; // sweep speed
+  // Initialize dual sweep laser state
+  if (e._sweepState === undefined) e._sweepState = 'cooldown'; // 'charging'|'active'|'cooldown'
+  if (e._sweepStateTimer === undefined) e._sweepStateTimer = 90; // start with short cooldown
+  if (e._laserAngle === undefined) e._laserAngle = 0;
+  if (e._laserAngle2 === undefined) e._laserAngle2 = Math.PI; // second laser offset 180°
 
-  // Check what the sweeping laser hits this frame
-  const LASER_LEN = Math.max(W, H);
-  const lx = e.x, ly = e.y;
-  const lEndX = lx + Math.cos(e._laserAngle) * LASER_LEN;
-  const lEndY = ly + Math.sin(e._laserAngle) * LASER_LEN;
+  e._sweepStateTimer--;
 
-  // Store for drawing
-  e._sweepLaserEndX = lEndX;
-  e._sweepLaserEndY = lEndY;
+  if (e._sweepState === 'cooldown') {
+    if (e._sweepStateTimer <= 0) {
+      e._sweepState = 'charging';
+      e._sweepStateTimer = 60; // 1s charge
+    }
+  } else if (e._sweepState === 'charging') {
+    // Pulse visual only — handled in draw
+    if (e._sweepStateTimer <= 0) {
+      e._sweepState = 'active';
+      e._sweepStateTimer = 240; // 4s active
+    }
+  } else if (e._sweepState === 'active') {
+    // Rotate both lasers
+    e._laserAngle += 0.025;
+    e._laserAngle2 = e._laserAngle + Math.PI; // always opposite
 
-  // Damage tetris blocks intersected by sweep laser (every 4 frames)
-  if (!e._laserDmgTimer) e._laserDmgTimer = 0;
-  e._laserDmgTimer--;
-  if (e._laserDmgTimer <= 0) {
-    e._laserDmgTimer = 4;
-    s.blocks.forEach(block => {
-      if (block.dead) return;
-      getBlockCells(block).forEach(cell => {
-        const cx = cell.x + BLOCK_SIZE / 2, cy = cell.y + BLOCK_SIZE / 2;
-        if (pointNearLine(cx, cy, lx, ly, lEndX, lEndY, 12)) {
-          block.hp -= block.invulnerable ? 0.5 : 1;
-          spawnExplosion(s, cx, cy, '#ff44ff', 3);
-          if (block.hp <= 0) block.dead = true;
-        }
+    const LASER_LEN = Math.max(W, H) * 1.5;
+    const lx = e.x, ly = e.y;
+
+    // Both laser endpoints
+    const l1EndX = lx + Math.cos(e._laserAngle) * LASER_LEN;
+    const l1EndY = ly + Math.sin(e._laserAngle) * LASER_LEN;
+    const l2EndX = lx + Math.cos(e._laserAngle2) * LASER_LEN;
+    const l2EndY = ly + Math.sin(e._laserAngle2) * LASER_LEN;
+
+    e._sweepLaserEndX = l1EndX;
+    e._sweepLaserEndY = l1EndY;
+    e._sweepLaserEndX2 = l2EndX;
+    e._sweepLaserEndY2 = l2EndY;
+
+    // Damage timer
+    if (!e._laserDmgTimer) e._laserDmgTimer = 0;
+    e._laserDmgTimer--;
+    if (e._laserDmgTimer <= 0) {
+      e._laserDmgTimer = 3;
+      // Damage blocks hit by either laser
+      const checkEndpoints = [[l1EndX, l1EndY], [l2EndX, l2EndY]];
+      checkEndpoints.forEach(([endX, endY]) => {
+        s.blocks.forEach(block => {
+          if (block.dead) return;
+          getBlockCells(block).forEach(cell => {
+            const cx = cell.x + BLOCK_SIZE / 2, cy = cell.y + BLOCK_SIZE / 2;
+            if (pointNearLine(cx, cy, lx, ly, endX, endY, 16)) {
+              block.hp -= block.invulnerable ? 0.5 : 1;
+              spawnExplosion(s, cx, cy, '#ff44ff', 3);
+              if (block.hp <= 0) block.dead = true;
+            }
+          });
+          s.piledCells.forEach((cell, idx) => {
+            const cx = cell.x + BLOCK_SIZE / 2, cy = cell.y + BLOCK_SIZE / 2;
+            if (pointNearLine(cx, cy, lx, ly, endX, endY, 16)) {
+              spawnExplosion(s, cx, cy, '#ff44ff', 3);
+              s.piledCells.splice(idx, 1);
+            }
+          });
+        });
       });
-      // Also damage piled cells
-      s.piledCells.forEach((cell, idx) => {
-        const cx = cell.x + BLOCK_SIZE / 2, cy = cell.y + BLOCK_SIZE / 2;
-        if (pointNearLine(cx, cy, lx, ly, lEndX, lEndY, 12)) {
-          spawnExplosion(s, cx, cy, '#ff44ff', 3);
-          s.piledCells.splice(idx, 1);
-        }
-      });
-    });
-    // Damage player if hit by sweep laser
-    if (pointNearLine(p.x, p.y, lx, ly, lEndX, lEndY, 18)) {
-      // handled externally via _sweepLaserActive flag
-      e._sweepHitsPlayer = true;
-    } else {
+      // Player hit by either laser
+      const hitsPlayer =
+        pointNearLine(p.x, p.y, lx, ly, l1EndX, l1EndY, 18) ||
+        pointNearLine(p.x, p.y, lx, ly, l2EndX, l2EndY, 18);
+      e._sweepHitsPlayer = hitsPlayer;
+    }
+
+    if (e._sweepStateTimer <= 0) {
+      e._sweepState = 'cooldown';
+      e._sweepStateTimer = 180; // 3s cooldown
+      e._sweepLaserEndX = null;
+      e._sweepLaserEndX2 = null;
       e._sweepHitsPlayer = false;
     }
   }
 
-  // Super laser: charge up for 3 seconds, then fire a massive beam straight down
+  // Super laser: charge up for 2 seconds, then fire a massive beam straight down
   e._superLaserTimer = (e._superLaserTimer || 360) - 1;
   if (!e._superLaserCharging && !e._superLaserActive && e._superLaserTimer <= 0) {
     e._superLaserCharging = true;
-    e._superLaserChargeTimer = 180; // 3s charge
-    e._superLaserTimer = 600;       // next super in 10s
+    e._superLaserChargeTimer = 90; // reduced to 1.5s charge
+    e._superLaserTimer = 500;
   }
   if (e._superLaserCharging) {
     e._superLaserChargeTimer--;
     if (e._superLaserChargeTimer <= 0) {
       e._superLaserCharging = false;
       e._superLaserActive = true;
-      e._superLaserDuration = 120; // 2s beam
+      e._superLaserDuration = 120;
     }
   }
   if (e._superLaserActive) {
     e._superLaserDuration--;
-    // Damage everything below boss
-    if (e._laserDmgTimer <= 0) {
+    if (!e._laserDmgTimer || e._laserDmgTimer <= 0) {
       const bx = e.x;
-      // damage blocks under super laser
       s.blocks.forEach(block => {
         if (block.dead) return;
         getBlockCells(block).forEach(cell => {
@@ -243,30 +273,54 @@ export function updateBossTier3Fire(e, p, s, W, H, spawnExplosion, sounds, onSco
   }
 }
 
-// ─── Tier 4 Block Armor: blocks that collide with the boss stick as armor ──────
+// ─── Tier 4 Block+Enemy Armor: blocks/enemies that collide with boss stick as armor ──────
 export function updateBossTier4Armor(e, s, BLOCK_SIZE, getBlockCells, spawnExplosion) {
-  if (!e._armorBlocks) e._armorBlocks = []; // [{dx, dy, color, hp}]
+  if (!e._armorBlocks) e._armorBlocks = []; // [{dx, dy, color, hp, isShip}]
 
-  // Check falling blocks — if within 60px of boss, absorb them as armor
+  // Absorb falling blocks within range
   s.blocks = s.blocks.filter(block => {
     if (block.dead || block.settled || block._bossAbsorbed) return true;
     const cells = getBlockCells(block);
-    const anyClose = cells.some(cell => Math.hypot(cell.x + BLOCK_SIZE / 2 - e.x, cell.y + BLOCK_SIZE / 2 - e.y) < 70);
+    const anyClose = cells.some(cell => Math.hypot(cell.x + BLOCK_SIZE / 2 - e.x, cell.y + BLOCK_SIZE / 2 - e.y) < 80);
     if (anyClose) {
-      // Absorb each cell as an armor piece offset from boss center
       cells.forEach(cell => {
         const dx = (cell.x + BLOCK_SIZE / 2) - e.x;
         const dy = (cell.y + BLOCK_SIZE / 2) - e.y;
-        e._armorBlocks.push({ dx, dy, color: block.color, hp: 2 });
+        // Clamp to orbit ring: 60–120px from boss center
+        const dist = Math.hypot(dx, dy) || 1;
+        const targetDist = Math.max(60, Math.min(120, dist));
+        const ndx = (dx / dist) * targetDist;
+        const ndy = (dy / dist) * targetDist;
+        e._armorBlocks.push({ dx: ndx, dy: ndy, color: block.color, hp: 3 });
       });
       block._bossAbsorbed = true;
-      return false; // remove block from game
+      return false;
     }
     return true;
   });
 
-  // Cap armor at 20 pieces
-  if (e._armorBlocks.length > 20) e._armorBlocks = e._armorBlocks.slice(-20);
+  // Absorb nearby non-boss enemies (basic, elite) as armor ships
+  s.enemies = s.enemies.filter(enemy => {
+    if (enemy === e || enemy.dead || enemy.type === 'boss' || enemy.type === 'dropper') return true;
+    if (enemy._bossAbsorbed) return false; // already absorbed, remove
+    const dist = Math.hypot(enemy.x - e.x, enemy.y - e.y);
+    if (dist < 90 && e._armorBlocks.length < 24) {
+      const dx = enemy.x - e.x;
+      const dy = enemy.y - e.y;
+      const nd = Math.max(dist, 1);
+      const targetDist = Math.max(60, Math.min(130, nd));
+      const ndx = (dx / nd) * targetDist;
+      const ndy = (dy / nd) * targetDist;
+      e._armorBlocks.push({ dx: ndx, dy: ndy, color: '#ff4444', hp: 4, isShip: true });
+      enemy._bossAbsorbed = true;
+      spawnExplosion(s, enemy.x, enemy.y, '#ff4444', 6);
+      return false; // remove from normal enemy list
+    }
+    return true;
+  });
+
+  // Cap armor at 24 pieces
+  if (e._armorBlocks.length > 24) e._armorBlocks = e._armorBlocks.slice(-24);
 }
 
 export function drawBossTier4Armor(ctx, e, BLOCK_SIZE) {
@@ -276,18 +330,32 @@ export function drawBossTier4Armor(ctx, e, BLOCK_SIZE) {
     const ax = e.x + piece.dx;
     const ay = e.y + piece.dy;
     ctx.save();
-    ctx.shadowColor = piece.color; ctx.shadowBlur = 8;
-    ctx.fillStyle = piece.color + 'cc';
-    ctx.fillRect(ax - sz / 2, ay - sz / 2, sz, sz);
-    ctx.strokeStyle = '#ffffff44'; ctx.lineWidth = 1;
-    ctx.strokeRect(ax - sz / 2, ay - sz / 2, sz, sz);
-    // HP crack overlay
-    if (piece.hp <= 1) {
-      ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1;
+    ctx.shadowColor = piece.color; ctx.shadowBlur = 10;
+    if (piece.isShip) {
+      // Draw as small ship silhouette
+      ctx.translate(ax, ay);
+      ctx.strokeStyle = piece.color; ctx.lineWidth = 2;
+      ctx.fillStyle = piece.color + '66';
       ctx.beginPath();
-      ctx.moveTo(ax - sz / 2, ay); ctx.lineTo(ax + sz / 2, ay);
-      ctx.moveTo(ax, ay - sz / 2); ctx.lineTo(ax, ay + sz / 2);
-      ctx.stroke();
+      ctx.moveTo(0, -10); ctx.lineTo(8, 8); ctx.lineTo(0, 4); ctx.lineTo(-8, 8); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      if (piece.hp <= 2) {
+        // cracked
+        ctx.strokeStyle = 'rgba(255,200,200,0.6)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(-8, 0); ctx.lineTo(8, 0); ctx.stroke();
+      }
+    } else {
+      ctx.fillStyle = piece.color + 'cc';
+      ctx.fillRect(ax - sz / 2, ay - sz / 2, sz, sz);
+      ctx.strokeStyle = '#ffffff44'; ctx.lineWidth = 1;
+      ctx.strokeRect(ax - sz / 2, ay - sz / 2, sz, sz);
+      if (piece.hp <= 1) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(ax - sz / 2, ay); ctx.lineTo(ax + sz / 2, ay);
+        ctx.moveTo(ax, ay - sz / 2); ctx.lineTo(ax, ay + sz / 2);
+        ctx.stroke();
+      }
     }
     ctx.restore();
   });
@@ -295,7 +363,6 @@ export function drawBossTier4Armor(ctx, e, BLOCK_SIZE) {
 
 // ─── Tier 4 (Wave 20): Multi-position photon guns + max bounce shot ───────────
 export function updateBossTier4Fire(e, p, s, sounds, W, H, spawnExplosion) {
-  // Fire photon orbs from 5 positions periodically
   e._photonTimer = (e._photonTimer || 0) - 1;
   if (e._photonTimer <= 0) {
     const offsets = [-80, -40, 0, 40, 80];
@@ -315,7 +382,6 @@ export function updateBossTier4Fire(e, p, s, sounds, W, H, spawnExplosion) {
     e._photonTimer = 80;
   }
 
-  // Max bounce shots — fired in a wide spread, bounce off walls
   e._bounceTimer = (e._bounceTimer || 200) - 1;
   if (e._bounceTimer <= 0) {
     const SHOTS = 8;
@@ -340,13 +406,11 @@ export function updateBossTier5Fire(e, p, s, sounds, W, H, spawnExplosion) {
   if (e._weaponTimer <= 0) {
     const gun = BOSS5_WEAPONS[e._weaponIdx % BOSS5_WEAPONS.length];
     fireBoss5Weapon(gun, e, p, s);
-    // Cycle weapon every 3 shots
     e._shotCount = (e._shotCount || 0) + 1;
     if (e._shotCount >= 3) { e._shotCount = 0; e._weaponIdx++; }
     e._weaponTimer = 25;
   }
 
-  // Charge attack at player every ~5 seconds
   e._chargeTimer = (e._chargeTimer || 300) - 1;
   if (e._chargeTimer <= 0 && !e._charging) {
     const dx = p.x - e.x, dy = p.y - e.y;
@@ -393,7 +457,7 @@ function fireBoss5Weapon(gun, e, p, s) {
   }
 }
 
-// ─── Homing bullet updater (called each frame for enemy bullets) ──────────────
+// ─── Homing bullet updater ──────────────────────────────────────────────────
 export function updateHomingBullets(enemyBullets) {
   enemyBullets.forEach(b => {
     if (!b.homing || !b.target) return;
@@ -420,20 +484,44 @@ function pointNearLine(px, py, x1, y1, x2, y2, threshold) {
   return Math.hypot(px - nx, py - ny) < threshold;
 }
 
-// ─── Draw boss anchor (stub — anchor removed from tier 4) ─────────────────────
-export function drawBossAnchor(ctx, e) {
-  // Anchor weapon removed; stub kept to avoid import errors
-}
+// ─── Draw boss anchor (stub) ─────────────────────────────────────────────────
+export function drawBossAnchor(ctx, e) {}
 
-// ─── Draw tier 3 sweep laser ──────────────────────────────────────────────────
+// ─── Draw tier 3 dual sweep lasers ───────────────────────────────────────────
 export function drawBossSweepLaser(ctx, e) {
-  if (!e._sweepLaserEndX) return;
+  const isCharging = e._sweepState === 'charging';
+  const isActive = e._sweepState === 'active';
+
+  // Charging indicator
+  if (isCharging) {
+    const pct = 1 - (e._sweepStateTimer / 60);
+    ctx.save();
+    ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 30 * pct;
+    ctx.strokeStyle = `rgba(255,68,255,${pct * 0.9})`;
+    ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(e.x, e.y, 30 + pct * 40, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+    return;
+  }
+
+  if (!isActive || !e._sweepLaserEndX) return;
+
+  // Draw laser 1
   ctx.save();
-  ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 20;
-  ctx.strokeStyle = 'rgba(255,68,255,0.7)'; ctx.lineWidth = 4;
+  ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 28;
+  ctx.strokeStyle = 'rgba(255,68,255,0.75)'; ctx.lineWidth = 8;
   ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e._sweepLaserEndX, e._sweepLaserEndY); ctx.stroke();
-  ctx.strokeStyle = 'rgba(255,200,255,0.9)'; ctx.lineWidth = 1.5;
+  ctx.strokeStyle = 'rgba(255,200,255,0.95)'; ctx.lineWidth = 3;
   ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e._sweepLaserEndX, e._sweepLaserEndY); ctx.stroke();
+
+  // Draw laser 2
+  if (e._sweepLaserEndX2) {
+    ctx.strokeStyle = 'rgba(200,68,255,0.75)'; ctx.lineWidth = 8;
+    ctx.shadowColor = '#cc44ff';
+    ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e._sweepLaserEndX2, e._sweepLaserEndY2); ctx.stroke();
+    ctx.strokeStyle = 'rgba(220,180,255,0.95)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e._sweepLaserEndX2, e._sweepLaserEndY2); ctx.stroke();
+  }
   ctx.restore();
 }
 
@@ -441,15 +529,13 @@ export function drawBossSuperLaser(ctx, e) {
   if (!e._superLaserCharging && !e._superLaserActive) return;
   ctx.save();
   if (e._superLaserCharging) {
-    // Pulsing charge effect around boss
-    const pct = 1 - (e._superLaserChargeTimer / 180);
+    const pct = 1 - (e._superLaserChargeTimer / 90);
     const radius = 20 + pct * 60;
     ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 40 * pct;
     ctx.strokeStyle = `rgba(255,255,255,${pct * 0.8})`;
     ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(e.x, e.y, radius, 0, Math.PI * 2); ctx.stroke();
   } else if (e._superLaserActive) {
-    // Massive white beam downward
     ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 60;
     ctx.strokeStyle = 'rgba(200,200,255,0.5)'; ctx.lineWidth = 60;
     ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e.x, 2000); ctx.stroke();

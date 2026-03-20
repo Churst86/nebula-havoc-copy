@@ -22,8 +22,8 @@ export function updateBerserkMovement(e, p, W, H) {
 }
 
 export function updateBerserkLaser(e, s, p, W, H) {
-  const laserChargeMax = 30;
-  const laserActiveDuration = 45;
+  const laserChargeMax = 20;
+  const laserActiveDuration = 90; // longer active duration
   
   if (e._laserCooldown > 0) {
     e._laserCooldown--;
@@ -31,7 +31,7 @@ export function updateBerserkLaser(e, s, p, W, H) {
     e._laserActive--;
     if (e._laserActive <= 0) {
       e._laserActive = false;
-      e._laserCooldown = 90;
+      e._laserCooldown = 60; // shorter cooldown
     }
   } else {
     e._laserCharge++;
@@ -85,10 +85,10 @@ export function drawBerserk(ctx, e, t) {
     e._spinAngle += spinSpeed;
 
     const orbitR = 60;          // orbit radius from center
-    const laserLen = e._isHell ? 220 : 160;
-    const laserW = e._isHell ? 7 : 5;
+    const laserLen = e._isHell ? 320 : 260; // longer lasers
+    const laserW = e._isHell ? 10 : 8; // thicker lasers
 
-    const beamCount = e._isHell ? 2 : 1;
+    const beamCount = e._isHell ? 4 : 2; // always at least 2 beams
     for (let bi = 0; bi < beamCount; bi++) {
       const angle = e._spinAngle + (bi / beamCount) * Math.PI * 2;
       const startX = Math.cos(angle) * orbitR;
