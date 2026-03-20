@@ -1280,45 +1280,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         const dx = p.x - e.x, dy = p.y - e.y;
         const len = Math.sqrt(dx * dx + dy * dy) || 1;
         if (e.type === 'boss') {
-          const gun = e.gun || 'spread';
-          if (gun === 'spread') {
-            // Wide spread shotgun burst
-            [-40, -25, -10, 0, 10, 25, 40].forEach(angle => {
-              const rad = (angle * Math.PI) / 180;
-              const bvx = (dx / len) * 4;
-              const bvy = (dy / len) * 4;
-              s.enemyBullets.push({ x: e.x, y: e.y, vx: bvx + Math.sin(rad) * 3, vy: bvy + Math.cos(rad) * 0.5, boss: true });
-            });
-          } else if (gun === 'laser') {
-            // Tight laser burst — 3 fast shots in a line
-            for (let li = 0; li < 3; li++) {
-              s.enemyBullets.push({ x: e.x, y: e.y + li * 6, vx: (dx / len) * 6.5, vy: (dy / len) * 6.5, boss: true });
-            }
-          } else if (gun === 'photon') {
-            // Big slow plasma orb
-            s.enemyBullets.push({ x: e.x, y: e.y, vx: (dx / len) * 2.8, vy: (dy / len) * 2.8, boss: true, big: true });
-          } else if (gun === 'bounce') {
-            // Bouncing bullets at wide angles
-            [-50, -20, 0, 20, 50].forEach(angle => {
-              const rad = (angle * Math.PI) / 180;
-              s.enemyBullets.push({ x: e.x, y: e.y, vx: (dx / len) * 4 + Math.sin(rad) * 3.5, vy: (dy / len) * 4, boss: true, bouncing: true, bouncesLeft: 3 });
-            });
-          } else if (gun === 'missile') {
-            // Homing missiles — 3 at a time
-            for (let mi = 0; mi < 3; mi++) {
-              const spread = (mi - 1) * 0.4;
-              s.enemyBullets.push({ x: e.x, y: e.y, vx: Math.sin(spread) * 3, vy: (dy / len) * 5 + Math.cos(spread), boss: true, big: true });
-            }
-          } else if (gun === 'shotgun') {
-            // Dense wide burst — lvl 10 shotgun style
-            for (let si = 0; si < 11; si++) {
-              const angleDeg = -75 + si * 15;
-              const rad = (angleDeg * Math.PI) / 180;
-              s.enemyBullets.push({ x: e.x, y: e.y, vx: Math.sin(rad) * 5, vy: Math.cos(rad) * 5, boss: true });
-            }
-          }
-          const bt2 = e.tier || 1;
-          e.fireTimer = Math.max(15, 35 - bt2 * 4);
+          // Boss fire is now handled per-tier in the movement section above
+          // (no-op here)
         } else {
           const bspd = 2;
           s.enemyBullets.push({ x: e.x, y: e.y, vx: (dx / len) * bspd, vy: (dy / len) * bspd });
