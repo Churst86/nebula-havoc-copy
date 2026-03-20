@@ -131,6 +131,10 @@ export default function Game() {
       handleSettingsChange(newSettings);
       // Snapshot current powerups to carry over
       setCarryOverPowerups({ ...activePowerup });
+      // Reset shop upgrades for new difficulty
+      const resetUpgrades = { armor: 0, repair: 0, drone: 0, harvester: 0 };
+      setShopUpgrades(resetUpgrades);
+      saveShopUpgrades(resetUpgrades);
       handleStart(true);
     }
   }, [settings, handleStart, activePowerup]);
