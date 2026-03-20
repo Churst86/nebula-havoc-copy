@@ -166,9 +166,9 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
         )}
       </div>
 
-      {/* Shop upgrades — bottom-left above score */}
+      {/* Shop upgrades — bottom-right above armor/lives (only show during gameplay) */}
       {shopKeys.length > 0 && (
-        <div className="absolute bottom-20 left-6 flex flex-col gap-1" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.8))' }}>
+        <div className="absolute bottom-32 right-6 flex flex-col gap-1 items-end" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.8))' }}>
           {shopKeys.map(([key, lvl]) => (
             <div key={key} className="text-xs font-bold px-2 py-0.5 rounded-full"
               style={{ color: SHOP_COLORS[key], border: `1px solid ${SHOP_COLORS[key]}`, background: `${SHOP_COLORS[key]}22` }}>
