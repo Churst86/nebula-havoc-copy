@@ -1688,10 +1688,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       cell._dmgCooldown = Math.max(0, (cell._dmgCooldown || 0) - 1);
     });
 
-    // Wave clear — only count combat enemies; also wait for boss warning to finish
+    // Wave clear — only count combat enemies; wait for boss warning to finish before advancing wave
     const combatEnemies = s.enemies.filter(e => e.type !== 'dropper' && e.type !== 'eater');
-    if (s.bossWarning && s.bossWarning.active) return; // wait for boss to enter
-    if (combatEnemies.length === 0) {
+    if (combatEnemies.length === 0 && s.bossWarning && s.bossWarning.active) {
+      // Game keeps running — just don't advance the wave yet
+    } else if (combatEnemies.length === 0) {
       s.waveTimer++;
       if (s.waveTimer > 90) {
         s.wave++;
