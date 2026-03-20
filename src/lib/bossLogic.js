@@ -243,6 +243,56 @@ export function updateBossTier3Fire(e, p, s, W, H, spawnExplosion, sounds, onSco
   }
 }
 
+// ─── Tier 4 Block Armor: blocks that collide with the boss stick as armor ──────
+export function updateBossTier4Armor(e, s, BLOCK_SIZE, getBlockCells, spawnExplosion) {
+  if (!e._armorBlocks) e._armorBlocks = []; // [{dx, dy, color, hp}]
+
+  // Check falling blocks — if within 60px of boss, absorb them as armor
+  s.blocks = s.blocks.filter(block => {
+    if (block.dead || block.settled || block._bossAbsorbed) return true;
+    const cells = getBlockCells(block);
+    const anyClose = cells.some(cell => Math.hypot(cell.x + BLOCK_SIZE / 2 - e.x, cell.y + BLOCK_SIZE / 2 - e.y) < 70);
+    if (anyClose) {
+      // Absorb each cell as an armor piece offset from boss center
+      cells.forEach(cell => {
+        const dx = (cell.x + BLOCK_SIZE / 2) - e.x;
+        const dy = (cell.y + BLOCK_SIZE / 2) - e.y;
+        e._armorBlocks.push({ dx, dy, color: block.color, hp: 2 });
+      });
+      block._bossAbsorbed = true;
+      return false; // remove block from game
+    }
+    return true;
+  });
+
+  // Cap armor at 20 pieces
+  if (e._armorBlocks.length > 20) e._armorBlocks = e._armorBlocks.slice(-20);
+}
+
+export function drawBossTier4Armor(ctx, e, BLOCK_SIZE) {
+  if (!e._armorBlocks || e._armorBlocks.length === 0) return;
+  const sz = BLOCK_SIZE;
+  e._armorBlocks.forEach(piece => {
+    const ax = e.x + piece.dx;
+    const ay = e.y + piece.dy;
+    ctx.save();
+    ctx.shadowColor = piece.color; ctx.shadowBlur = 8;
+    ctx.fillStyle = piece.color + 'cc';
+    ctx.fillRect(ax - sz / 2, ay - sz / 2, sz, sz);
+    ctx.strokeStyle = '#ffffff44'; ctx.lineWidth = 1;
+    ctx.strokeRect(ax - sz / 2, ay - sz / 2, sz, sz);
+    // HP crack overlay
+    if (piece.hp <= 1) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(ax - sz / 2, ay); ctx.lineTo(ax + sz / 2, ay);
+      ctx.moveTo(ax, ay - sz / 2); ctx.lineTo(ax, ay + sz / 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  });
+}
+
 // ─── Tier 4 (Wave 20): Multi-position photon guns + max bounce shot ───────────
 export function updateBossTier4Fire(e, p, s, sounds, W, H, spawnExplosion) {
   // Fire photon orbs from 5 positions periodically
