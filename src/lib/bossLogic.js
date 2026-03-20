@@ -249,7 +249,7 @@ export function updateBossTier3Fire(e, p, s, W, H, spawnExplosion, sounds, onSco
   }
 }
 
-// ─── Tier 4 (Wave 20): Multi-position photon guns + anchor weapon ─────────────
+// ─── Tier 4 (Wave 20): Multi-position photon guns + max bounce shot ───────────
 export function updateBossTier4Fire(e, p, s, sounds, W, H, spawnExplosion) {
   // Fire photon orbs from 5 positions periodically
   e._photonTimer = (e._photonTimer || 0) - 1;
@@ -264,82 +264,27 @@ export function updateBossTier4Fire(e, p, s, sounds, W, H, spawnExplosion) {
         x: fx, y: fy,
         vx: (dx / len) * 3.5, vy: (dy / len) * 3.5,
         boss: true, big: true,
-        photonOrb: true, orbSize: 14,
+        photonOrb: true, orbSize: 16,
         piercing: true,
       });
     });
     e._photonTimer = 80;
   }
 
-  // Anchor weapon: throws anchor that latches onto player or block
-  e._anchorTimer = (e._anchorTimer || 300) - 1;
-  if (e._anchorTimer <= 0 && !e._anchorOut) {
-    e._anchorOut = true;
-    // Aim at player
-    const dx = p.x - e.x, dy = p.y - e.y;
-    const len = Math.hypot(dx, dy) || 1;
-    e._anchorX = e.x;
-    e._anchorY = e.y;
-    e._anchorVx = (dx / len) * 9;
-    e._anchorVy = (dy / len) * 9;
-    e._anchorTarget = null;
-    e._anchorTimer = 400;
-    e._anchorRetracted = false;
-    e._anchorChainLen = 0;
-  }
-
-  if (e._anchorOut) {
-    if (!e._anchorTarget) {
-      e._anchorX += e._anchorVx;
-      e._anchorY += e._anchorVy;
-      e._anchorChainLen = Math.hypot(e._anchorX - e.x, e._anchorY - e.y);
-
-      // Check if anchor hits player
-      if (Math.hypot(e._anchorX - p.x, e._anchorY - p.y) < 22) {
-        e._anchorTarget = 'player';
-        e._anchorVx = 0; e._anchorVy = 0;
-      }
-
-      // Check if anchor hits a block
-      for (let block of (s.blocks || [])) {
-        if (block.dead) continue;
-        const cx = block.x + 18, cy = block.y + 18;
-        if (Math.hypot(e._anchorX - cx, e._anchorY - cy) < 28) {
-          e._anchorTarget = 'block';
-          e._anchorBlock = block;
-          e._anchorVx = 0; e._anchorVy = 0;
-          break;
-        }
-      }
-
-      // Retract if too far or off screen
-      if (e._anchorChainLen > Math.max(W, H) * 0.7 || e._anchorX < 0 || e._anchorX > W || e._anchorY < -50 || e._anchorY > H + 50) {
-        e._anchorOut = false;
-        e._anchorTarget = null;
-      }
-    } else {
-      // Anchor is latched — pull boss toward target
-      const tx = e._anchorTarget === 'player' ? p.x : (e._anchorBlock ? e._anchorBlock.x + 18 : e._anchorX);
-      const ty = e._anchorTarget === 'player' ? p.y : (e._anchorBlock ? e._anchorBlock.y + 18 : e._anchorY);
-      e._anchorX = tx;
-      e._anchorY = ty;
-
-      // Pull boss quickly toward anchor point
-      const pdx = tx - e.x, pdy = ty - e.y;
-      const plen = Math.hypot(pdx, pdy) || 1;
-      if (plen > 30) {
-        e.x += (pdx / plen) * 6;
-        e.y += (pdy / plen) * 6;
-      } else {
-        // Reached target — detach
-        e._anchorOut = false;
-        e._anchorTarget = null;
-        if (e._anchorTarget === 'player') {
-          e._anchorHitPlayer = true;
-          setTimeout(() => { e._anchorHitPlayer = false; }, 100);
-        }
-      }
+  // Max bounce shots — fired in a wide spread, bounce off walls
+  e._bounceTimer = (e._bounceTimer || 200) - 1;
+  if (e._bounceTimer <= 0) {
+    const SHOTS = 8;
+    for (let i = 0; i < SHOTS; i++) {
+      const angle = (i / SHOTS) * Math.PI * 2;
+      s.enemyBullets.push({
+        x: e.x, y: e.y,
+        vx: Math.cos(angle) * 5, vy: Math.sin(angle) * 5,
+        boss: true, big: true,
+        bouncing: true, bouncesLeft: 10,
+      });
     }
+    e._bounceTimer = 280;
   }
 }
 
