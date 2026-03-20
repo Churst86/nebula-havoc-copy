@@ -674,8 +674,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
   function drawBullet(ctx, b, isEnemy) {
     ctx.save();
     if (b.type === 'spreadPellet') {
-      ctx.shadowColor = '#ffdd00'; ctx.shadowBlur = 8;
-      ctx.fillStyle = '#ffdd00';
+      ctx.shadowColor = '#ff6600'; ctx.shadowBlur = 8;
+      ctx.fillStyle = '#ff6600';
       ctx.beginPath(); ctx.arc(b.x, b.y, 3, 0, Math.PI * 2); ctx.fill();
     } else if (b.type === 'wingman') {
       ctx.shadowColor = '#aaddff'; ctx.shadowBlur = 8;
