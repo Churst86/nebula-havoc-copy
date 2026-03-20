@@ -8,6 +8,13 @@ import { fireMissiles, updateMissiles, drawMissile, getMissileHitDamage, shouldS
 import { DROPPER_COLORS, DROPPER_LABELS, DROPPER_ROTATION } from '../../lib/powerupConfig.js';
 import { drawBlock, drawPiledCells, drawParticle } from '../../lib/drawingUtils.js';
 import { loadSprites, getSprite, getBossSpriteKey, BOSS_SPRITE_MAP } from '../../lib/spriteLoader.js';
+import {
+  createBossWarning, spawnBoss,
+  updateBossMovement, updateBossTier1Fire, updateBossTier2Fire,
+  updateBossTier3Fire, updateBossTier4Fire, updateBossTier5Fire,
+  updateHomingBullets,
+  drawBossAnchor, drawBossSweepLaser, drawBossSuperLaser,
+} from '../../lib/bossLogic.js';
 
 // Import laser logic
 import { updateLaserBeam, LASER_CHARGE_FRAMES, LASER_BEAM_FRAMES, LASER_COOLDOWN_FRAMES } from '../../lib/laserLogic.js';
