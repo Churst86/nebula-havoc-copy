@@ -1162,7 +1162,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
           if (e.y < bound) { e.y = bound; e._chargingPlayer = false; e.vx = randomBetween(-0.5,0.5); e.vy = Math.abs(randomBetween(0.4,0.8)); }
           if (e.y > H-bound) { e.y = H-bound; e._chargingPlayer = false; e.vx = randomBetween(-0.5,0.5); e.vy = -Math.abs(randomBetween(0.4,0.8)); }
         } else {
-          e._eating = false; // default: not eating
           let targetX = null, targetY = null, bestDist = Infinity;
           s.blocks.forEach(block => {
             if (block.dead) return;
