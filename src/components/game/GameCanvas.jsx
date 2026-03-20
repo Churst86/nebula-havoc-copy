@@ -1743,7 +1743,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
       if (e.type !== 'boss') return;
       const bt = e.tier || 1;
       if (bt === 3) { drawBossSweepLaser(ctx, e); drawBossSuperLaser(ctx, e); }
-      if (bt === 4) drawBossAnchor(ctx, e);
     });
     s.bullets.forEach(b => drawBullet(ctx, b, false));
     s.enemyBullets.forEach(b => drawBullet(ctx, b, true));
