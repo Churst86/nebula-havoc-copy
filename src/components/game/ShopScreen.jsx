@@ -2,22 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UPGRADE_DEFS } from '../../lib/shopUpgrades';
 
-const OZMA_GREETING = "Hi, I'm Ozma. I can take your artifacts and exchange them for upgrades! Just let me know what you want.";
-
+const OZMA_GREETING = "Hi, I'm Ozma. I can exchange your artifacts for upgrades!";
 const SHOPKEEPER_URL = 'https://raw.githubusercontent.com/Churst86/Sprites/main/Shopkeeper.png';
-
-function OzmaPortrait() {
-  return (
-    <div className="relative">
-      <img
-        src={SHOPKEEPER_URL}
-        alt="Ozma the Shopkeeper"
-        className="w-32 h-32 object-contain drop-shadow-lg"
-        style={{ imageRendering: 'pixelated', filter: 'drop-shadow(0 0 12px #44aaff88)' }}
-      />
-    </div>
-  );
-}
 
 function UpgradeCard({ def, currentLevel, blockScore, onBuy }) {
   const maxed = currentLevel >= def.maxLevel;
@@ -26,44 +12,43 @@ function UpgradeCard({ def, currentLevel, blockScore, onBuy }) {
 
   return (
     <motion.div
-      whileHover={!maxed ? { scale: 1.03 } : {}}
-      className="rounded-xl border p-4 flex flex-col gap-2"
+      whileHover={!maxed ? { scale: 1.02 } : {}}
+      className="rounded-lg border p-3 flex flex-col gap-1.5"
       style={{
-        background: 'rgba(10,20,40,0.85)',
-        borderColor: maxed ? '#556633' : def.color,
-        boxShadow: maxed ? 'none' : `0 0 12px ${def.color}44`,
+        background: 'rgba(5,10,25,0.82)',
+        borderColor: maxed ? '#446633' : def.color + '99',
+        boxShadow: maxed ? 'none' : `0 0 8px ${def.color}33`,
       }}
     >
-      <div className="flex items-center gap-3">
-        <span className="text-3xl">{def.icon}</span>
-        <div>
-          <div className="font-bold text-white text-sm">{def.name}</div>
-          <div className="text-xs" style={{ color: def.color }}>
-            Level {currentLevel} / {def.maxLevel}
-          </div>
+      <div className="flex items-center gap-2">
+        <span className="text-2xl">{def.icon}</span>
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-white text-xs truncate">{def.name}</div>
+          <div className="text-xs" style={{ color: def.color }}>Lv {currentLevel}/{def.maxLevel}</div>
         </div>
-        <div className="ml-auto flex gap-1">
-          {Array.from({ length: def.maxLevel }).map((_, i) => (
-            <div key={i} className="w-2 h-2 rounded-full"
-              style={{ background: i < currentLevel ? def.color : '#223' }} />
+        {/* Level pips */}
+        <div className="flex gap-0.5 flex-wrap justify-end max-w-16">
+          {Array.from({ length: Math.min(def.maxLevel, 10) }).map((_, i) => (
+            <div key={i} className="w-1.5 h-1.5 rounded-full"
+              style={{ background: i < currentLevel ? def.color : '#1a2a3a' }} />
           ))}
         </div>
       </div>
-      <div className="text-xs text-gray-300">{def.description(Math.max(currentLevel, 1))}</div>
+      <div className="text-xs text-gray-400 leading-snug">{def.description(Math.max(currentLevel, 1))}</div>
       {maxed ? (
-        <div className="text-center text-xs font-bold text-green-400 py-1">✓ MAXED OUT</div>
+        <div className="text-center text-xs font-bold text-green-400">✓ MAXED</div>
       ) : (
         <button
           onClick={() => canAfford && onBuy(def.id)}
-          className="mt-1 py-1.5 px-4 rounded-lg text-sm font-bold transition-all"
+          className="py-1 px-3 rounded text-xs font-bold transition-all"
           style={{
-            background: canAfford ? def.color + 'cc' : '#334',
-            color: canAfford ? '#000' : '#667',
+            background: canAfford ? def.color + 'dd' : '#1a2233',
+            color: canAfford ? '#000' : '#556',
             cursor: canAfford ? 'pointer' : 'not-allowed',
-            border: `1px solid ${canAfford ? def.color : '#445'}`,
+            border: `1px solid ${canAfford ? def.color : '#334'}`,
           }}
         >
-          {canAfford ? `⛏ ${cost} pts` : `Need ${cost} pts`}
+          {canAfford ? `⛏ ${cost} pts` : `Need ${cost}`}
         </button>
       )}
     </motion.div>
@@ -74,7 +59,6 @@ export default function ShopScreen({ blockScore, shopUpgrades, onBuy, onReturn, 
   const [showDialogue, setShowDialogue] = useState(true);
   const [displayedText, setDisplayedText] = useState('');
 
-  // Typewriter effect for greeting
   useEffect(() => {
     setDisplayedText('');
     let i = 0;
@@ -83,9 +67,9 @@ export default function ShopScreen({ blockScore, shopUpgrades, onBuy, onReturn, 
       setDisplayedText(OZMA_GREETING.slice(0, i));
       if (i >= OZMA_GREETING.length) {
         clearInterval(t);
-        setTimeout(() => setShowDialogue(false), 3000);
+        setTimeout(() => setShowDialogue(false), 2500);
       }
-    }, 30);
+    }, 35);
     return () => clearInterval(t);
   }, []);
 
@@ -94,60 +78,42 @@ export default function ShopScreen({ blockScore, shopUpgrades, onBuy, onReturn, 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-40 flex flex-col overflow-hidden"
-      style={{
-        background: 'radial-gradient(ellipse at 50% 0%, #0a1a3a 0%, #050510 70%)',
-      }}
+      className="fixed inset-0 z-40 overflow-hidden"
     >
-      {/* Stars */}
-      <div className="absolute inset-0 pointer-events-none">
-        {Array.from({ length: 60 }).map((_, i) => (
-          <div key={i} className="absolute rounded-full bg-white"
-            style={{
-              left: `${(i * 17.3) % 100}%`, top: `${(i * 13.7) % 100}%`,
-              width: `${(i % 3) + 1}px`, height: `${(i % 3) + 1}px`,
-              opacity: 0.2 + (i % 5) * 0.1,
-            }} />
-        ))}
-      </div>
+      {/* Shopkeeper as full-screen background */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url(${SHOPKEEPER_URL})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center top',
+          imageRendering: 'pixelated',
+        }}
+      />
+      {/* Dark overlay for readability */}
+      <div className="absolute inset-0" style={{ background: 'rgba(2,6,18,0.68)' }} />
 
-      {/* Station name header */}
-      <div className="relative z-10 text-center pt-4 pb-2">
-        <div className="text-xs tracking-[0.4em] uppercase text-cyan-500/60 font-mono">Space Station</div>
-        <div className="text-2xl font-black tracking-widest text-cyan-300" style={{ textShadow: '0 0 20px #00ccff' }}>
-          OZMA
-        </div>
-      </div>
+      {/* UI overlay */}
+      <div className="relative z-10 flex flex-col h-full">
 
-      {/* Main area */}
-      <div className="relative z-10 flex flex-1 gap-4 px-4 pb-4 overflow-hidden">
-        {/* Ozma column */}
-        <div className="flex flex-col items-center gap-3 w-36 shrink-0">
-          <div className="relative">
-            <OzmaPortrait />
-            <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-400 animate-pulse border border-green-600" />
-          </div>
-          <div className="text-center text-xs text-cyan-400/70 font-mono">Ozma<br/>Station Keeper</div>
-
-          {/* Block score */}
-          <div className="w-full rounded-lg border border-orange-500/40 bg-black/40 p-2 text-center">
-            <div className="text-xs text-orange-400/70 font-mono uppercase">Artifacts</div>
-            <div className="text-xl font-black text-orange-300">{blockScore.toLocaleString()}</div>
-            <div className="text-xs text-orange-500/50">pts available</div>
+        {/* Header */}
+        <div className="text-center pt-4 pb-1">
+          <div className="text-xs tracking-[0.4em] uppercase text-cyan-500/60 font-mono">Space Station</div>
+          <div className="text-xl font-black tracking-widest text-cyan-300" style={{ textShadow: '0 0 16px #00ccff' }}>
+            OZMA
           </div>
         </div>
 
-        {/* Dialogue + Shop */}
-        <div className="flex-1 flex flex-col gap-3 overflow-hidden">
-          {/* Dialogue bubble */}
+        {/* Dialogue bubble */}
+        <div className="px-4 min-h-[44px]">
           <AnimatePresence>
             {showDialogue && (
               <motion.div
-                initial={{ opacity: 0, y: -8 }}
+                initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                className="rounded-xl border border-cyan-500/40 p-3 text-sm text-gray-200 leading-relaxed"
-                style={{ background: 'rgba(0,40,80,0.7)' }}
+                exit={{ opacity: 0 }}
+                className="rounded-lg border border-cyan-500/40 px-3 py-2 text-xs text-gray-200"
+                style={{ background: 'rgba(0,30,60,0.85)' }}
               >
                 <span className="text-cyan-400 font-bold">Ozma: </span>
                 {displayedText}
@@ -155,9 +121,21 @@ export default function ShopScreen({ blockScore, shopUpgrades, onBuy, onReturn, 
               </motion.div>
             )}
           </AnimatePresence>
+        </div>
 
-          {/* Shop grid */}
-          <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-3 pr-1">
+        {/* Artifacts balance */}
+        <div className="px-4 pt-2 pb-1">
+          <div className="rounded-lg border border-orange-500/40 px-3 py-1.5 inline-flex items-center gap-2"
+            style={{ background: 'rgba(0,0,0,0.6)' }}>
+            <span className="text-xs text-orange-400/80 font-mono uppercase">Artifacts</span>
+            <span className="text-lg font-black text-orange-300">{blockScore.toLocaleString()}</span>
+            <span className="text-xs text-orange-500/60">pts</span>
+          </div>
+        </div>
+
+        {/* Upgrade cards grid */}
+        <div className="flex-1 overflow-y-auto px-4 pb-2">
+          <div className="grid grid-cols-2 gap-2">
             {UPGRADE_DEFS.map(def => (
               <UpgradeCard
                 key={def.id}
@@ -169,25 +147,25 @@ export default function ShopScreen({ blockScore, shopUpgrades, onBuy, onReturn, 
             ))}
           </div>
         </div>
-      </div>
 
-      {/* Return button */}
-      <div className="relative z-10 px-6 pb-6 flex justify-center">
-        <motion.button
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={onReturn}
-          className="px-10 py-3 rounded-xl font-black text-lg tracking-wider"
-          style={{
-            background: 'linear-gradient(135deg, #00ccff33, #0044aa44)',
-            border: '2px solid #00ccff',
-            color: '#00f0ff',
-            textShadow: '0 0 12px #00ccff',
-            boxShadow: '0 0 20px #00ccff44',
-          }}
-        >
-          ▶ RETURN TO STAGE {nextWave}
-        </motion.button>
+        {/* Return button */}
+        <div className="px-6 pb-5 pt-2 flex justify-center">
+          <motion.button
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={onReturn}
+            className="px-10 py-2.5 rounded-xl font-black text-base tracking-wider"
+            style={{
+              background: 'rgba(0,40,80,0.8)',
+              border: '2px solid #00ccff',
+              color: '#00f0ff',
+              textShadow: '0 0 10px #00ccff',
+              boxShadow: '0 0 16px #00ccff33',
+            }}
+          >
+            ▶ RETURN TO STAGE {nextWave}
+          </motion.button>
+        </div>
       </div>
     </motion.div>
   );
