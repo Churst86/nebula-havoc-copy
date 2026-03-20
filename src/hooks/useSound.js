@@ -486,6 +486,15 @@ export const sounds = {
       setTimeout(() => playToneSfx({ freq: 440 + i * 220, type: 'sine', duration: 0.15, gain: 0.2 }), t * 1000);
     });
   },
+  invinciblePowerdown() {
+    // Descending alarm: power winding down
+    [0, 0.12, 0.24, 0.36, 0.48].forEach((t, i) => {
+      setTimeout(() => {
+        playToneSfx({ freq: 600 - i * 80, type: 'sine', duration: 0.18, gain: 0.18, freqEnd: 400 - i * 60 });
+      }, t * 1000);
+    });
+    playNoiseSfx({ duration: 0.6, gain: 0.08, filterFreq: 300 });
+  },
 
   // Called by GameCanvas on every wave start
   startWaveMusic(wave) { startWaveMusic(wave); },
