@@ -98,6 +98,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   const animRef = useRef(null);
   const lastTimeRef = useRef(0);
   const playerShipImageRef = useRef(null);
+  const shopUpgradesRef = useRef(shopUpgrades);
+  useEffect(() => { shopUpgradesRef.current = shopUpgrades; }, [shopUpgrades]);
 
   useEffect(() => {
     loadSprites((sprites) => {
