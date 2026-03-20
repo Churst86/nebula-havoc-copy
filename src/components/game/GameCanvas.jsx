@@ -1103,8 +1103,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
         // Tier 3: sweep laser damage to player
         if ((e.tier || 1) === 3 && e._sweepHitsPlayer) takeDamage(s);
         if ((e.tier || 1) === 3 && e._superHitsPlayer) takeDamage(s);
-        // Tier 4: anchor hit player
-        if ((e.tier || 1) === 4 && e._anchorHitPlayer) { takeDamage(s); e._anchorHitPlayer = false; }
+        // (tier 4 anchor removed)
       } else if (e.type === 'mine') {
         // Mine: slow drift, periodically charges far at player, recharges after cooldown
         e._chargeTimer = (e._chargeTimer === undefined ? randomBetween(30, 60) : e._chargeTimer) - 1;
