@@ -362,7 +362,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.rotate(angle);
       if (wingmanImg) {
         ctx.shadowColor = '#44aaff'; ctx.shadowBlur = 10;
-        ctx.drawImage(wingmanImg, -20, -20, 40, 40);
+        ctx.drawImage(wingmanImg, -30, -30, 60, 60);
       } else {
         ctx.shadowColor = '#44aaff'; ctx.shadowBlur = 10;
         ctx.strokeStyle = '#44aaff'; ctx.lineWidth = 1.5;
@@ -385,7 +385,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.rotate(angle);
       if (superWingmanImg) {
         ctx.shadowColor = '#ffdd00'; ctx.shadowBlur = 22;
-        ctx.drawImage(superWingmanImg, -28, -28, 56, 56);
+        ctx.drawImage(superWingmanImg, -42, -42, 84, 84);
       } else {
         ctx.shadowColor = '#ffdd00'; ctx.shadowBlur = 22;
         ctx.strokeStyle = '#ffdd00'; ctx.lineWidth = 2;
@@ -427,7 +427,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     const playerImage = playerShipImageRef.current;
     if (playerImage) {
       ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 18;
-      ctx.drawImage(playerImage, -40, -40, 80, 80);
+      ctx.drawImage(playerImage, -60, -60, 120, 120);
     } else {
       ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 18;
       ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2;
@@ -1241,7 +1241,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           const dx = cx - h.x, dy = cy - h.y, len = Math.hypot(dx, dy) || 1;
           h.x += (dx / len) * harvSpeed * 1.5; h.y += (dy / len) * harvSpeed * 1.5;
           if (len < 12) {
-            h.targetBlock.hp -= 0.08;
+            h.targetBlock.hp -= 0.03;
             if (h.targetBlock.hp <= 0) {
               spawnExplosion(s, h.targetBlock.x, h.targetBlock.y, '#ff8800', 5);
               h.targetBlock.dead = true; h.carryScore += 15; h.targetBlock = null;
@@ -1282,7 +1282,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         const orbitR = 60 + s.drones.indexOf(d) * 20;
         const tx = p.x + Math.cos(d.orbitAngle) * orbitR;
         const ty = p.y + Math.sin(d.orbitAngle) * orbitR;
-        d.x += (tx - d.x) * 0.1; d.y += (ty - d.y) * 0.1;
+        d.x += (tx - d.x) * 0.05; d.y += (ty - d.y) * 0.05;
         // Look for dropper or powerup item nearby
         let best = null, bestDist = 999;
         s.enemies.forEach(e => {
@@ -1305,18 +1305,27 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         }
         if (!valid) { d.target = null; d.state = 'orbit'; return; }
         const dx = tx - d.x, dy = ty - d.y, len = Math.hypot(dx, dy) || 1;
-        d.x += (dx / len) * 4; d.y += (dy / len) * 4;
+        d.x += (dx / len) * 1.2; d.y += (dy / len) * 1.2;
         if (len < 16) {
           if (d.target.isDropper) {
             const dropper = d.target.ref;
-            dropper.dead = true; sounds.killDropper && sounds.killDropper();
-            s.powerupItems.push({ x: dropper.x, y: dropper.y, type: dropper.dropType, angle: 0 });
-            d.target = { isPowerup: true, idx: s.powerupItems.length - 1 };
+            dropper._droneKillTimer = (dropper._droneKillTimer || 0) + 1;
+            if (dropper._droneKillTimer >= 120) {
+              dropper.dead = true; sounds.killDropper && sounds.killDropper();
+              s.powerupItems.push({ x: dropper.x, y: dropper.y, type: dropper.dropType, angle: 0 });
+              d.target = { isPowerup: true, idx: s.powerupItems.length - 1 };
+              d._returnTimer = 0;
+            }
           } else {
             // Carry powerup to player
             const item = s.powerupItems[d.target.idx];
-            if (item) { item.x = p.x; item.y = p.y; } // teleport to player to trigger collection
-            d.target = null; d.state = 'orbit';
+            if (item) {
+              d._returnTimer = (d._returnTimer || 0) + 1;
+              if (d._returnTimer >= 120) {
+                item.x = p.x; item.y = p.y;
+                d.target = null; d.state = 'orbit'; d._returnTimer = 0;
+              }
+            }
           }
         }
       }

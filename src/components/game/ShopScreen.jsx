@@ -12,19 +12,19 @@ function UpgradeCard({ def, currentLevel, blockScore, onBuy }) {
 
   return (
     <motion.div
-      whileHover={!maxed ? { scale: 1.02 } : {}}
-      className="rounded-lg border p-3 flex flex-col gap-1.5"
+      whileHover={!maxed ? { scale: 1.05 } : {}}
+      className="rounded border p-2 flex flex-col gap-1"
       style={{
         background: 'rgba(5,10,25,0.82)',
         borderColor: maxed ? '#446633' : def.color + '99',
-        boxShadow: maxed ? 'none' : `0 0 8px ${def.color}33`,
+        boxShadow: maxed ? 'none' : `0 0 4px ${def.color}33`,
       }}
     >
-      <div className="flex items-center gap-2">
-        <span className="text-2xl">{def.icon}</span>
-        <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-1 flex-col">
+        <span className="text-lg">{def.icon}</span>
+        <div className="flex-1 min-w-0 text-center">
           <div className="font-bold text-white text-xs truncate">{def.name}</div>
-          <div className="text-xs" style={{ color: def.color }}>Lv {currentLevel}/{def.maxLevel}</div>
+          <div className="text-xs" style={{ color: def.color }}>Lv{currentLevel}/{def.maxLevel}</div>
         </div>
         {/* Level pips */}
         <div className="flex gap-0.5 flex-wrap justify-end max-w-16">
@@ -34,21 +34,22 @@ function UpgradeCard({ def, currentLevel, blockScore, onBuy }) {
           ))}
         </div>
       </div>
-      <div className="text-xs text-gray-400 leading-snug">{def.description(Math.max(currentLevel, 1))}</div>
+      <div className="text-xs text-gray-400 leading-tight line-clamp-2">{def.description(Math.max(currentLevel, 1))}</div>
       {maxed ? (
-        <div className="text-center text-xs font-bold text-green-400">✓ MAXED</div>
+        <div className="text-center text-xs font-bold text-green-400">✓</div>
       ) : (
         <button
           onClick={() => canAfford && onBuy(def.id)}
-          className="py-1 px-3 rounded text-xs font-bold transition-all"
+          className="py-0.5 px-2 rounded text-xs font-bold transition-all"
           style={{
             background: canAfford ? def.color + 'dd' : '#1a2233',
             color: canAfford ? '#000' : '#556',
             cursor: canAfford ? 'pointer' : 'not-allowed',
             border: `1px solid ${canAfford ? def.color : '#334'}`,
+            fontSize: '10px',
           }}
         >
-          {canAfford ? `⛏ ${cost} pts` : `Need ${cost}`}
+          {canAfford ? `${cost}` : '✕'}
         </button>
       )}
     </motion.div>
@@ -85,8 +86,9 @@ export default function ShopScreen({ blockScore, shopUpgrades, onBuy, onReturn, 
         className="absolute inset-0"
         style={{
           backgroundImage: `url(${SHOPKEEPER_URL})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center top',
+          backgroundSize: 'contain',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center',
           imageRendering: 'pixelated',
         }}
       />
@@ -135,7 +137,7 @@ export default function ShopScreen({ blockScore, shopUpgrades, onBuy, onReturn, 
 
         {/* Upgrade cards grid */}
         <div className="flex-1 overflow-y-auto px-4 pb-2">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-4 gap-1">
             {UPGRADE_DEFS.map(def => (
               <UpgradeCard
                 key={def.id}
