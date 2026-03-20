@@ -503,21 +503,23 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const isCharging = e._charging;
       const damaged = e.hp < e.maxHp;
       const sz = 64;
+      // Flash when damaged (charging after first hit)
+      const flashOn = damaged && Math.floor(Date.now() / 120) % 2 === 0;
       if (mineImg) {
         if (isCharging) {
-          ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 40;
-          ctx.globalAlpha = 0.85 + Math.sin(Date.now() * 0.04) * 0.15;
-        } else if (damaged) {
-          ctx.shadowColor = '#ff4400'; ctx.shadowBlur = 20;
+          ctx.shadowColor = '#ff2200'; ctx.shadowBlur = 50;
+          ctx.globalAlpha = 0.7 + Math.sin(Date.now() * 0.06) * 0.3;
+        } else if (flashOn) {
+          ctx.shadowColor = '#ff2200'; ctx.shadowBlur = 30;
+          ctx.globalAlpha = 0.5 + Math.sin(Date.now() * 0.08) * 0.5;
         } else {
           ctx.shadowColor = '#ff8800'; ctx.shadowBlur = 12;
         }
         ctx.drawImage(mineImg, -sz / 2, -sz / 2, sz, sz);
         ctx.globalAlpha = 1;
       } else {
-        // fallback: simple circle
-        ctx.shadowColor = isCharging ? '#fff' : '#ff8800'; ctx.shadowBlur = 20;
-        ctx.fillStyle = isCharging ? '#fff' : damaged ? '#ff4400' : '#ff8800';
+        ctx.shadowColor = isCharging ? '#ff2200' : '#ff8800'; ctx.shadowBlur = 20;
+        ctx.fillStyle = isCharging ? '#ff2200' : damaged ? '#ff4400' : '#ff8800';
         ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
       }
       // HP pips
