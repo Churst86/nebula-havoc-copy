@@ -1707,6 +1707,61 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     });
     s.bullets.forEach(b => drawBullet(ctx, b, false));
     s.enemyBullets.forEach(b => drawBullet(ctx, b, true));
+    // Draw harvesters
+    s.harvesters.forEach(h => {
+      const harvImg = getSprite('Harvester');
+      ctx.save();
+      ctx.translate(h.x, h.y);
+      if (h.state === 'return' && h.carryScore > 0) {
+        ctx.shadowColor = '#ff8800'; ctx.shadowBlur = 16;
+      } else {
+        ctx.shadowColor = '#ffaa44'; ctx.shadowBlur = 8;
+      }
+      if (harvImg) {
+        ctx.drawImage(harvImg, -18, -18, 36, 36);
+      } else {
+        // Procedural: mining drill shape
+        ctx.strokeStyle = '#ff8800'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#ff880033'; ctx.fill();
+        ctx.strokeStyle = '#ffaa44'; ctx.lineWidth = 1;
+        for (let i = 0; i < 4; i++) {
+          const a = (i / 4) * Math.PI * 2;
+          ctx.beginPath(); ctx.moveTo(Math.cos(a) * 10, Math.sin(a) * 10); ctx.lineTo(Math.cos(a) * 16, Math.sin(a) * 16); ctx.stroke();
+        }
+      }
+      if (h.carryScore > 0) {
+        ctx.fillStyle = '#ffdd00'; ctx.font = 'bold 8px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        ctx.fillText(`+${h.carryScore}`, 0, 12);
+      }
+      ctx.restore();
+    });
+
+    // Draw drones
+    s.drones.forEach(d => {
+      const droneImg = getSprite('Drone');
+      ctx.save();
+      ctx.translate(d.x, d.y);
+      ctx.shadowColor = '#ffdd00'; ctx.shadowBlur = d.state === 'fetch' ? 16 : 8;
+      if (droneImg) {
+        ctx.drawImage(droneImg, -16, -16, 32, 32);
+      } else {
+        // Procedural: small round drone
+        ctx.strokeStyle = '#ffdd00'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#ffdd0022'; ctx.fill();
+        ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI * 2); ctx.fillStyle = '#ffdd00'; ctx.fill();
+        // Rotors
+        ctx.strokeStyle = '#ffaa00'; ctx.lineWidth = 1;
+        [[-12, -12], [12, -12], [-12, 12], [12, 12]].forEach(([rx, ry]) => {
+          ctx.save(); ctx.translate(rx, ry);
+          ctx.beginPath(); ctx.ellipse(0, 0, 5, 2, d.orbitAngle * 3, 0, Math.PI * 2); ctx.stroke();
+          ctx.restore();
+        });
+      }
+      ctx.restore();
+    });
+
     drawPlayer(ctx, p, s.wingmen, s.shieldHp, s.enemies, s.invincibleTimer, keys, s.starInvincibleTimer, s.superWingman, s.superWingmen);
 
     const reverseTier = s.powerups.reverse || 0;
