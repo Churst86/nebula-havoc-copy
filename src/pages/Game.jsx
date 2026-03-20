@@ -45,6 +45,8 @@ export default function Game() {
   const [bossWarning, setBossWarning] = useState(null);
   const [shopUpgrades, setShopUpgrades] = useState(() => loadShopUpgrades());
   const [showPauseOptions, setShowPauseOptions] = useState(false);
+  const [showDocking, setShowDocking] = useState(false);
+  const [showShop, setShowShop] = useState(false);
   const scoreRef = useRef(0);
   const waveRef = useRef(1);
 
