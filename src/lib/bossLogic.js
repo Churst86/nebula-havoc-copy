@@ -39,60 +39,58 @@ export function spawnBoss(W, wave, hpMult) {
 // ─── Boss Movement ────────────────────────────────────────────────────────────
 export function updateBossMovement(e, W, H) {
   const bt = e.tier || 1;
-  // Slower phase increment = smoother, less jittery
-  e.phase = (e.phase || 0) + (bt >= 4 ? 0.016 : bt >= 3 ? 0.014 : bt >= 2 ? 0.010 : 0.008);
-  const targetY = bt >= 3 ? H * 0.28 : H * 0.20;
+  e.phase = (e.phase || 0) + (bt >= 4 ? 0.012 : bt >= 3 ? 0.010 : bt >= 2 ? 0.008 : 0.006);
+  const targetY = bt >= 3 ? H * 0.25 : H * 0.18;
 
-  // Smooth slide down from top
-  if (e.y < targetY) {
-    e.y += (targetY - e.y) * 0.04 + 0.5;
-    e.x += (W / 2 - e.x) * 0.05;
+  // Smooth slide down from top — don't return early, just lerp
+  if (e.y < targetY - 10) {
+    e.y += Math.min((targetY - e.y) * 0.03 + 0.4, 6);
+    e.x += (W / 2 - e.x) * 0.04;
     return;
   }
 
   if (e._charging) {
-    e.x += e._chargeDx * 7;
-    e.y += e._chargeDy * 7;
+    e.x += e._chargeDx * 5;
+    e.y += e._chargeDy * 5;
     e._chargeDuration = (e._chargeDuration || 0) - 1;
     if (e._chargeDuration <= 0) {
       e._charging = false;
-      e._chargeTimer = 200;
+      e._chargeTimer = 240;
     }
-    // Smooth bounce off walls instead of hard stop
     if (e.x < 60) { e.x = 60; e._chargeDx = Math.abs(e._chargeDx); }
     if (e.x > W - 60) { e.x = W - 60; e._chargeDx = -Math.abs(e._chargeDx); }
     if (e.y < 30) { e.y = 30; e._chargeDy = Math.abs(e._chargeDy); }
-    if (e.y > H * 0.72) { e.y = H * 0.72; e._chargeDy = -Math.abs(e._chargeDy); e._charging = false; e._chargeTimer = 200; }
+    if (e.y > H * 0.55) { e.y = H * 0.55; e._chargeDy = -Math.abs(e._chargeDy); e._charging = false; e._chargeTimer = 240; }
     return;
   }
 
-  // Compute desired position
+  // Compute desired — keep boss in upper portion of screen only
+  const margin = W * 0.20;
   let desiredX, desiredY;
   if (bt === 1) {
-    desiredX = W / 2 + Math.sin(e.phase) * W * 0.30;
-    desiredY = targetY;
+    desiredX = W / 2 + Math.sin(e.phase) * (W * 0.28);
+    desiredY = targetY + Math.sin(e.phase * 1.3) * 30;
   } else if (bt === 2) {
-    desiredX = W / 2 + Math.sin(e.phase) * W * 0.35;
-    desiredY = targetY + Math.sin(e.phase * 2) * 35;
+    desiredX = W / 2 + Math.sin(e.phase) * (W * 0.32);
+    desiredY = targetY + Math.sin(e.phase * 1.5) * 40;
   } else if (bt === 3) {
-    desiredX = W / 2 + Math.cos(e.phase) * (W * 0.38);
-    desiredY = targetY + Math.sin(e.phase * 2) * (H * 0.22);
+    desiredX = W / 2 + Math.cos(e.phase) * (W * 0.32);
+    desiredY = targetY + Math.sin(e.phase * 1.7) * 50;
   } else if (bt === 4) {
-    desiredX = W / 2 + Math.cos(e.phase) * (W * 0.26);
-    desiredY = targetY + Math.sin(e.phase * 2) * 45;
+    desiredX = W / 2 + Math.cos(e.phase) * (W * 0.24);
+    desiredY = targetY + Math.sin(e.phase * 2) * 40;
   } else {
-    desiredX = W / 2 + Math.cos(e.phase) * (W * 0.30);
-    desiredY = targetY + Math.sin(e.phase * 2) * 55;
+    desiredX = W / 2 + Math.cos(e.phase) * (W * 0.28);
+    desiredY = targetY + Math.sin(e.phase * 2) * 50;
   }
 
-  // Lerp toward desired — smooth out any snapping
-  const lerpSpeed = 0.08;
-  e.x += (desiredX - e.x) * lerpSpeed;
-  e.y += (desiredY - e.y) * lerpSpeed;
+  // Clamp desired to safe zone — boss stays in top 40% of screen
+  desiredX = Math.max(margin, Math.min(W - margin, desiredX));
+  desiredY = Math.max(targetY - 20, Math.min(H * 0.42, desiredY));
 
-  // Hard clamp as safety net
-  e.x = Math.max(50, Math.min(W - 50, e.x));
-  e.y = Math.max(30, Math.min(H * 0.75, e.y));
+  // Smooth lerp
+  e.x += (desiredX - e.x) * 0.05;
+  e.y += (desiredY - e.y) * 0.05;
 }
 
 // ─── Tier 1 (Wave 5): Rapid basic shots + occasional missiles ────────────────
