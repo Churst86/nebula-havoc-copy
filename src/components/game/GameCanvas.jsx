@@ -1522,14 +1522,44 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
 
     if (s.invincibleTimer > 0) s.invincibleTimer--;
 
+    // Invincible powerdown warning — play sound when ~60 frames left
+    if (s.starInvincibleTimer === 60) {
+      sounds.invinciblePowerdown && sounds.invinciblePowerdown();
+    }
+
     s.particles.forEach(pt => {
-      if (pt.shockwave) { pt.shockwaveR += 4; pt.alpha -= 0.04; }
-      else { pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.04; pt.alpha -= 0.025; }
+      if (pt.mineExplosion) {
+        pt.mineExplosionTimer = (pt.mineExplosionTimer || 0) - 1;
+        pt.alpha = Math.max(0, pt.mineExplosionTimer / 40);
+      } else if (pt.shockwave) {
+        pt.shockwaveR += 4; pt.alpha -= 0.04;
+      } else {
+        pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.04; pt.alpha -= 0.025;
+      }
     });
     s.particles = s.particles.filter(pt => pt.alpha > 0);
     if (s.particles.length > 500) s.particles = s.particles.slice(-500);
 
-    s.particles.forEach(pt => drawParticle(ctx, pt));
+    s.particles.forEach(pt => {
+      if (pt.mineExplosion) {
+        const mineExpImg = getSprite('MineExplosion');
+        const sz = 120 + (40 - (pt.mineExplosionTimer || 0)) * 3;
+        if (mineExpImg) {
+          ctx.save();
+          ctx.globalAlpha = pt.alpha;
+          ctx.drawImage(mineExpImg, pt.x - sz / 2, pt.y - sz / 2, sz, sz);
+          ctx.restore();
+        } else {
+          ctx.save();
+          ctx.globalAlpha = pt.alpha * 0.6;
+          ctx.strokeStyle = '#ff8800'; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.arc(pt.x, pt.y, sz / 2, 0, Math.PI * 2); ctx.stroke();
+          ctx.restore();
+        }
+      } else {
+        drawParticle(ctx, pt);
+      }
+    });
     drawPiledCells(ctx, s.piledCells);
     s.blocks.forEach(b => drawBlock(ctx, b));
     s.powerupItems.forEach(item => drawPowerupItem(ctx, item));
