@@ -36,6 +36,7 @@ export default function Game() {
   const [continuesLeft, setContinuesLeft] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [settings, setSettings] = useState(() => loadSettings());
+  const [bossWarning, setBossWarning] = useState(null);
   const [showPauseOptions, setShowPauseOptions] = useState(false);
   const scoreRef = useRef(0);
   const waveRef = useRef(1);
