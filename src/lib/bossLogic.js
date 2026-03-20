@@ -39,54 +39,60 @@ export function spawnBoss(W, wave, hpMult) {
 // ─── Boss Movement ────────────────────────────────────────────────────────────
 export function updateBossMovement(e, W, H) {
   const bt = e.tier || 1;
-  e.phase = (e.phase || 0) + (bt >= 4 ? 0.022 : bt >= 3 ? 0.020 : bt >= 2 ? 0.013 : 0.01);
-  const targetY = bt >= 3 ? H * 0.30 : H * 0.22;
+  // Slower phase increment = smoother, less jittery
+  e.phase = (e.phase || 0) + (bt >= 4 ? 0.016 : bt >= 3 ? 0.014 : bt >= 2 ? 0.010 : 0.008);
+  const targetY = bt >= 3 ? H * 0.28 : H * 0.20;
 
-  // Slide down from top smoothly
+  // Smooth slide down from top
   if (e.y < targetY) {
-    e.y = Math.min(e.y + 1.5, targetY);
-    e.x = W / 2;
+    e.y += (targetY - e.y) * 0.04 + 0.5;
+    e.x += (W / 2 - e.x) * 0.05;
     return;
   }
 
   if (e._charging) {
-    e.x += e._chargeDx * 8;
-    e.y += e._chargeDy * 8;
+    e.x += e._chargeDx * 7;
+    e.y += e._chargeDy * 7;
     e._chargeDuration = (e._chargeDuration || 0) - 1;
     if (e._chargeDuration <= 0) {
       e._charging = false;
-      e._chargeTimer = 180;
+      e._chargeTimer = 200;
     }
-    if (e.x < 60) { e.x = 60; e._charging = false; e._chargeTimer = 120; }
-    if (e.x > W - 60) { e.x = W - 60; e._charging = false; e._chargeTimer = 120; }
-    if (e.y < 20) { e.y = 20; e._charging = false; e._chargeTimer = 120; }
-    if (e.y > H * 0.75) { e.y = H * 0.75; e._charging = false; e._chargeTimer = 120; }
+    // Smooth bounce off walls instead of hard stop
+    if (e.x < 60) { e.x = 60; e._chargeDx = Math.abs(e._chargeDx); }
+    if (e.x > W - 60) { e.x = W - 60; e._chargeDx = -Math.abs(e._chargeDx); }
+    if (e.y < 30) { e.y = 30; e._chargeDy = Math.abs(e._chargeDy); }
+    if (e.y > H * 0.72) { e.y = H * 0.72; e._chargeDy = -Math.abs(e._chargeDy); e._charging = false; e._chargeTimer = 200; }
     return;
   }
 
+  // Compute desired position
+  let desiredX, desiredY;
   if (bt === 1) {
-    e.x += Math.sin(e.phase) * 2;
+    desiredX = W / 2 + Math.sin(e.phase) * W * 0.30;
+    desiredY = targetY;
   } else if (bt === 2) {
-    e.x += Math.sin(e.phase) * 3;
-    e.y = targetY + Math.sin(e.phase * 2) * 30;
+    desiredX = W / 2 + Math.sin(e.phase) * W * 0.35;
+    desiredY = targetY + Math.sin(e.phase * 2) * 35;
   } else if (bt === 3) {
-    // Tier 3: wide sweeping figure-8 across full stage + vertical movement
-    e.x = W / 2 + Math.cos(e.phase) * (W * 0.42);
-    e.y = targetY + Math.sin(e.phase * 2) * (H * 0.28);
-    // Clamp safely
-    e.x = Math.max(60, Math.min(W - 60, e.x));
-    e.y = Math.max(30, Math.min(H * 0.75, e.y));
+    desiredX = W / 2 + Math.cos(e.phase) * (W * 0.38);
+    desiredY = targetY + Math.sin(e.phase * 2) * (H * 0.22);
   } else if (bt === 4) {
-    e.x = W / 2 + Math.cos(e.phase) * (W * 0.28);
-    e.y = targetY + Math.sin(e.phase * 2) * 40;
+    desiredX = W / 2 + Math.cos(e.phase) * (W * 0.26);
+    desiredY = targetY + Math.sin(e.phase * 2) * 45;
   } else {
-    // tier 5: figure-8 wide sweep
-    e.x = W / 2 + Math.cos(e.phase) * (W * 0.32);
-    e.y = targetY + Math.sin(e.phase * 2) * 50;
+    desiredX = W / 2 + Math.cos(e.phase) * (W * 0.30);
+    desiredY = targetY + Math.sin(e.phase * 2) * 55;
   }
 
-  if (e.x < 50) { e.x = 50; e.vx = Math.abs(e.vx); }
-  if (e.x > W - 50) { e.x = W - 50; e.vx = -Math.abs(e.vx); }
+  // Lerp toward desired — smooth out any snapping
+  const lerpSpeed = 0.08;
+  e.x += (desiredX - e.x) * lerpSpeed;
+  e.y += (desiredY - e.y) * lerpSpeed;
+
+  // Hard clamp as safety net
+  e.x = Math.max(50, Math.min(W - 50, e.x));
+  e.y = Math.max(30, Math.min(H * 0.75, e.y));
 }
 
 // ─── Tier 1 (Wave 5): Rapid basic shots + occasional missiles ────────────────
