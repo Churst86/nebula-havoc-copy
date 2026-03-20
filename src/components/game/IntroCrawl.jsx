@@ -86,7 +86,7 @@ export default function IntroCrawl({ onDone }) {
           <div style={{
             color: '#ffe87a',
             fontFamily: 'Georgia, serif',
-            fontSize: 'clamp(1.2rem, 3vw, 1.9rem)',
+            fontSize: 'clamp(2.4rem, 6vw, 3.8rem)',
             lineHeight: 2.1,
             textAlign: 'justify',
             textShadow: '0 0 24px rgba(255,232,122,0.7)',
