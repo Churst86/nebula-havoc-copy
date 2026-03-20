@@ -162,16 +162,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     const enemies = [];
 
     if (wave % 5 === 0) {
-      const bossHp = Math.round((20 + wave * 5) * hpMult);
-      const bossGuns = ['spread', 'laser', 'photon', 'bounce', 'missile', 'shotgun'];
-      const bossGun = bossGuns[Math.floor(Math.random() * bossGuns.length)];
-      const bossTier = Math.floor(wave / 5); // 1, 2, 3, 4...
-      enemies.push({
-        type: 'boss', x: W / 2, y: -60, w: 45, h: 45,
-        hp: bossHp, maxHp: bossHp, vx: 1.8, vy: 0.4, fireTimer: 20, phase: 0,
-        gun: bossGun, tier: bossTier, _wave: wave,
-      });
+      // Start with warning — boss spawns after warning expires
+      s.bossWarning = createBossWarning(wave);
+      if (onBossWarning) onBossWarning(s.bossWarning);
       sounds.startBossMusic();
+      // Don't push the boss yet — it will be pushed when warning expires
     } else {
       sounds.startWaveMusic(wave);
     }
