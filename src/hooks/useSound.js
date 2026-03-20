@@ -499,7 +499,8 @@ export const sounds = {
   // Called by GameCanvas on every wave start
   startWaveMusic(wave) { startWaveMusic(wave); },
   startBossMusic()     { startBossMusic(); },
-  stopBossMusic()      { stopAllBg(); },
+  stopBossMusic()      { /* keep playing through continue screen */ },
+  stopBossMusicOnClear() { stopAllBg(); }, // only stop when boss is actually killed
   stopAllMusic()       { stopAllBg(); },
 
   // External track helpers for screens
