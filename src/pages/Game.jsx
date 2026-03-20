@@ -217,8 +217,8 @@ export default function Game() {
         onBossWarning={setBossWarning}
         continuesLeft={continuesLeft}
         onContinueUsed={handleContinueUsed}
-        isPaused={isPaused}
-        difficultyConfig={difficultyConfig}
+        isPaused={isPaused || showDocking || showShop}
+          difficultyConfig={difficultyConfig}
         gameSpeed={settings.gameSpeed ?? 30}
         carryOverPowerups={carryOverPowerups}
       />
