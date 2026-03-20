@@ -221,6 +221,7 @@ export default function Game() {
           difficultyConfig={difficultyConfig}
         gameSpeed={settings.gameSpeed ?? 30}
         carryOverPowerups={carryOverPowerups}
+        shopUpgrades={shopUpgrades}
       />
 
       <BossWarning warning={bossWarning} />
