@@ -1263,6 +1263,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     if ((s.powerups.missile || 0) > 0) {
       updateMissiles(s.bullets, s.enemies, W, H);
     }
+    // Update boss homing bullets
+    updateHomingBullets(s.enemyBullets);
 
     // Move bullets
     s.bullets = s.bullets.filter(b => {
