@@ -135,6 +135,19 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
 
       {/* Lives + Continues — bottom-right */}
       <div className="absolute bottom-6 right-6 flex flex-col items-end gap-2">
+        {/* Armor bar above hearts */}
+        {maxArmorHp > 0 && (
+          <div className="w-full px-1" style={{ minWidth: 120 }}>
+            <div className="flex items-center justify-between mb-0.5">
+              <span className="text-xs font-bold" style={{ color: '#4488ff' }}>🛡 ARMOR</span>
+              <span className="text-xs font-bold" style={{ color: '#4488ff' }}>{armorHp}/{maxArmorHp}</span>
+            </div>
+            <div className="rounded-full overflow-hidden" style={{ height: 6, background: 'rgba(0,0,0,0.5)', border: '1px solid #4488ff44' }}>
+              <div className="h-full rounded-full transition-all duration-200"
+                style={{ width: `${maxArmorHp > 0 ? (armorHp / maxArmorHp) * 100 : 0}%`, background: armorHp > maxArmorHp * 0.5 ? '#4488ff' : armorHp > maxArmorHp * 0.25 ? '#ffaa44' : '#ff4444', boxShadow: '0 0 6px #4488ff' }} />
+            </div>
+          </div>
+        )}
         <div className="flex items-center gap-1.5 flex-wrap justify-end max-w-40 px-3 py-1.5 rounded-lg" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,80,80,0.25)' }}>
           {Array.from({ length: maxLives || 3 }).map((_, i) => (
             <Heart key={i}
