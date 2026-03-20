@@ -36,12 +36,23 @@ const POWERUP_ICONS = {
   rapidfire: '◇',
 };
 
-export default function GameHUD({ score, lives, maxLives, wave, activePowerup, continuesLeft, isPaused, onPauseToggle, onOpenOptions, blockScore }) {
+const SHOP_COLORS = {
+  armor:     '#4488ff',
+  repair:    '#44ffaa',
+  drone:     '#ffdd00',
+  harvester: '#ff8800',
+};
+const SHOP_ICONS = {
+  armor: '🛡', repair: '🔧', drone: '🤖', harvester: '⛏',
+};
+
+export default function GameHUD({ score, lives, maxLives, wave, activePowerup, continuesLeft, isPaused, onPauseToggle, onOpenOptions, blockScore, shopUpgrades }) {
   const powerups = activePowerup || {};
   const shieldHp = powerups.shieldHp || 0;
   const starInvincible = powerups.starInvincible || false;
   const gunKeys = GUN_POWERUPS.filter(k => (powerups[k] || 0) > 0);
   const utilityKeys = ['speed', 'rapidfire', 'wingman', 'shield'].filter(k => (powerups[k] || 0) > 0);
+  const shopKeys = shopUpgrades ? Object.entries(shopUpgrades).filter(([, v]) => v > 0) : [];
 
   return (
     <div className="absolute inset-0 z-20 pointer-events-none">
@@ -140,6 +151,18 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
           </div>
         )}
       </div>
+
+      {/* Shop upgrades — bottom-left above score */}
+      {shopKeys.length > 0 && (
+        <div className="absolute bottom-20 left-6 flex flex-col gap-1" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.8))' }}>
+          {shopKeys.map(([key, lvl]) => (
+            <div key={key} className="text-xs font-bold px-2 py-0.5 rounded-full"
+              style={{ color: SHOP_COLORS[key], border: `1px solid ${SHOP_COLORS[key]}`, background: `${SHOP_COLORS[key]}22` }}>
+              {SHOP_ICONS[key]} {key.toUpperCase()} Lv{lvl}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Pause + Options buttons — bottom-center */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto flex gap-2">
