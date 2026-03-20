@@ -836,8 +836,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       return;
     }
     lastTimeRef.current = timestamp;
-    const s = stateRef.current;
-    if (!s.running) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
