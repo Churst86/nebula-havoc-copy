@@ -306,7 +306,12 @@ export default function Game() {
           score={score}
           wave={wave}
           onRestart={handleStart}
-          onReturnToTitle={() => setGameState('start')}
+          onReturnToTitle={() => {
+            const resetUpgrades = { armor: 0, repair: 0, drone: 0, harvester: 0 };
+            setShopUpgrades(resetUpgrades);
+            saveShopUpgrades(resetUpgrades);
+            setGameState('start');
+          }}
           isNewScore={isHighScore(score)}
         />
       )}
