@@ -1726,6 +1726,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onL
     s.blocks.forEach(b => drawBlock(ctx, b));
     s.powerupItems.forEach(item => drawPowerupItem(ctx, item));
     s.enemies.forEach(e => drawEnemy(ctx, e));
+    // Draw boss special effects on top of sprites
+    s.enemies.forEach(e => {
+      if (e.type !== 'boss') return;
+      const bt = e.tier || 1;
+      if (bt === 3) { drawBossSweepLaser(ctx, e); drawBossSuperLaser(ctx, e); }
+      if (bt === 4) drawBossAnchor(ctx, e);
+    });
     s.bullets.forEach(b => drawBullet(ctx, b, false));
     s.enemyBullets.forEach(b => drawBullet(ctx, b, true));
     drawPlayer(ctx, p, s.wingmen, s.shieldHp, s.enemies, s.invincibleTimer, keys, s.starInvincibleTimer, s.superWingman, s.superWingmen);
