@@ -139,6 +139,22 @@ export default function Game() {
     saveSettings(next);
   }, []);
 
+  const handleShopBuy = useCallback((upgradeId) => {
+    setShopUpgrades(prev => {
+      const newUpgrades = { ...prev, [upgradeId]: (prev[upgradeId] || 0) + 1 };
+      saveShopUpgrades(newUpgrades);
+      return newUpgrades;
+    });
+    // Also deduct from blockScore — stored in ref for canvas, update React state
+    setBlockScore(prev => {
+      // Cost calculation mirrors shopUpgrades.js
+      const currentLevel = shopUpgrades[upgradeId] || 0;
+      const COSTS = { armor: (l) => (l + 1) * 150, repair: (l) => (l + 1) * 120, drone: (l) => (l + 1) * 200, harvester: (l) => (l + 1) * 180 };
+      const cost = COSTS[upgradeId] ? COSTS[upgradeId](currentLevel) : 0;
+      return Math.max(0, prev - cost);
+    });
+  }, [shopUpgrades]);
+
   // Enter key toggles pause during gameplay
   React.useEffect(() => {
     const onKey = (e) => {
