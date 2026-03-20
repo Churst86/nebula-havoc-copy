@@ -474,41 +474,33 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.fillStyle=c; ctx.font='bold 11px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillText(DROPPER_LABELS[e.dropType]||'★',0,1);
     } else if (e.type === 'mine') {
-      const damaged = e.hp < e.maxHp;
+      const mineImg = getSprite('Mine');
       const isCharging = e._charging;
-      const pulse = 0.7 + Math.sin(Date.now() * (damaged ? 0.022 : 0.008)) * 0.3;
-      const mineColor = isCharging ? '#ffffff' : damaged ? `rgba(255,${Math.floor(80 + pulse * 80)},0,1)` : '#ff8800';
-      ctx.shadowColor = mineColor; ctx.shadowBlur = isCharging ? 40 : 16 + pulse * 10;
-      const SPIKES = 8;
-      const innerR = 12;
-      const outerR = damaged ? 20 + pulse * 3 : 18;
-      ctx.fillStyle = isCharging ? 'rgba(255,255,200,0.95)' : damaged ? `rgba(255,${Math.floor(60 + pulse * 60)},0,0.9)` : 'rgba(255,120,0,0.9)';
-      ctx.beginPath();
-      for (let i = 0; i < SPIKES * 2; i++) {
-        const angle = (i / (SPIKES * 2)) * Math.PI * 2 - Math.PI / 2;
-        const r = i % 2 === 0 ? outerR : innerR;
-        i === 0 ? ctx.moveTo(Math.cos(angle) * r, Math.sin(angle) * r)
-                : ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+      const damaged = e.hp < e.maxHp;
+      const sz = 64;
+      if (mineImg) {
+        if (isCharging) {
+          ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 40;
+          ctx.globalAlpha = 0.85 + Math.sin(Date.now() * 0.04) * 0.15;
+        } else if (damaged) {
+          ctx.shadowColor = '#ff4400'; ctx.shadowBlur = 20;
+        } else {
+          ctx.shadowColor = '#ff8800'; ctx.shadowBlur = 12;
+        }
+        ctx.drawImage(mineImg, -sz / 2, -sz / 2, sz, sz);
+        ctx.globalAlpha = 1;
+      } else {
+        // fallback: simple circle
+        ctx.shadowColor = isCharging ? '#fff' : '#ff8800'; ctx.shadowBlur = 20;
+        ctx.fillStyle = isCharging ? '#fff' : damaged ? '#ff4400' : '#ff8800';
+        ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
       }
-      ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = mineColor; ctx.lineWidth = 1.5; ctx.stroke();
-      if (!isCharging) {
-        ctx.strokeStyle = '#ffdd00'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(2, -18); ctx.quadraticCurveTo(10, -28, 6, -34); ctx.stroke();
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath(); ctx.arc(6, -34, 2.5, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#ffff00';
-        ctx.beginPath(); ctx.arc(6, -34, 1.5, 0, Math.PI * 2); ctx.fill();
-      }
+      // HP pips
       for (let hi = 0; hi < e.hp; hi++) {
         const a = (hi / 3) * Math.PI * 2 - Math.PI / 2;
         ctx.fillStyle = isCharging ? '#ff2200' : '#ff8800';
-        ctx.beginPath(); ctx.arc(Math.cos(a) * 8, Math.sin(a) * 8, 3, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(Math.cos(a) * 10, Math.sin(a) * 10, 3, 0, Math.PI * 2); ctx.fill();
       }
-      ctx.fillStyle = isCharging ? '#ff2200' : damaged ? '#fff' : '#330000';
-      ctx.font = `bold ${isCharging ? 13 : damaged ? 13 : 11}px sans-serif`;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(isCharging ? '!!!' : damaged ? '>_<' : '^_^', 0, 1);
     } else if (e.type === 'eater') {
       const isMini = e._mini;
       const isEating = e._eating;
