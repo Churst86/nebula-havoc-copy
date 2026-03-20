@@ -1857,6 +1857,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         s.shieldHp = shieldHp;
         s.lockedPowerups = GUN_TYPES.filter(g => (s.powerups[g] || 0) > 0);
       }
+      s.armorHp = (shopUpgradesRef.current?.armor || 0) * 3;
+      s.harvesters = [];
+      s.drones = [];
       s.running = true;
       spawnWave(W, s);
       lastTimeRef.current = performance.now();
