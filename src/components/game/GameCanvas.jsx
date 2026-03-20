@@ -1671,6 +1671,12 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           // just continue and spawn the boss wave
         }
         s.waveTimer = 0;
+        // Restore some armor each wave (repair upgrade)
+        const repairLevel = shopUpgradesRef.current?.repair || 0;
+        if (repairLevel > 0) {
+          const maxArmor = (shopUpgradesRef.current?.armor || 0) * 3;
+          s.armorHp = Math.min(s.armorHp + repairLevel, maxArmor);
+        }
         const survivingPersistent = s.enemies.filter(e => e.type === 'dropper' || e.type === 'eater');
         spawnWave(W, s);
         s.enemies.push(...survivingPersistent);
