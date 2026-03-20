@@ -494,9 +494,11 @@ export const sounds = {
   stopAllMusic()       { stopAllBg(); },
 
   // External track helpers for screens
-  playTitleMusic()   { playExternalAudio('title',    true);  },
+  playTitleMusic()   { playExternalAudio('title', true);  },
   playGameOverMusic(){ playExternalAudio('gameover', false); },
   playWinMusic()     { playExternalAudio('win',      false); },
+  // Boss music continues through continue screen — don't stop on death
+  stopBossMusicOnClear() { stopAllBg(); },
 
   // Music on/off toggle
   setMusicEnabled(enabled) {
