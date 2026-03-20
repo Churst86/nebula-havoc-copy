@@ -79,6 +79,10 @@ export default function Game() {
     if (!keepPowerups) {
       setCarryOverPowerups(null);
       setActivePowerup({});
+      // Reset shop upgrades on fresh game (game over), but not on difficulty progression
+      const resetUpgrades = { armor: 0, repair: 0, drone: 0, harvester: 0 };
+      setShopUpgrades(resetUpgrades);
+      saveShopUpgrades(resetUpgrades);
     }
     setContinuesLeft(0);
     setShowDocking(false);
