@@ -80,6 +80,8 @@ export default function Game() {
       setActivePowerup({});
     }
     setContinuesLeft(0);
+    setShowDocking(false);
+    setShowShop(false);
     setGameState('playing');
   }, []);
 
