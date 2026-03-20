@@ -1178,6 +1178,126 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       }
     });
 
+    // ─── In-stage Harvesters (shop upgrade) ──────────────────────────────────
+    const harvesterLevel = shopUpgradesRef.current?.harvester || 0;
+    const harvesterCount = Math.min(harvesterLevel, 3);
+    while (s.harvesters.length < harvesterCount) {
+      s.harvesters.push({ x: p.x + (s.harvesters.length % 2 === 0 ? -60 : 60), y: p.y + 30, angle: Math.random() * Math.PI * 2, state: 'orbit', orbitAngle: (s.harvesters.length / harvesterCount) * Math.PI * 2, targetBlock: null, targetCell: null, carryScore: 0 });
+    }
+    while (s.harvesters.length > harvesterCount) s.harvesters.pop();
+    const harvSpeed = harvesterLevel <= 3 ? 1.5 : harvesterLevel <= 6 ? 2.5 : 3.5;
+    s.harvesters.forEach(h => {
+      if (h.state === 'orbit') {
+        // Slowly orbit the player looking for blocks
+        h.orbitAngle += 0.04;
+        const orbitR = 80;
+        const tx = p.x + Math.cos(h.orbitAngle) * orbitR;
+        const ty = p.y + Math.sin(h.orbitAngle) * orbitR;
+        h.x += (tx - h.x) * 0.08; h.y += (ty - h.y) * 0.08;
+        // Find a block to target
+        let best = null, bestDist = Infinity;
+        s.blocks.forEach(block => {
+          if (block.dead || block.invulnerable || block._harvesterClaimed) return;
+          const cx = block.x + BLOCK_SIZE, cy = block.y + BLOCK_SIZE / 2;
+          const d = Math.hypot(cx - h.x, cy - h.y);
+          if (d < bestDist) { bestDist = d; best = block; }
+        });
+        if (!best) {
+          s.piledCells.forEach((cell, idx) => {
+            const cx = cell.x + BLOCK_SIZE / 2, cy = cell.y + BLOCK_SIZE / 2;
+            const d = Math.hypot(cx - h.x, cy - h.y);
+            if (d < bestDist) { bestDist = d; best = null; h.targetCell = idx; }
+          });
+        }
+        if (best) { best._harvesterClaimed = true; h.targetBlock = best; h.state = 'harvest'; }
+        else if (bestDist < 200) { h.state = 'harvest'; }
+      } else if (h.state === 'harvest') {
+        if (h.targetBlock && !h.targetBlock.dead) {
+          const cx = h.targetBlock.x + BLOCK_SIZE, cy = h.targetBlock.y + BLOCK_SIZE / 2;
+          const dx = cx - h.x, dy = cy - h.y, len = Math.hypot(dx, dy) || 1;
+          h.x += (dx / len) * harvSpeed * 1.5; h.y += (dy / len) * harvSpeed * 1.5;
+          if (len < 12) {
+            h.targetBlock.hp -= 0.08;
+            if (h.targetBlock.hp <= 0) {
+              spawnExplosion(s, h.targetBlock.x, h.targetBlock.y, '#ff8800', 5);
+              h.targetBlock.dead = true; h.carryScore += 15; h.targetBlock = null;
+              h.state = 'return';
+            }
+          }
+        } else if (h.targetCell !== null && s.piledCells[h.targetCell]) {
+          const cell = s.piledCells[h.targetCell];
+          const cx = cell.x + BLOCK_SIZE / 2, cy = cell.y + BLOCK_SIZE / 2;
+          const dx = cx - h.x, dy = cy - h.y, len = Math.hypot(dx, dy) || 1;
+          h.x += (dx / len) * harvSpeed * 1.5; h.y += (dy / len) * harvSpeed * 1.5;
+          if (len < 10) {
+            s.piledCells.splice(h.targetCell, 1); h.carryScore += 3; h.targetCell = null;
+            h.state = 'return';
+          }
+        } else { h.targetBlock = null; h.targetCell = null; h.state = 'orbit'; }
+      } else if (h.state === 'return') {
+        const dx = p.x - h.x, dy = p.y - h.y, len = Math.hypot(dx, dy) || 1;
+        h.x += (dx / len) * harvSpeed * 2; h.y += (dy / len) * harvSpeed * 2;
+        if (len < 20 && h.carryScore > 0) {
+          s.blockScore = (s.blockScore || 0) + h.carryScore;
+          if (onBlockScoreChange) onBlockScoreChange(s.blockScore);
+          h.carryScore = 0; h.state = 'orbit';
+        }
+      }
+    });
+
+    // ─── In-stage Drones (shop upgrade) ──────────────────────────────────────
+    const droneLevel = shopUpgradesRef.current?.drone || 0;
+    const droneCount = Math.min(droneLevel, 3);
+    while (s.drones.length < droneCount) {
+      s.drones.push({ x: p.x + (s.drones.length % 2 === 0 ? 50 : -50), y: p.y, orbitAngle: (s.drones.length / droneCount) * Math.PI * 2 + Math.PI * 0.5, state: 'orbit', target: null });
+    }
+    while (s.drones.length > droneCount) s.drones.pop();
+    s.drones.forEach(d => {
+      if (d.state === 'orbit') {
+        d.orbitAngle += 0.025;
+        const orbitR = 60 + s.drones.indexOf(d) * 20;
+        const tx = p.x + Math.cos(d.orbitAngle) * orbitR;
+        const ty = p.y + Math.sin(d.orbitAngle) * orbitR;
+        d.x += (tx - d.x) * 0.1; d.y += (ty - d.y) * 0.1;
+        // Look for dropper or powerup item nearby
+        let best = null, bestDist = 999;
+        s.enemies.forEach(e => {
+          if (e.type !== 'dropper') return;
+          const dist = Math.hypot(e.x - d.x, e.y - d.y);
+          if (dist < bestDist) { bestDist = dist; best = { isDropper: true, ref: e }; }
+        });
+        s.powerupItems.forEach((item, idx) => {
+          const dist = Math.hypot(item.x - d.x, item.y - d.y);
+          if (dist < bestDist) { bestDist = dist; best = { isPowerup: true, idx }; }
+        });
+        if (best) { d.target = best; d.state = 'fetch'; }
+      } else if (d.state === 'fetch') {
+        let tx, ty, valid = false;
+        if (d.target.isDropper && d.target.ref && !d.target.ref.dead) {
+          tx = d.target.ref.x; ty = d.target.ref.y; valid = true;
+        } else if (d.target.isPowerup) {
+          const item = s.powerupItems[d.target.idx];
+          if (item) { tx = item.x; ty = item.y; valid = true; }
+        }
+        if (!valid) { d.target = null; d.state = 'orbit'; return; }
+        const dx = tx - d.x, dy = ty - d.y, len = Math.hypot(dx, dy) || 1;
+        d.x += (dx / len) * 4; d.y += (dy / len) * 4;
+        if (len < 16) {
+          if (d.target.isDropper) {
+            const dropper = d.target.ref;
+            dropper.dead = true; sounds.killDropper && sounds.killDropper();
+            s.powerupItems.push({ x: dropper.x, y: dropper.y, type: dropper.dropType, angle: 0 });
+            d.target = { isPowerup: true, idx: s.powerupItems.length - 1 };
+          } else {
+            // Carry powerup to player
+            const item = s.powerupItems[d.target.idx];
+            if (item) { item.x = p.x; item.y = p.y; } // teleport to player to trigger collection
+            d.target = null; d.state = 'orbit';
+          }
+        }
+      }
+    });
+
     if ((s.powerups.missile || 0) > 0) updateMissiles(s.bullets, s.enemies, W, H);
     updateHomingBullets(s.enemyBullets);
 
