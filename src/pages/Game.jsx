@@ -240,6 +240,7 @@ export default function Game() {
           onPauseToggle={handlePauseToggle}
           onOpenOptions={() => setShowPauseOptions(true)}
           shopUpgrades={shopUpgrades}
+          armorHp={armorHp}
         />
       )}
 
