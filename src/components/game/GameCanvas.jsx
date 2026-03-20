@@ -1328,11 +1328,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             e.dead = true;
             if (e.type === 'mine') {
               const MINE_RADIUS = 120;
-              spawnExplosion(s, e.x, e.y, '#ff8800', 60);
-              spawnExplosion(s, e.x, e.y, '#ffdd00', 35);
-              spawnExplosion(s, e.x, e.y, '#ffffff', 15);
-              s.particles.push({ x: e.x, y: e.y, vx: 0, vy: 0, r: 10, alpha: 1, color: '#ff8800', shockwave: true, shockwaveR: 10 });
-              s.particles.push({ x: e.x, y: e.y, vx: 0, vy: 0, r: 10, alpha: 0.7, color: '#ffdd00', shockwave: true, shockwaveR: 5 });
+              // Sprite-based explosion
+              s.particles.push({ x: e.x, y: e.y, vx: 0, vy: 0, r: 10, alpha: 1, color: '#ff8800', shockwave: true, shockwaveR: 10, mineExplosion: true, mineExplosionTimer: 40 });
+              spawnExplosion(s, e.x, e.y, '#ff8800', 40);
+              spawnExplosion(s, e.x, e.y, '#ffdd00', 20);
               s.enemies.forEach(ne => {
                 if (ne === e || ne.dead) return;
                 if (Math.hypot(ne.x - e.x, ne.y - e.y) < MINE_RADIUS) {
@@ -1463,9 +1462,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         }
         if (e.type === 'mine') {
           const MINE_RADIUS = 120;
-          spawnExplosion(s, e.x, e.y, '#ff8800', 60); spawnExplosion(s, e.x, e.y, '#ffdd00', 35); spawnExplosion(s, e.x, e.y, '#ffffff', 15);
-          s.particles.push({ x: e.x, y: e.y, vx: 0, vy: 0, r: 10, alpha: 1, color: '#ff8800', shockwave: true, shockwaveR: 10 });
-          s.particles.push({ x: e.x, y: e.y, vx: 0, vy: 0, r: 10, alpha: 0.7, color: '#ffdd00', shockwave: true, shockwaveR: 5 });
+          s.particles.push({ x: e.x, y: e.y, vx: 0, vy: 0, r: 10, alpha: 1, color: '#ff8800', shockwave: true, shockwaveR: 10, mineExplosion: true, mineExplosionTimer: 40 });
+          spawnExplosion(s, e.x, e.y, '#ff8800', 40);
+          spawnExplosion(s, e.x, e.y, '#ffdd00', 20);
           s.enemies.forEach(ne => {
             if (ne === e || ne.dead) return;
             if (Math.hypot(ne.x - e.x, ne.y - e.y) < MINE_RADIUS) { ne.hp -= 2; spawnExplosion(s, ne.x, ne.y, '#ff8800', 8); if (ne.hp <= 0) ne.dead = true; }
