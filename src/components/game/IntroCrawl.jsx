@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { sounds } from '../../hooks/useSound.js';
 
 const CRAWL_TEXT = `In a galaxy far, far away the evil empire....
 
