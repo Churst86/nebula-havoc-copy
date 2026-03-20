@@ -33,12 +33,6 @@ export function spawnBoss(W, wave, hpMult) {
     _laserChargeTimer: 0,
     _laserActive: false,
     _laserAngle: 0,
-    _anchorOut: false,
-    _anchorX: 0,
-    _anchorY: 0,
-    _anchorVx: 0,
-    _anchorVy: 0,
-    _anchorTarget: null, // 'player', 'block', or null
     _photonPositions: [-80, -40, 0, 40, 80], // x offsets for photon emitters (tier 4)
   };
   return boss;
