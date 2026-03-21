@@ -26,8 +26,10 @@ const SPRITE_NAMES = [
 const SPRITE_EXTENSIONS = {
   'Drone': 'jpg',
   'Harvester': 'jpg',
+  'Dropper': 'jpg',
   'Shotgun Powerup': 'jpg',
   'Photon Powerup': 'jpg',
+  'BounceshotPowerup': 'jpg',
   'Laser Powerup': 'png',
   'Missile Powerup': 'png',
 };
@@ -35,16 +37,18 @@ const SPRITE_EXTENSIONS = {
 const EXTRA_SPRITE_NAMES = [
   'Drone',
   'Harvester',
+  'Dropper',
   'Shotgun Powerup',
   'Photon Powerup',
+  'BounceshotPowerup',
   'Laser Powerup',
   'Missile Powerup',
 ];
 
 // Sprites that need white background removal (JPEGs or PNGs with white bg)
 const NEEDS_BG_REMOVAL = new Set([
-  'Drone', 'Harvester',
-  'Shotgun Powerup', 'Photon Powerup', 'Laser Powerup', 'Missile Powerup',
+  'Drone', 'Harvester', 'Dropper',
+  'Shotgun Powerup', 'Photon Powerup', 'BounceshotPowerup', 'Laser Powerup', 'Missile Powerup',
   'Eater', 'EaterChomp',
 ]);
 
