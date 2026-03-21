@@ -1,4 +1,6 @@
 // Sprite loader — preloads all game sprites from GitHub
+import { removeWhiteBackground } from './spriteProcessor.js';
+
 const BASE = 'https://raw.githubusercontent.com/Churst86/Sprites/main/';
 
 const SPRITE_NAMES = [
@@ -28,6 +30,9 @@ const SPRITE_EXTENSIONS = {
 
 const EXTRA_SPRITE_NAMES = ['Drone', 'Harvester'];
 
+// Sprites that need white background removal (JPEGs or PNGs with white bg)
+const NEEDS_BG_REMOVAL = new Set(['Drone', 'Harvester', 'Eater', 'EaterChomp']);
+
 // Map of wave number → boss sprite name
 export const BOSS_SPRITE_MAP = {
   5:  'FirstBoss',
@@ -49,14 +54,28 @@ const sprites = {};
 export function loadSprites(onComplete) {
   const allNames = [...SPRITE_NAMES, ...EXTRA_SPRITE_NAMES];
   let loaded = 0;
+
+  function finish(name, imgOrCanvas) {
+    sprites[name] = imgOrCanvas;
+    loaded++;
+    if (loaded === allNames.length && onComplete) onComplete(sprites);
+  }
+
   allNames.forEach(name => {
     const ext = SPRITE_EXTENSIONS[name] || 'png';
     const img = new Image();
+    img.crossOrigin = 'anonymous';
     img.src = BASE + name + '.' + ext;
     img.onload = () => {
-      sprites[name] = img;
-      loaded++;
-      if (loaded === allNames.length && onComplete) onComplete(sprites);
+      if (NEEDS_BG_REMOVAL.has(name)) {
+        try {
+          finish(name, removeWhiteBackground(img));
+        } catch {
+          finish(name, img);
+        }
+      } else {
+        finish(name, img);
+      }
     };
     img.onerror = () => {
       loaded++;
