@@ -525,20 +525,19 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.shadowColor = c; ctx.shadowBlur = 18;
       // Draw dropper ship body
       if (dropperBodySprite) {
-        ctx.drawImage(dropperBodySprite, -35, -35, 70, 70);
+        drawSprite(ctx, dropperBodySprite, -35, -35, 70, 70);
       } else {
-        // Fallback ship shape
         ctx.strokeStyle = c; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(0, -16); ctx.lineTo(12, 10); ctx.lineTo(0, 5); ctx.lineTo(-12, 10); ctx.closePath();
         ctx.stroke(); ctx.fillStyle = c + '33'; ctx.fill();
       }
-      // Draw the carried powerup sprite as a small icon above the ship
+      // Draw the carried powerup as a small glowing icon below the ship
+      ctx.shadowColor = c; ctx.shadowBlur = 16;
       if (dropSprite) {
-        ctx.shadowColor = c; ctx.shadowBlur = 14;
-        ctx.drawImage(dropSprite, -14, -38, 28, 28);
+        drawSprite(ctx, dropSprite, -14, 16, 28, 28);
       } else {
-        ctx.fillStyle = c; ctx.font = 'bold 11px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(DROPPER_LABELS[e.dropType] || '★', 0, -26);
+        ctx.fillStyle = c; ctx.font = 'bold 12px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(DROPPER_LABELS[e.dropType] || '★', 0, 28);
       }
     } else if (e.type === 'mine') {
       const mineImg = getSprite('Mine');
