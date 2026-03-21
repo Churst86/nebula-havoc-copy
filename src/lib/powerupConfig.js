@@ -1,7 +1,7 @@
 // Powerup configuration — colors, labels, and rotation
 export const POWERUP_COLORS = {
   shotgun: '#ffdd00',
-  laser: '#ff44ff',
+  laser: '#ff2200',
   photon: '#44ffaa',
   wingman: '#44aaff',
   bounce: '#aaff00',
@@ -24,7 +24,7 @@ export const POWERUP_LABELS = {
 
 export const DROPPER_COLORS = {
   shotgun: '#ffdd00',
-  laser: '#ff44ff',
+  laser: '#ff2200',
   photon: '#44ffaa',
   wingman: '#44aaff',
   shield: '#00ccff',

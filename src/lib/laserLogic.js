@@ -29,7 +29,7 @@ export function updateLaserBeam(s, p, W, H, spawnExplosion, sounds, onScoreChang
     });
 
     const isPiercing = laserTier >= 10;
-    const laserColor = isPiercing ? '#ffffff' : '#ff44ff';
+    const laserColor = isPiercing ? '#ffffff' : '#ff2200';
     if (s.laserFlareTimer > 0) s.laserFlareTimer--;
 
     if (s.laserBeamTimer % 4 === 0) {

@@ -99,15 +99,15 @@ export function updateBossTier1Fire(e, p, s, sounds) {
   if (e.fireTimer <= 0) {
     const dx = p.x - e.x, dy = p.y - e.y;
     const baseAngle = Math.atan2(dy, dx);
-    // 3-way rapid spread
-    for (let i = -1; i <= 1; i++) {
-      const a = baseAngle + i * 0.22;
+    // 5-way spread for more coverage
+    for (let i = -2; i <= 2; i++) {
+      const a = baseAngle + i * 0.18;
       s.enemyBullets.push({ x: e.x, y: e.y, vx: Math.cos(a) * 5.5, vy: Math.sin(a) * 5.5, boss: true });
     }
-    e.fireTimer = 8;
+    e.fireTimer = 5;
   }
 
-  e._specialTimer = (e._specialTimer || 180) - 1;
+  e._specialTimer = (e._specialTimer || 80) - 1;
   if (e._specialTimer <= 0) {
     for (let i = 0; i < 3; i++) {
       const spread = (i - 1) * 0.35;
@@ -121,7 +121,7 @@ export function updateBossTier1Fire(e, p, s, sounds) {
       });
     }
     sounds && sounds.hit && sounds.hit();
-    e._specialTimer = 180;
+    e._specialTimer = 80;
   }
 }
 
