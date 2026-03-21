@@ -510,16 +510,26 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.fillStyle = bossBarColor; ctx.fillRect(-bw / 2, by, bw * (e.hp / e.maxHp), bh);
     } else if (e.type === 'dropper') {
       const c = e.color || '#ffd700';
+      const dropSpriteKey = POWERUP_SPRITE_KEYS[e.dropType];
+      const dropSprite = dropSpriteKey ? getSprite(dropSpriteKey) : null;
       ctx.shadowColor = c; ctx.shadowBlur = 18;
+      // Pulsing orbit ring
       ctx.strokeStyle = c; ctx.lineWidth = 2;
-      ctx.beginPath();
-      for (let i = 0; i < 16; i++) {
-        const a = (i/16)*Math.PI*2-Math.PI/2, r = i%2===0?20:10;
-        i===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);
+      ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = c + '22'; ctx.fill();
+      if (dropSprite) {
+        ctx.drawImage(dropSprite, -14, -14, 28, 28);
+      } else {
+        ctx.strokeStyle = c; ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < 16; i++) {
+          const a = (i/16)*Math.PI*2-Math.PI/2, r = i%2===0?20:10;
+          i===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);
+        }
+        ctx.closePath(); ctx.fillStyle=c+'22'; ctx.fill(); ctx.stroke();
+        ctx.fillStyle=c; ctx.font='bold 11px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(DROPPER_LABELS[e.dropType]||'★',0,1);
       }
-      ctx.closePath(); ctx.fillStyle=c+'22'; ctx.fill(); ctx.stroke();
-      ctx.fillStyle=c; ctx.font='bold 11px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(DROPPER_LABELS[e.dropType]||'★',0,1);
     } else if (e.type === 'mine') {
       const mineImg = getSprite('Mine');
       const isCharging = e._charging;
