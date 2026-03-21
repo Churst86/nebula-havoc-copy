@@ -801,8 +801,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.fillText('★', 0, 1);
     } else if (spriteImg) {
       const c = colors[item.type] || '#fff';
-      ctx.shadowColor = c; ctx.shadowBlur = 18;
-      ctx.drawImage(spriteImg, -18, -18, 36, 36);
+      ctx.shadowColor = c; ctx.shadowBlur = 22;
+      ctx.drawImage(spriteImg, -26, -26, 52, 52);
     } else {
       const c = colors[item.type] || '#fff';
       ctx.shadowColor = c; ctx.shadowBlur = 16;
