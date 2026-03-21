@@ -22,16 +22,27 @@ const SPRITE_NAMES = [
   'Shopkeeper',
 ];
 
-// Sprites with non-png extensions
+// Sprites with non-png extensions (key = sprite name, value = extension)
 const SPRITE_EXTENSIONS = {
   'Drone': 'jpg',
   'Harvester': 'jpg',
+  'Shotgun Powerup': 'jpg',
+  'Photon Powerup': 'jpg',
+  'Laser Powerup': 'png',
+  'Missile Powerup': 'png',
 };
 
-const EXTRA_SPRITE_NAMES = ['Drone', 'Harvester'];
+const EXTRA_SPRITE_NAMES = [
+  'Drone',
+  'Harvester',
+  'Shotgun Powerup',
+  'Photon Powerup',
+  'Laser Powerup',
+  'Missile Powerup',
+];
 
 // Sprites that need white background removal (JPEGs or PNGs with white bg)
-const NEEDS_BG_REMOVAL = new Set(['Drone', 'Harvester', 'Eater', 'EaterChomp']);
+const NEEDS_BG_REMOVAL = new Set(['Drone', 'Harvester', 'Shotgun Powerup', 'Photon Powerup', 'Eater', 'EaterChomp']);
 
 // Map of wave number → boss sprite name
 export const BOSS_SPRITE_MAP = {
