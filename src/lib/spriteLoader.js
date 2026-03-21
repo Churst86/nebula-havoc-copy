@@ -42,7 +42,11 @@ const EXTRA_SPRITE_NAMES = [
 ];
 
 // Sprites that need white background removal (JPEGs or PNGs with white bg)
-const NEEDS_BG_REMOVAL = new Set(['Drone', 'Harvester', 'Shotgun Powerup', 'Photon Powerup', 'Eater', 'EaterChomp']);
+const NEEDS_BG_REMOVAL = new Set([
+  'Drone', 'Harvester',
+  'Shotgun Powerup', 'Photon Powerup', 'Laser Powerup', 'Missile Powerup',
+  'Eater', 'EaterChomp',
+]);
 
 // Map of wave number → boss sprite name
 export const BOSS_SPRITE_MAP = {
