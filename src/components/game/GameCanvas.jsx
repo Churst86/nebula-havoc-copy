@@ -1819,7 +1819,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.translate(d.x, d.y);
       ctx.shadowColor = '#00ddff'; ctx.shadowBlur = d.state === 'fetch' ? 20 : 10;
       if (droneImg) {
-        ctx.drawImage(droneImg, -34, -34, 68, 68);
+        drawSprite(ctx, droneImg, -34, -34, 68, 68);
       } else {
         ctx.strokeStyle = '#00ddff'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.stroke();
