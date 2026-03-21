@@ -17,7 +17,7 @@ export function spawnBoss(W, wave, hpMult) {
     w: 45, h: 45,
     hp: bossHp, maxHp: bossHp,
     vx: 1.8, vy: 0.4,
-    fireTimer: 60,
+    fireTimer: 5,
     phase: 0,
     tier: bossTier,
     _wave: wave,
@@ -42,11 +42,11 @@ export function updateBossMovement(e, W, H) {
   e.phase = (e.phase || 0) + (bt >= 4 ? 0.012 : bt >= 3 ? 0.010 : bt >= 2 ? 0.008 : 0.006);
   const targetY = bt >= 3 ? H * 0.25 : H * 0.18;
 
-  // Smooth slide down from top — don't return early, just lerp
+  // Smooth slide down from top — lerp toward position, no early return so firing is not interrupted
   if (e.y < targetY - 10) {
     e.y += Math.min((targetY - e.y) * 0.03 + 0.4, 6);
     e.x += (W / 2 - e.x) * 0.04;
-    return;
+    // Don't return — allow firing to proceed below
   }
 
   if (e._charging) {
