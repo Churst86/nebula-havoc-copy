@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { Trophy, Settings } from 'lucide-react';
+import { Trophy, Settings, Play } from 'lucide-react';
 import HighScoresMenu from './HighScoresMenu';
 import OptionsScreen from './OptionsScreen';
 import { sounds } from '../../hooks/useSound.js';
+import { loadSaveFile } from '../../lib/gameSettings';
 
 export const GAME_VERSION = 'v1.3.0';
 
-export default function StartScreen({ onStart, settings, onSettingsChange }) {
+export default function StartScreen({ onStart, onContinue, settings, onSettingsChange }) {
   const [showScores, setShowScores] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const musicEnabled = settings.musicEnabled !== false;
+  const saveFile = loadSaveFile();
 
   // Stop game music and start title music immediately on mount.
   // The IntroCrawl requires a user gesture to dismiss, so autoplay is already unblocked by the time StartScreen mounts.
@@ -61,8 +63,19 @@ export default function StartScreen({ onStart, settings, onSettingsChange }) {
             onClick={onStart}
             size="lg"
             className="bg-primary hover:bg-primary/80 text-primary-foreground font-bold text-lg px-10 py-6 rounded-xl w-full">
-            START GAME
+            NEW GAME
           </Button>
+
+          {saveFile && (
+            <Button
+              onClick={onContinue}
+              size="lg"
+              variant="outline"
+              className="font-bold text-lg px-10 py-6 rounded-xl w-full gap-2 border-cyan-500 text-cyan-300 hover:bg-cyan-900/30">
+              <Play className="w-5 h-5" />
+              CONTINUE — Wave {saveFile.wave} ({saveFile.difficulty?.toUpperCase() || 'NORMAL'})
+            </Button>
+          )}
 
           <div className="flex gap-3">
             <Button
