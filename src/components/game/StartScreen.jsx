@@ -73,7 +73,7 @@ export default function StartScreen({ onStart, onContinue, settings, onSettingsC
               variant="outline"
               className="font-bold text-lg px-10 py-6 rounded-xl w-full gap-2 border-cyan-500 text-cyan-300 hover:bg-cyan-900/30">
               <Play className="w-5 h-5" />
-              CONTINUE — Wave {saveFile.wave} ({saveFile.difficulty?.toUpperCase() || 'NORMAL'})
+              LOAD GAME — {saveFile.difficulty?.toUpperCase() || 'NORMAL'} (Wave 1 + Upgrades)
             </Button>
           )}
 
