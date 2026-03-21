@@ -1792,28 +1792,31 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.restore();
     });
 
-    // Draw drones
+    // Draw drones — procedural hexagonal scout drone (no JPEG white background)
     s.drones.forEach(d => {
-      const droneImg = getSprite('Drone');
       ctx.save();
       ctx.translate(d.x, d.y);
-      ctx.shadowColor = '#ffdd00'; ctx.shadowBlur = d.state === 'fetch' ? 16 : 8;
-      if (droneImg) {
-        ctx.drawImage(droneImg, -16, -16, 32, 32);
-      } else {
-        // Procedural: small round drone
-        ctx.strokeStyle = '#ffdd00'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.stroke();
-        ctx.fillStyle = '#ffdd0022'; ctx.fill();
-        ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI * 2); ctx.fillStyle = '#ffdd00'; ctx.fill();
-        // Rotors
-        ctx.strokeStyle = '#ffaa00'; ctx.lineWidth = 1;
-        [[-12, -12], [12, -12], [-12, 12], [12, 12]].forEach(([rx, ry]) => {
-          ctx.save(); ctx.translate(rx, ry);
-          ctx.beginPath(); ctx.ellipse(0, 0, 5, 2, d.orbitAngle * 3, 0, Math.PI * 2); ctx.stroke();
-          ctx.restore();
-        });
+      const pulse = d.state === 'fetch' ? 1 : 0;
+      ctx.shadowColor = '#00ddff'; ctx.shadowBlur = 8 + pulse * 10;
+      // Hexagonal body
+      ctx.strokeStyle = '#00ddff'; ctx.lineWidth = 1.5;
+      ctx.fillStyle = 'rgba(0,180,255,0.18)';
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
+        i === 0 ? ctx.moveTo(Math.cos(a) * 9, Math.sin(a) * 9) : ctx.lineTo(Math.cos(a) * 9, Math.sin(a) * 9);
       }
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      // Inner core
+      ctx.fillStyle = '#00eeff';
+      ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI * 2); ctx.fill();
+      // Spinning rotors
+      ctx.strokeStyle = '#00aacc'; ctx.lineWidth = 1;
+      [[-11, -11], [11, -11], [-11, 11], [11, 11]].forEach(([rx, ry]) => {
+        ctx.save(); ctx.translate(rx, ry);
+        ctx.beginPath(); ctx.ellipse(0, 0, 5, 2, d.orbitAngle * 4, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+      });
       ctx.restore();
     });
 
