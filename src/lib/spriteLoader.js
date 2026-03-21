@@ -112,3 +112,19 @@ export function loadSprites(onComplete) {
 export function getSprite(name) {
   return sprites[name] || null;
 }
+
+/**
+ * Draw a sprite onto ctx, automatically applying 'multiply' blend if needed
+ * to remove white backgrounds on cross-origin JPEGs.
+ */
+export function drawSprite(ctx, sprite, x, y, w, h) {
+  if (!sprite) return;
+  if (sprite._needsMultiply) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.drawImage(sprite, x, y, w, h);
+    ctx.restore();
+  } else {
+    ctx.drawImage(sprite, x, y, w, h);
+  }
+}
