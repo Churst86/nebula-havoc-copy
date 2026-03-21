@@ -526,7 +526,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2); ctx.stroke();
       ctx.fillStyle = c + '22'; ctx.fill();
       if (dropSprite) {
-        ctx.drawImage(dropSprite, -14, -14, 28, 28);
+        ctx.drawImage(dropSprite, -18, -18, 36, 36);
       } else {
         ctx.strokeStyle = c; ctx.lineWidth = 2;
         ctx.beginPath();
