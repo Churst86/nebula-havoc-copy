@@ -58,9 +58,30 @@ export function removeWhiteBackground(img, threshold = 230) {
     }
   }
 
-  // Soften anti-aliased fringe pixels (high brightness, non-background)
+  // Second pass: expand removal to JPEG-artifact near-white pixels adjacent to already-removed pixels
+  const toRemove = new Uint8Array(W * H);
+  const artifactThreshold = 200;
   for (let i = 0; i < W * H; i++) {
-    if (!visited[i] && data[i * 4 + 3] > 0) {
+    if (visited[i]) continue;
+    const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2];
+    if (r > artifactThreshold && g > artifactThreshold && b > artifactThreshold) {
+      // Check if any neighbor is already transparent (background)
+      const x = i % W, y = Math.floor(i / W);
+      const hasRemovedNeighbor =
+        (x > 0 && visited[i - 1]) ||
+        (x < W - 1 && visited[i + 1]) ||
+        (y > 0 && visited[i - W]) ||
+        (y < H - 1 && visited[i + W]);
+      if (hasRemovedNeighbor) toRemove[i] = 1;
+    }
+  }
+  for (let i = 0; i < W * H; i++) {
+    if (toRemove[i]) data[i * 4 + 3] = 0;
+  }
+
+  // Soften remaining anti-aliased fringe pixels
+  for (let i = 0; i < W * H; i++) {
+    if (!visited[i] && !toRemove[i] && data[i * 4 + 3] > 0) {
       const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2];
       if (r > 200 && g > 200 && b > 200) {
         const brightness = (r + g + b) / 3;
