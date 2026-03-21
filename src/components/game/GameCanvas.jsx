@@ -1305,7 +1305,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         }
         if (!valid) { d.target = null; d.state = 'orbit'; return; }
         const dx = tx - d.x, dy = ty - d.y, len = Math.hypot(dx, dy) || 1;
-        d.x += (dx / len) * 1.2; d.y += (dy / len) * 1.2;
+        d.x += (dx / len) * 4.5; d.y += (dy / len) * 4.5;
         if (len < 16) {
           if (d.target.isDropper) {
             const dropper = d.target.ref;
@@ -1381,8 +1381,21 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       return b.y < H + 20 && b.x > -20 && b.x < W + 20 && b.y > -20;
     });
 
-    s.powerupItems.forEach(item => { item.y += 1.2; item.angle = (item.angle || 0) + 0.04; });
-    s.powerupItems = s.powerupItems.filter(item => item.y < H + 30);
+    // Powerup items bounce off walls and never leave the screen
+    s.powerupItems.forEach(item => {
+      if (!item.vx) item.vx = (Math.random() - 0.5) * 1.5;
+      if (!item.vy) item.vy = 1.2;
+      item.x += item.vx;
+      item.y += item.vy;
+      item.angle = (item.angle || 0) + 0.04;
+      // Bounce off left/right walls
+      if (item.x < 16) { item.x = 16; item.vx = Math.abs(item.vx); }
+      if (item.x > W - 16) { item.x = W - 16; item.vx = -Math.abs(item.vx); }
+      // Bounce off top, and bounce off bottom wall
+      if (item.y < 16) { item.y = 16; item.vy = Math.abs(item.vy); }
+      if (item.y > H - 16) { item.y = H - 16; item.vy = -Math.abs(item.vy); }
+    });
+    // Never remove powerup items — they stay until collected
 
     s.blockSpawnTimer--;
     if (s.blockSpawnTimer <= 0) {
