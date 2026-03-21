@@ -220,9 +220,18 @@ export default function Game() {
 
   // Title music is triggered by user click in StartScreen (browser requires user gesture)
 
-  // Play game-over music on game over
+  // Auto-save when game ends so Load Game is available on title screen
   useEffect(() => {
-    if (gameState === 'gameover') sounds.playGameOverMusic();
+    if (gameState === 'gameover') {
+      sounds.playGameOverMusic();
+      writeSaveFile({
+        wave: waveRef.current,
+        difficulty: settings.difficulty,
+        powerups: activePowerup,
+        shopUpgrades: shopUpgrades,
+        blockScore: blockScore,
+      });
+    }
   }, [gameState]);
 
   // Play win music on congratulations screen
