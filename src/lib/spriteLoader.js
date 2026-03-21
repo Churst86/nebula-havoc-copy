@@ -65,7 +65,9 @@ export function loadSprites(onComplete) {
     const ext = SPRITE_EXTENSIONS[name] || 'png';
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.src = BASE + name + '.' + ext;
+    // Cache-bust JPEGs to always fetch fresh from GitHub
+    const bust = SPRITE_EXTENSIONS[name] ? `?t=${Date.now()}` : '';
+    img.src = BASE + name + '.' + ext + bust;
     img.onload = () => {
       if (NEEDS_BG_REMOVAL.has(name)) {
         try {
