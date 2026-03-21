@@ -111,7 +111,13 @@ export function loadSprites(onComplete) {
       // Fetch as blob to avoid canvas CORS tainting, then process pixels
       loadImageViaBlobUrl(url, (img) => {
         const result = removeWhiteBackground(img);
-        finish(name, result || img);
+        if (result) {
+          finish(name, result);
+        } else {
+          // Fallback: store raw img with multiply flag
+          img._needsMultiply = true;
+          finish(name, img);
+        }
       }, () => {
         loaded++;
         if (loaded === allNames.length && onComplete) onComplete(sprites);
