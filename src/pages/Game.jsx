@@ -7,7 +7,7 @@ import ContinueScreen from '../components/game/ContinueScreen';
 import StartScreen from '../components/game/StartScreen';
 import OptionsScreen from '../components/game/OptionsScreen';
 import CongratulationsScreen from '../components/game/CongratulationsScreen';
-import { loadSettings, saveSettings, DIFFICULTY_CONFIG } from '../lib/gameSettings';
+import { loadSettings, saveSettings, DIFFICULTY_CONFIG, loadSaveFile, writeSaveFile, deleteSaveFile } from '../lib/gameSettings';
 import { sounds } from '../hooks/useSound.js';
 import IntroCrawl from '../components/game/IntroCrawl';
 import { loadShopUpgrades, saveShopUpgrades } from '../lib/shopUpgrades';
@@ -83,12 +83,40 @@ export default function Game() {
       const resetUpgrades = { armor: 0, repair: 0, drone: 0, harvester: 0 };
       setShopUpgrades(resetUpgrades);
       saveShopUpgrades(resetUpgrades);
+      deleteSaveFile();
     }
     setContinuesLeft(0);
     setShowDocking(false);
     setShowShop(false);
     setGameState('playing');
   }, []);
+
+  const handleContinueSave = useCallback(() => {
+    const save = loadSaveFile();
+    if (!save) return;
+    // Restore difficulty
+    const savedDifficulty = save.difficulty || 'normal';
+    const newSettings = { ...settings, difficulty: savedDifficulty };
+    setSettings(newSettings);
+    saveSettings(newSettings);
+    // Restore shop upgrades
+    const savedShopUpgrades = save.shopUpgrades || { armor: 0, repair: 0, drone: 0, harvester: 0 };
+    setShopUpgrades(savedShopUpgrades);
+    saveShopUpgrades(savedShopUpgrades);
+    // Restore powerups + wave
+    setCarryOverPowerups(save.powerups || {});
+    waveRef.current = save.wave || 1;
+    setWave(save.wave || 1);
+    scoreRef.current = 0;
+    setScore(0);
+    setBlockScore(0);
+    setLives(3);
+    setMaxLives(3);
+    setContinuesLeft(0);
+    setShowDocking(false);
+    setShowShop(false);
+    setGameState('playing');
+  }, [settings]);
 
   // Called by canvas when lives hit 0 or wave milestone reached
   const handleSetGameState = useCallback((state) => {
