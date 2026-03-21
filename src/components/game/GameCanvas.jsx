@@ -770,14 +770,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     ctx.restore();
   }
 
-  // Map powerup types to sprite names
-  const POWERUP_SPRITE_KEYS = {
-    shotgun:  'Shotgun Powerup',
-    photon:   'Photon Powerup',
-    laser:    'Laser Powerup',
-    missile:  'Missile Powerup',
-  };
-
   function drawPowerupItem(ctx, item) {
     const colors = { spread: '#ff6600', shotgun: '#ff6600', laser: '#ff44ff', photon: '#44ffaa', wingman: '#44aaff', shield: '#00ccff', bounce: '#aaff00', speed: '#ff8800', rapidfire: '#ff4488', star: '#ffffff', missile: '#aa22ff' };
     const labels = { shotgun: 'S', laser: 'L', photon: 'P', wingman: 'W', shield: '🛡', bounce: 'B', speed: '▶', rapidfire: '⚡', star: '★', missile: 'M' };
