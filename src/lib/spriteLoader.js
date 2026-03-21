@@ -105,31 +105,27 @@ export function loadSprites(onComplete) {
 
   allNames.forEach(name => {
     const ext = SPRITE_EXTENSIONS[name] || 'png';
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    // Cache-bust JPEGs to always fetch fresh from GitHub
-    const bust = SPRITE_EXTENSIONS[name] ? `?t=${Date.now()}` : '';
-    img.src = BASE + name + '.' + ext + bust;
-    img.onload = () => {
-      if (NEEDS_BG_REMOVAL.has(name)) {
+    const url = BASE + name + '.' + ext;
+
+    if (NEEDS_BG_REMOVAL.has(name)) {
+      // Fetch as blob to avoid canvas CORS tainting, then process pixels
+      loadImageViaBlobUrl(url, (img) => {
         const result = removeWhiteBackground(img);
-        if (result) {
-          // Successfully processed — transparent canvas
-          finish(name, result);
-        } else {
-          // Cross-origin tainted — store raw img with a flag to use multiply blend
-          img._needsMultiply = true;
-          finish(name, img);
-        }
-      } else {
-        finish(name, img);
-      }
-    };
-    img.onerror = () => {
-      // On error, still count as loaded so onComplete fires
-      loaded++;
-      if (loaded === allNames.length && onComplete) onComplete(sprites);
-    };
+        finish(name, result || img);
+      }, () => {
+        loaded++;
+        if (loaded === allNames.length && onComplete) onComplete(sprites);
+      });
+    } else {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = url;
+      img.onload = () => finish(name, img);
+      img.onerror = () => {
+        loaded++;
+        if (loaded === allNames.length && onComplete) onComplete(sprites);
+      };
+    }
   });
 }
 
