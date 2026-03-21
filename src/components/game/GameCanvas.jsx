@@ -1317,11 +1317,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
               d._returnTimer = 0;
             }
           } else {
-            // Carry powerup to player
+            // Push powerup toward player
             const item = s.powerupItems[d.target.idx];
             if (item) {
+              const pdx = p.x - item.x, pdy = p.y - item.y, plen = Math.hypot(pdx, pdy) || 1;
+              item.vx = (pdx / plen) * 5;
+              item.vy = (pdy / plen) * 5;
               d._returnTimer = (d._returnTimer || 0) + 1;
-              if (d._returnTimer >= 120) {
+              if (d._returnTimer >= 60) {
                 item.x = p.x; item.y = p.y;
                 d.target = null; d.state = 'orbit'; d._returnTimer = 0;
               }
