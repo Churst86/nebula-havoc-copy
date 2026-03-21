@@ -45,7 +45,7 @@ export default function Game() {
   const [isPaused, setIsPaused] = useState(false);
   const [settings, setSettings] = useState(() => loadSettings());
   const [bossWarning, setBossWarning] = useState(null);
-  const [shopUpgrades, setShopUpgrades] = useState(() => loadShopUpgrades());
+  const [shopUpgrades, setShopUpgrades] = useState(() => ({ armor: 0, repair: 0, drone: 0, harvester: 0 }));
   const [showPauseOptions, setShowPauseOptions] = useState(false);
   const [showDocking, setShowDocking] = useState(false);
   const [showShop, setShowShop] = useState(false);
