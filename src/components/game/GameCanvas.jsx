@@ -760,12 +760,24 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     ctx.restore();
   }
 
+  // Map powerup types to sprite names
+  const POWERUP_SPRITE_KEYS = {
+    shotgun:  'Shotgun Powerup',
+    photon:   'Photon Powerup',
+    laser:    'Laser Powerup',
+    missile:  'Missile Powerup',
+  };
+
   function drawPowerupItem(ctx, item) {
     const colors = { spread: '#ff6600', shotgun: '#ff6600', laser: '#ff44ff', photon: '#44ffaa', wingman: '#44aaff', shield: '#00ccff', bounce: '#aaff00', speed: '#ff8800', rapidfire: '#ff4488', star: '#ffffff', missile: '#aa22ff' };
     const labels = { shotgun: 'S', laser: 'L', photon: 'P', wingman: 'W', shield: '🛡', bounce: 'B', speed: '▶', rapidfire: '⚡', star: '★', missile: 'M' };
     ctx.save();
     ctx.translate(item.x, item.y);
     ctx.rotate(item.angle || 0);
+
+    const spriteKey = POWERUP_SPRITE_KEYS[item.type];
+    const spriteImg = spriteKey ? getSprite(spriteKey) : null;
+
     if (item.type === 'star') {
       const hue = (Date.now() * 0.2) % 360;
       const c1 = `hsl(${hue},100%,70%)`;
@@ -777,6 +789,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.font = 'bold 14px monospace';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('★', 0, 1);
+    } else if (spriteImg) {
+      const c = colors[item.type] || '#fff';
+      ctx.shadowColor = c; ctx.shadowBlur = 18;
+      ctx.drawImage(spriteImg, -18, -18, 36, 36);
     } else {
       const c = colors[item.type] || '#fff';
       ctx.shadowColor = c; ctx.shadowBlur = 16;
