@@ -40,6 +40,7 @@ export default function Game() {
   const [armorHp, setArmorHp] = useState(0);
   const [blockScore, setBlockScore] = useState(0);
   const [carryOverPowerups, setCarryOverPowerups] = useState(null);
+  const [startWave, setStartWave] = useState(1);
   const [continuesLeft, setContinuesLeft] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [settings, setSettings] = useState(() => loadSettings());
@@ -76,6 +77,7 @@ export default function Game() {
     setLives(3);
     setMaxLives(3);
     setWave(1);
+    setStartWave(1);
     if (!keepPowerups) {
       setCarryOverPowerups(null);
       setActivePowerup({});
@@ -105,8 +107,10 @@ export default function Game() {
     saveShopUpgrades(savedShopUpgrades);
     // Restore powerups + wave
     setCarryOverPowerups(save.powerups || {});
-    waveRef.current = save.wave || 1;
-    setWave(save.wave || 1);
+    const savedWave = save.wave || 1;
+    waveRef.current = savedWave;
+    setWave(savedWave);
+    setStartWave(savedWave);
     scoreRef.current = 0;
     setScore(0);
     setBlockScore(0);
@@ -264,6 +268,7 @@ export default function Game() {
         gameSpeed={settings.gameSpeed ?? 30}
         carryOverPowerups={carryOverPowerups}
         shopUpgrades={shopUpgrades}
+        startWave={startWave}
       />
 
       <BossWarning warning={bossWarning} />
