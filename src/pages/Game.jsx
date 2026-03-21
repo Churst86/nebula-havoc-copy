@@ -177,6 +177,15 @@ export default function Game() {
     saveSettings(next);
   }, []);
 
+  const handleSaveGame = useCallback(() => {
+    writeSaveFile({
+      wave: waveRef.current,
+      difficulty: settings.difficulty,
+      powerups: activePowerup,
+      shopUpgrades: shopUpgrades,
+    });
+  }, [settings.difficulty, activePowerup, shopUpgrades]);
+
   const handleShopBuy = useCallback((upgradeId) => {
     setShopUpgrades(prev => {
       const newUpgrades = { ...prev, [upgradeId]: (prev[upgradeId] || 0) + 1 };
@@ -282,6 +291,7 @@ export default function Game() {
           settings={settings}
           onSettingsChange={handleSettingsChange}
           gameState="playing"
+          onSaveGame={handleSaveGame}
           onExitToTitle={() => {
             sounds.stopAllMusic();
             setGameState('start');
@@ -292,7 +302,7 @@ export default function Game() {
       )}
 
       {gameState === 'start' && (
-        <StartScreen onStart={handleStart} settings={settings} onSettingsChange={handleSettingsChange} />
+        <StartScreen onStart={handleStart} onContinue={handleContinueSave} settings={settings} onSettingsChange={handleSettingsChange} />
       )}
 
       {gameState === 'continue' && (
