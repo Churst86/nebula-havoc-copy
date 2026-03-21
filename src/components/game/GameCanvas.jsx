@@ -802,19 +802,18 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     } else if (spriteImg) {
       const c = colors[item.type] || '#fff';
       ctx.shadowColor = c; ctx.shadowBlur = 22;
-      ctx.drawImage(spriteImg, -26, -26, 52, 52);
+      ctx.drawImage(spriteImg, -34, -34, 68, 68);
     } else {
+      // Sprite not yet loaded — draw glow bubble with label
       const c = colors[item.type] || '#fff';
       ctx.shadowColor = c; ctx.shadowBlur = 16;
-      ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2);
+      ctx.beginPath(); ctx.arc(0, 0, 17, 0, Math.PI * 2);
       ctx.fillStyle = c + '33'; ctx.fill();
       ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.stroke();
-      ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2);
-      ctx.strokeStyle = c + '88'; ctx.lineWidth = 1; ctx.stroke();
       ctx.fillStyle = c;
-      ctx.font = 'bold 11px monospace';
+      ctx.font = 'bold 14px monospace';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(labels[item.type], 0, 0);
+      ctx.fillText(labels[item.type] || '?', 0, 0);
     }
     ctx.restore();
   }
