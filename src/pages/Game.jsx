@@ -217,8 +217,11 @@ export default function Game() {
   React.useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Enter' && (gameState === 'playing' || gameState === 'resuming')) {
-        setIsPaused(p => !p);
-        setShowPauseOptions(false);
+        setIsPaused(p => {
+          const next = !p;
+          setShowPauseOptions(next);
+          return next;
+        });
       }
     };
     window.addEventListener('keydown', onKey);
