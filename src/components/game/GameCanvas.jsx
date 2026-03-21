@@ -50,6 +50,7 @@ const POWERUP_SPRITE_KEYS = {
   photon:   'Photon Powerup',
   laser:    'Laser Powerup',
   missile:  'Missile Powerup',
+  bounce:   'BounceshotPowerup',
 };
 const DROPPER_ROTATE_FRAMES = 300;
 const STAR_SPAWN_INTERVAL = 1800;
