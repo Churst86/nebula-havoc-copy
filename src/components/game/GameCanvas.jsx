@@ -1762,27 +1762,23 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     });
     s.bullets.forEach(b => drawBullet(ctx, b, false));
     s.enemyBullets.forEach(b => drawBullet(ctx, b, true));
-    // Draw harvesters — procedural angular mining craft
+    // Draw harvesters — sprite with white bg removed, orange tint glow
     s.harvesters.forEach(h => {
+      const harvImg = getSprite('Harvester');
       ctx.save();
       ctx.translate(h.x, h.y);
       const busy = h.state === 'return' && h.carryScore > 0;
       ctx.shadowColor = busy ? '#ff8800' : '#ffaa44';
       ctx.shadowBlur = busy ? 16 : 8;
-      // Diamond body
-      ctx.strokeStyle = busy ? '#ff8800' : '#ffaa44'; ctx.lineWidth = 2;
-      ctx.fillStyle = busy ? 'rgba(255,136,0,0.25)' : 'rgba(255,170,68,0.18)';
-      ctx.beginPath();
-      ctx.moveTo(0, -12); ctx.lineTo(10, 0); ctx.lineTo(0, 12); ctx.lineTo(-10, 0); ctx.closePath();
-      ctx.fill(); ctx.stroke();
-      // Drill tip
-      ctx.strokeStyle = '#ffdd44'; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(0, -18); ctx.stroke();
-      ctx.fillStyle = '#ffdd44';
-      ctx.beginPath(); ctx.moveTo(-3, -18); ctx.lineTo(3, -18); ctx.lineTo(0, -24); ctx.closePath(); ctx.fill();
-      // Center gem
-      ctx.fillStyle = busy ? '#ff8800' : '#ffcc44';
-      ctx.beginPath(); ctx.arc(0, 0, 3.5, 0, Math.PI * 2); ctx.fill();
+      if (harvImg) {
+        ctx.drawImage(harvImg, -18, -18, 36, 36);
+      } else {
+        ctx.strokeStyle = busy ? '#ff8800' : '#ffaa44'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,136,0,0.2)'; ctx.fill();
+        ctx.fillStyle = busy ? '#ff8800' : '#ffcc44';
+        ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI * 2); ctx.fill();
+      }
       if (h.carryScore > 0) {
         ctx.fillStyle = '#ffdd00'; ctx.font = 'bold 8px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
         ctx.fillText(`+${h.carryScore}`, 0, 14);
