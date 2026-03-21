@@ -512,7 +512,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         ctx.beginPath(); ctx.arc(0, 0, 60, 0, Math.PI * 2); ctx.stroke();
       }
       // Single health bar — no duplicate
-      const bw = 120, bh = 7, by = sz / 2 + 8;
+      const bw = 120, bh = 7, by = sz / 2 - 180;
       ctx.fillStyle = '#222'; ctx.fillRect(-bw / 2, by, bw, bh);
       const bossBarColor = ['#ff0066','#ff6600','#aa00ff','#00ccff'][Math.min((e.tier || 1) - 1, 3)];
       ctx.fillStyle = bossBarColor; ctx.fillRect(-bw / 2, by, bw * (e.hp / e.maxHp), bh);
