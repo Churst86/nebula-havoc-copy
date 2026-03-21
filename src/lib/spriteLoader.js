@@ -89,9 +89,13 @@ export function loadSprites(onComplete) {
     img.src = BASE + name + '.' + ext + bust;
     img.onload = () => {
       if (NEEDS_BG_REMOVAL.has(name)) {
-        try {
-          finish(name, removeWhiteBackground(img));
-        } catch {
+        const result = removeWhiteBackground(img);
+        if (result) {
+          // Successfully processed — transparent canvas
+          finish(name, result);
+        } else {
+          // Cross-origin tainted — store raw img with a flag to use multiply blend
+          img._needsMultiply = true;
           finish(name, img);
         }
       } else {
