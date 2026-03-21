@@ -521,13 +521,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const dropSpriteKey = POWERUP_SPRITE_KEYS[e.dropType];
       const dropSprite = dropSpriteKey ? getSprite(dropSpriteKey) : null;
       ctx.shadowColor = c; ctx.shadowBlur = 22;
-      // Orbit ring
-      ctx.strokeStyle = c; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(0, 0, 38, 0, Math.PI * 2); ctx.stroke();
-      ctx.fillStyle = c + '22'; ctx.fill();
       if (dropSprite) {
+        // Sprite available — just draw it, no orbit ring
         ctx.drawImage(dropSprite, -30, -30, 60, 60);
       } else {
+        // No sprite — draw orbit ring + label fallback
+        ctx.strokeStyle = c; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(0, 0, 38, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = c + '22'; ctx.fill();
         ctx.fillStyle = c; ctx.font = 'bold 13px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(DROPPER_LABELS[e.dropType] || '★', 0, 1);
       }
