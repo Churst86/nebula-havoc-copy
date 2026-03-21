@@ -7,7 +7,7 @@ import { fireReverseShot, drawReverseFlame } from '../../lib/reverseGunUtils.js'
 import { fireMissiles, updateMissiles, drawMissile, getMissileHitDamage, shouldSpawnMissileExplosion } from '../../lib/missileUtils.js';
 import { DROPPER_COLORS, DROPPER_LABELS, DROPPER_ROTATION } from '../../lib/powerupConfig.js';
 import { drawBlock, drawPiledCells, drawParticle } from '../../lib/drawingUtils.js';
-import { loadSprites, getSprite, getBossSpriteKey, BOSS_SPRITE_MAP } from '../../lib/spriteLoader.js';
+import { loadSprites, getSprite, getBossSpriteKey, BOSS_SPRITE_MAP, drawSprite } from '../../lib/spriteLoader.js';
 import {
   createBossWarning, spawnBoss,
   updateBossMovement, updateBossTier1Fire, updateBossTier2Fire,
