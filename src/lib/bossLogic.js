@@ -44,8 +44,8 @@ export function updateBossMovement(e, W, H) {
 
   // Smooth slide down from top — lerp toward position, no early return so firing is not interrupted
   if (e.y < targetY - 10) {
-    e.y += Math.min((targetY - e.y) * 0.03 + 0.4, 6);
-    e.x += (W / 2 - e.x) * 0.04;
+    e.y += Math.min((targetY - e.y) * 0.04 + 0.8, 8);
+    e.x += (W / 2 - e.x) * 0.05;
     // Don't return — allow firing to proceed below
   }
 
