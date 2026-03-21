@@ -94,7 +94,7 @@ function initState() {
   };
 }
 
-export default function GameCanvas({ gameState, setGameState, onScoreChange, onBlockScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, onBossWarning, continuesLeft, onContinueUsed, isPaused, difficultyConfig, gameSpeed = 30, carryOverPowerups = null, shopUpgrades = null }) {
+export default function GameCanvas({ gameState, setGameState, onScoreChange, onBlockScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, onBossWarning, continuesLeft, onContinueUsed, isPaused, difficultyConfig, gameSpeed = 30, carryOverPowerups = null, shopUpgrades = null, startWave = 1 }) {
   const canvasRef = useRef(null);
   const keysRef = useRef({});
   const stateRef = useRef(initState());
@@ -1872,10 +1872,12 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         s.shieldHp = shieldHp;
         s.lockedPowerups = GUN_TYPES.filter(g => (s.powerups[g] || 0) > 0);
       }
+      s.wave = startWave > 1 ? startWave : 1;
       s.armorHp = (shopUpgradesRef.current?.armor || 0) * 3;
       s.harvesters = [];
       s.drones = [];
       s.running = true;
+      onWaveChange(s.wave);
       spawnWave(W, s);
       lastTimeRef.current = performance.now();
       animRef.current = requestAnimationFrame(loop);
