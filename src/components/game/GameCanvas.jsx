@@ -523,10 +523,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.shadowColor = c; ctx.shadowBlur = 22;
       // Orbit ring
       ctx.strokeStyle = c; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(0, 0, 29, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, 0, 38, 0, Math.PI * 2); ctx.stroke();
       ctx.fillStyle = c + '22'; ctx.fill();
       if (dropSprite) {
-        ctx.drawImage(dropSprite, -23, -23, 46, 46);
+        ctx.drawImage(dropSprite, -30, -30, 60, 60);
       } else {
         ctx.fillStyle = c; ctx.font = 'bold 13px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(DROPPER_LABELS[e.dropType] || '★', 0, 1);
@@ -535,7 +535,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const mineImg = getSprite('Mine');
       const isCharging = e._charging;
       const damaged = e.hp < e.maxHp;
-      const sz = 83;
+      const sz = 108;
       // Flash when damaged (charging after first hit)
       const flashOn = damaged && Math.floor(Date.now() / 120) % 2 === 0;
       if (mineImg) {
@@ -567,7 +567,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const baseImg = getSprite('Eater');
       const chompImg = getSprite('EaterChomp');
       const eImg = (isEating && chompImg) ? chompImg : baseImg;
-      const eSz = isMini ? 104 : 208;
+      const eSz = isMini ? 135 : 270;
       ctx.shadowBlur = 0;
       ctx.shadowColor = 'transparent';
       if (eImg) {
@@ -592,7 +592,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       }
     } else if (e.type === 'berserk') {
       const bImg = getSprite('Berskerker');
-      const bSz = (e._mini ? 156 : 260);
+      const bSz = (e._mini ? 203 : 338);
       const t = Date.now();
       if (bImg) {
         ctx.shadowColor = '#ff4400'; ctx.shadowBlur = 12;
@@ -630,7 +630,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       }
     } else if (e.type === 'elite') {
       const eImg = getSprite('EliteEnemy');
-      const eSz = 130;
+      const eSz = 169;
       if (eImg) {
         ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 10;
         ctx.drawImage(eImg, -eSz / 2, -eSz / 2, eSz, eSz);
@@ -644,7 +644,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       }
     } else {
       const basicImg = getSprite('BasicEnemy');
-      const bSz = 130;
+      const bSz = 169;
       if (basicImg) {
         ctx.shadowColor = '#ff4444'; ctx.shadowBlur = 10;
         ctx.drawImage(basicImg, -bSz / 2, -bSz / 2, bSz, bSz);
@@ -795,7 +795,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     } else if (spriteImg) {
       const c = colors[item.type] || '#fff';
       ctx.shadowColor = c; ctx.shadowBlur = 22;
-      ctx.drawImage(spriteImg, -34, -34, 68, 68);
+      ctx.drawImage(spriteImg, -44, -44, 88, 88);
     } else {
       // Sprite not yet loaded — draw glow bubble with label
       const c = colors[item.type] || '#fff';
@@ -1789,7 +1789,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.shadowColor = busy ? '#ff8800' : '#ffaa44';
       ctx.shadowBlur = busy ? 20 : 10;
       if (harvImg) {
-        ctx.drawImage(harvImg, -31, -31, 62, 62);
+        ctx.drawImage(harvImg, -40, -40, 80, 80);
       } else {
         ctx.strokeStyle = busy ? '#ff8800' : '#ffaa44'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.stroke();
@@ -1811,7 +1811,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.translate(d.x, d.y);
       ctx.shadowColor = '#00ddff'; ctx.shadowBlur = d.state === 'fetch' ? 20 : 10;
       if (droneImg) {
-        ctx.drawImage(droneImg, -26, -26, 52, 52);
+        ctx.drawImage(droneImg, -34, -34, 68, 68);
       } else {
         ctx.strokeStyle = '#00ddff'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.stroke();
