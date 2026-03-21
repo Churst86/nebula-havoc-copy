@@ -803,7 +803,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     } else if (spriteImg) {
       const c = colors[item.type] || '#fff';
       ctx.shadowColor = c; ctx.shadowBlur = 22;
-      ctx.drawImage(spriteImg, -44, -44, 88, 88);
+      drawSprite(ctx, spriteImg, -44, -44, 88, 88);
     } else {
       // Sprite not yet loaded — draw glow bubble with label
       const c = colors[item.type] || '#fff';
