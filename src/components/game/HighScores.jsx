@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Trophy, RotateCcw } from 'lucide-react';
-import { TROPHY_DEFS, getEarnedTrophies } from '../../lib/trophies';
+import { Trophy, RotateCcw, Home } from 'lucide-react';
 
 const LS_KEY = 'voidstorm_highscores';
 const MAX_SCORES = 10;
@@ -26,13 +25,12 @@ export function saveHighScore(name, score, wave) {
 }
 
 export default function HighScores({ score, wave, onRestart, onReturnToTitle, isNewScore }) {
+  const [name, setName] = useState('');
   const [saved, setSaved] = useState(false);
   const [scores, setScores] = useState(getHighScores());
   const inputs = [useRef(), useRef(), useRef()];
   const [letters, setLetters] = useState(['', '', '']);
   const [countdown, setCountdown] = useState(null);
-  const [showTrophies, setShowTrophies] = useState(false);
-  const earnedTrophies = getEarnedTrophies();
 
   const handleLetterChange = (i, val) => {
     const char = val.replace(/[^a-zA-Z0-9]/g, '').slice(-1).toUpperCase();
@@ -56,10 +54,12 @@ export default function HighScores({ score, wave, onRestart, onReturnToTitle, is
     setCountdown(5);
   };
 
+  // Start countdown immediately if not a new high score
   useEffect(() => {
     if (!isNewScore) setCountdown(5);
   }, [isNewScore]);
 
+  // Tick the countdown
   useEffect(() => {
     if (countdown === null) return;
     if (countdown <= 0) { onReturnToTitle(); return; }
@@ -81,13 +81,14 @@ export default function HighScores({ score, wave, onRestart, onReturnToTitle, is
         backgroundAttachment: 'fixed',
       }}
     >
+      {/* Dark overlay for text legibility */}
       <div className="absolute inset-0 bg-black/40" />
       
       <motion.div
         initial={{ scale: 0.85, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.1, type: 'spring', stiffness: 180 }}
-        className="relative z-10 text-center space-y-4 p-8 max-w-sm w-full"
+        className="relative z-10 text-center space-y-5 p-8 max-w-sm w-full"
       >
         <div className="flex items-center justify-center gap-2">
           <Trophy className="w-5 h-5 text-yellow-400" />
@@ -95,90 +96,52 @@ export default function HighScores({ score, wave, onRestart, onReturnToTitle, is
           <span className="text-muted-foreground text-sm">· Wave {wave}</span>
         </div>
 
-        {/* Tab toggle */}
-        <div className="flex rounded-lg overflow-hidden border border-white/10">
-          <button
-            onClick={() => setShowTrophies(false)}
-            className={`flex-1 py-2 text-xs font-bold uppercase tracking-widest transition-colors ${!showTrophies ? 'bg-cyan-900/60 text-cyan-300' : 'text-muted-foreground'}`}
-          >
-            Scores
-          </button>
-          <button
-            onClick={() => setShowTrophies(true)}
-            className={`flex-1 py-2 text-xs font-bold uppercase tracking-widest transition-colors ${showTrophies ? 'bg-yellow-900/60 text-yellow-300' : 'text-muted-foreground'}`}
-          >
-            🏆 Trophies {earnedTrophies.length > 0 ? `(${earnedTrophies.length}/${TROPHY_DEFS.length})` : ''}
-          </button>
-        </div>
-
-        {!showTrophies ? (
-          <>
-            {/* Name entry */}
-            {isNewScore && !saved && (
-              <div className="space-y-3">
-                <p className="text-cyan-400 font-bold tracking-widest text-sm uppercase">New High Score!</p>
-                <div className="flex justify-center gap-3">
-                  {[0, 1, 2].map(i => (
-                    <input
-                      key={i}
-                      ref={inputs[i]}
-                      value={letters[i]}
-                      onChange={e => handleLetterChange(i, e.target.value)}
-                      onKeyDown={e => handleKeyDown(i, e)}
-                      maxLength={1}
-                      className="w-12 h-14 text-center text-2xl font-black bg-transparent border-2 border-cyan-500 text-white rounded-lg focus:outline-none focus:border-cyan-300 uppercase caret-transparent"
-                      placeholder="_"
-                      autoFocus={i === 0}
-                    />
-                  ))}
-                </div>
-                <Button onClick={handleSave} disabled={letters.join('').trim().length === 0}
-                  className="bg-primary hover:bg-primary/80 font-bold px-8">
-                  SAVE
-                </Button>
-              </div>
-            )}
-
-            {/* Leaderboard */}
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">High Scores</p>
-              {scores.length === 0 && <p className="text-muted-foreground text-sm">No scores yet</p>}
-              {scores.map((s, i) => {
-                const isThis = saved && i === newScoreIndex;
-                return (
-                  <div key={i}
-                    className={`flex justify-between items-center px-3 py-1.5 rounded-lg text-sm font-mono
-                      ${isThis ? 'bg-cyan-900/50 border border-cyan-500 text-cyan-300' : 'text-muted-foreground'}`}>
-                    <span className={`w-5 font-bold ${i === 0 ? 'text-yellow-400' : i === 1 ? 'text-slate-300' : i === 2 ? 'text-amber-600' : ''}`}>
-                      {i + 1}.
-                    </span>
-                    <span className="flex-1 text-left font-bold text-white ml-2">{s.name}</span>
-                    <span className="text-right">{s.score.toLocaleString()}</span>
-                    <span className="text-right ml-3 text-xs opacity-60">W{s.wave}</span>
-                  </div>
-                );
-              })}
+        {/* Name entry */}
+        {isNewScore && !saved && (
+          <div className="space-y-3">
+            <p className="text-cyan-400 font-bold tracking-widest text-sm uppercase">New High Score!</p>
+            <div className="flex justify-center gap-3">
+              {[0, 1, 2].map(i => (
+                <input
+                  key={i}
+                  ref={inputs[i]}
+                  value={letters[i]}
+                  onChange={e => handleLetterChange(i, e.target.value)}
+                  onKeyDown={e => handleKeyDown(i, e)}
+                  maxLength={1}
+                  className="w-12 h-14 text-center text-2xl font-black bg-transparent border-2 border-cyan-500 text-white rounded-lg focus:outline-none focus:border-cyan-300 uppercase caret-transparent"
+                  placeholder="_"
+                  autoFocus={i === 0}
+                />
+              ))}
             </div>
-          </>
-        ) : (
-          /* Trophies panel */
-          <div className="space-y-1.5 max-h-64 overflow-y-auto">
-            {TROPHY_DEFS.map(t => {
-              const earned = earnedTrophies.includes(t.id);
-              return (
-                <div key={t.id}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${earned ? 'bg-yellow-900/30 border border-yellow-600/40' : 'opacity-40'}`}>
-                  <span className="text-xl w-7 text-center">{earned ? t.icon : '🔒'}</span>
-                  <div className="text-left flex-1">
-                    <div className={`font-bold text-xs ${earned ? 'text-yellow-300' : 'text-muted-foreground'}`}>{t.name}</div>
-                    <div className="text-xs text-muted-foreground">{t.desc}</div>
-                  </div>
-                  {earned && <span className="text-xs text-yellow-500 font-bold">✓</span>}
-                </div>
-              );
-            })}
+            <Button onClick={handleSave} disabled={letters.join('').trim().length === 0}
+              className="bg-primary hover:bg-primary/80 font-bold px-8">
+              SAVE
+            </Button>
           </div>
         )}
+
+        {/* Leaderboard */}
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground uppercase tracking-widest mb-2">High Scores</p>
+          {scores.length === 0 && <p className="text-muted-foreground text-sm">No scores yet</p>}
+          {scores.map((s, i) => {
+            const isThis = saved && i === newScoreIndex;
+            return (
+              <div key={i}
+                className={`flex justify-between items-center px-3 py-1.5 rounded-lg text-sm font-mono
+                  ${isThis ? 'bg-cyan-900/50 border border-cyan-500 text-cyan-300' : 'text-muted-foreground'}`}>
+                <span className={`w-5 font-bold ${i === 0 ? 'text-yellow-400' : i === 1 ? 'text-slate-300' : i === 2 ? 'text-amber-600' : ''}`}>
+                  {i + 1}.
+                </span>
+                <span className="flex-1 text-left font-bold text-white ml-2">{s.name}</span>
+                <span className="text-right">{s.score.toLocaleString()}</span>
+                <span className="text-right ml-3 text-xs opacity-60">W{s.wave}</span>
+              </div>
+            );
+          })}
+        </div>
 
         {countdown !== null && (
           <p className="text-xs text-muted-foreground">

@@ -526,7 +526,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2); ctx.stroke();
       ctx.fillStyle = c + '22'; ctx.fill();
       if (dropSprite) {
-        ctx.drawImage(dropSprite, -18, -18, 36, 36);
+        ctx.drawImage(dropSprite, -14, -14, 28, 28);
       } else {
         ctx.strokeStyle = c; ctx.lineWidth = 2;
         ctx.beginPath();
@@ -801,8 +801,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.fillText('★', 0, 1);
     } else if (spriteImg) {
       const c = colors[item.type] || '#fff';
-      ctx.shadowColor = c; ctx.shadowBlur = 22;
-      ctx.drawImage(spriteImg, -28, -28, 56, 56);
+      ctx.shadowColor = c; ctx.shadowBlur = 18;
+      ctx.drawImage(spriteImg, -18, -18, 36, 36);
     } else {
       const c = colors[item.type] || '#fff';
       ctx.shadowColor = c; ctx.shadowBlur = 16;
