@@ -103,6 +103,7 @@ export function loadSprites(onComplete) {
       }
     };
     img.onerror = () => {
+      // On error, still count as loaded so onComplete fires
       loaded++;
       if (loaded === allNames.length && onComplete) onComplete(sprites);
     };
