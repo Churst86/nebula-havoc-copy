@@ -1762,32 +1762,30 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     });
     s.bullets.forEach(b => drawBullet(ctx, b, false));
     s.enemyBullets.forEach(b => drawBullet(ctx, b, true));
-    // Draw harvesters
+    // Draw harvesters — procedural angular mining craft
     s.harvesters.forEach(h => {
-      const harvImg = getSprite('Harvester');
       ctx.save();
       ctx.translate(h.x, h.y);
-      if (h.state === 'return' && h.carryScore > 0) {
-        ctx.shadowColor = '#ff8800'; ctx.shadowBlur = 16;
-      } else {
-        ctx.shadowColor = '#ffaa44'; ctx.shadowBlur = 8;
-      }
-      if (harvImg) {
-        ctx.drawImage(harvImg, -18, -18, 36, 36);
-      } else {
-        // Procedural: mining drill shape
-        ctx.strokeStyle = '#ff8800'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.stroke();
-        ctx.fillStyle = '#ff880033'; ctx.fill();
-        ctx.strokeStyle = '#ffaa44'; ctx.lineWidth = 1;
-        for (let i = 0; i < 4; i++) {
-          const a = (i / 4) * Math.PI * 2;
-          ctx.beginPath(); ctx.moveTo(Math.cos(a) * 10, Math.sin(a) * 10); ctx.lineTo(Math.cos(a) * 16, Math.sin(a) * 16); ctx.stroke();
-        }
-      }
+      const busy = h.state === 'return' && h.carryScore > 0;
+      ctx.shadowColor = busy ? '#ff8800' : '#ffaa44';
+      ctx.shadowBlur = busy ? 16 : 8;
+      // Diamond body
+      ctx.strokeStyle = busy ? '#ff8800' : '#ffaa44'; ctx.lineWidth = 2;
+      ctx.fillStyle = busy ? 'rgba(255,136,0,0.25)' : 'rgba(255,170,68,0.18)';
+      ctx.beginPath();
+      ctx.moveTo(0, -12); ctx.lineTo(10, 0); ctx.lineTo(0, 12); ctx.lineTo(-10, 0); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      // Drill tip
+      ctx.strokeStyle = '#ffdd44'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(0, -18); ctx.stroke();
+      ctx.fillStyle = '#ffdd44';
+      ctx.beginPath(); ctx.moveTo(-3, -18); ctx.lineTo(3, -18); ctx.lineTo(0, -24); ctx.closePath(); ctx.fill();
+      // Center gem
+      ctx.fillStyle = busy ? '#ff8800' : '#ffcc44';
+      ctx.beginPath(); ctx.arc(0, 0, 3.5, 0, Math.PI * 2); ctx.fill();
       if (h.carryScore > 0) {
         ctx.fillStyle = '#ffdd00'; ctx.font = 'bold 8px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-        ctx.fillText(`+${h.carryScore}`, 0, 12);
+        ctx.fillText(`+${h.carryScore}`, 0, 14);
       }
       ctx.restore();
     });
