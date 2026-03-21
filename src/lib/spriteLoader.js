@@ -3,6 +3,29 @@ import { removeWhiteBackground } from './spriteProcessor.js';
 
 const BASE = 'https://raw.githubusercontent.com/Churst86/Sprites/main/';
 
+/**
+ * Loads an image by fetching it as a blob (bypasses canvas CORS tainting),
+ * then calls onLoad with the img element ready for pixel manipulation.
+ */
+function loadImageViaBlobUrl(url, onLoad, onError) {
+  fetch(url)
+    .then(res => {
+      if (!res.ok) throw new Error('fetch failed');
+      return res.blob();
+    })
+    .then(blob => {
+      const objectUrl = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        onLoad(img);
+        URL.revokeObjectURL(objectUrl);
+      };
+      img.onerror = onError;
+      img.src = objectUrl;
+    })
+    .catch(onError);
+}
+
 const SPRITE_NAMES = [
   'PlayerShip',
   'BasicEnemy',
