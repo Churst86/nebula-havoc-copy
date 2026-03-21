@@ -171,9 +171,16 @@ export default function Game() {
   }, [settings, handleStart, activePowerup]);
 
   const handlePauseToggle = useCallback(() => {
-    setIsPaused(p => !p);
-    setShowPauseOptions(false);
-  }, []);
+    if (isPaused && showPauseOptions) {
+      // Already in options — unpause and close
+      setIsPaused(false);
+      setShowPauseOptions(false);
+    } else {
+      // Open options screen directly
+      setIsPaused(true);
+      setShowPauseOptions(true);
+    }
+  }, [isPaused, showPauseOptions]);
 
   const handleSettingsChange = useCallback((next) => {
     setSettings(next);
