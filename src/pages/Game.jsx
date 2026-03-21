@@ -307,7 +307,7 @@ export default function Game() {
       )}
 
       {gameState === 'start' && (
-        <StartScreen onStart={handleStart} onContinue={handleContinueSave} settings={settings} onSettingsChange={handleSettingsChange} />
+        <StartScreen onStart={handleStart} onContinue={handleLoadGame} settings={settings} onSettingsChange={handleSettingsChange} />
       )}
 
       {gameState === 'continue' && (
