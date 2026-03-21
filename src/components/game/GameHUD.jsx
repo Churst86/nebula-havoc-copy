@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Zap, Shield, RefreshCw, Pause, Play, Settings } from 'lucide-react';
+import { Heart, Zap, Shield, RefreshCw, Pause, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const GUN_POWERUPS = ['shotgun', 'laser', 'photon', 'bounce', 'missile'];
