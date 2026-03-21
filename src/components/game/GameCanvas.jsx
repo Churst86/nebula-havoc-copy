@@ -1797,7 +1797,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.shadowColor = busy ? '#ff8800' : '#ffaa44';
       ctx.shadowBlur = busy ? 20 : 10;
       if (harvImg) {
-        ctx.drawImage(harvImg, -40, -40, 80, 80);
+        drawSprite(ctx, harvImg, -40, -40, 80, 80);
       } else {
         ctx.strokeStyle = busy ? '#ff8800' : '#ffaa44'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.stroke();
