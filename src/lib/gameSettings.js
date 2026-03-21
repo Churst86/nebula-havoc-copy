@@ -1,5 +1,6 @@
 // Persistent game settings stored in localStorage
 const LS_KEY = 'voidstorm_settings';
+const SAVE_KEY = 'voidstorm_save';
 
 const DEFAULTS = {
   musicVolume: 0.8,
@@ -8,12 +9,24 @@ const DEFAULTS = {
   brightness: 1.0,
   difficulty: 'normal', // 'easy' | 'normal' | 'hell'
   gameSpeed: 30, // fps: 15–120
-  saveFiles: [
-    { name: 'Save 1', wave: 0, powerups: {} },
-    { name: 'Save 2', wave: 0, powerups: {} },
-    { name: 'Save 3', wave: 0, powerups: {} },
-  ],
 };
+
+export function loadSaveFile() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeSaveFile(data) {
+  localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+}
+
+export function deleteSaveFile() {
+  localStorage.removeItem(SAVE_KEY);
+}
 
 export function loadSettings() {
   try {

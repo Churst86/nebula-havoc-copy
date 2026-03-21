@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Music, Volume2, VolumeX, Sun, Skull, Gauge, Save, LogOut } from 'lucide-react';
-import { DIFFICULTY_CONFIG, saveSettings, loadSettings } from '../../lib/gameSettings';
+import { ArrowLeft, Music, Volume2, VolumeX, Sun, Skull, Gauge, Save, LogOut, CheckCircle } from 'lucide-react';
+import { DIFFICULTY_CONFIG, saveSettings, writeSaveFile } from '../../lib/gameSettings';
 import { sounds } from '../../hooks/useSound.js';
 
 function Slider({ color, min, max, step, value, onChange, label }) {
@@ -21,8 +21,8 @@ function Slider({ color, min, max, step, value, onChange, label }) {
   );
 }
 
-export default function OptionsScreen({ settings, onSettingsChange, onBack, gameState, onExitToTitle }) {
-  const [showSaveMenu, setShowSaveMenu] = useState(false);
+export default function OptionsScreen({ settings, onSettingsChange, onBack, gameState, onExitToTitle, onSaveGame }) {
+  const [savedFlash, setSavedFlash] = useState(false);
 
   function update(key, value) {
     const next = { ...settings, [key]: value };
@@ -30,11 +30,12 @@ export default function OptionsScreen({ settings, onSettingsChange, onBack, game
     saveSettings(next);
   }
 
-  function handleSave(index, score, wave, powerups) {
-    const next = { ...settings };
-    next.saveFiles[index] = { name: `Save ${index + 1}`, wave, powerups, score };
-    onSettingsChange(next);
-    saveSettings(next);
+  function handleSaveGame() {
+    if (onSaveGame) {
+      onSaveGame();
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 2000);
+    }
   }
 
   const musicVol = settings.musicVolume ?? settings.soundVolume ?? 0.8;
@@ -156,9 +157,9 @@ export default function OptionsScreen({ settings, onSettingsChange, onBack, game
         </div>
 
         {gameState === 'playing' && (
-          <Button onClick={() => setShowSaveMenu(true)} variant="outline" className="w-full gap-2 mt-2">
-            <Save className="w-4 h-4" />
-            Save Game
+          <Button onClick={handleSaveGame} variant="outline" className={`w-full gap-2 mt-2 transition-colors ${savedFlash ? 'border-green-500 text-green-400' : ''}`}>
+            {savedFlash ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+            {savedFlash ? 'Saved!' : 'Save Game'}
           </Button>
         )}
 
