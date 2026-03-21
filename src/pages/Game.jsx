@@ -81,7 +81,6 @@ export default function Game() {
     if (!keepPowerups) {
       setCarryOverPowerups(null);
       setActivePowerup({});
-      // Reset shop upgrades on fresh game (game over), but not on difficulty progression
       const resetUpgrades = { armor: 0, repair: 0, drone: 0, harvester: 0 };
       setShopUpgrades(resetUpgrades);
       saveShopUpgrades(resetUpgrades);
@@ -93,7 +92,7 @@ export default function Game() {
     setGameState('playing');
   }, []);
 
-  const handleContinueSave = useCallback(() => {
+  const handleLoadGame = useCallback(() => {
     const save = loadSaveFile();
     if (!save) return;
     // Restore difficulty
@@ -105,15 +104,15 @@ export default function Game() {
     const savedShopUpgrades = save.shopUpgrades || { armor: 0, repair: 0, drone: 0, harvester: 0 };
     setShopUpgrades(savedShopUpgrades);
     saveShopUpgrades(savedShopUpgrades);
-    // Restore powerups + wave
+    // Restore powerups, start at wave 1 with last difficulty
     setCarryOverPowerups(save.powerups || {});
-    const savedWave = save.wave || 1;
-    waveRef.current = savedWave;
-    setWave(savedWave);
-    setStartWave(savedWave);
+    // Restore block score so player keeps their currency
+    setBlockScore(save.blockScore || 0);
+    waveRef.current = 1;
+    setWave(1);
+    setStartWave(1);
     scoreRef.current = 0;
     setScore(0);
-    setBlockScore(0);
     setLives(3);
     setMaxLives(3);
     setContinuesLeft(0);
@@ -187,8 +186,9 @@ export default function Game() {
       difficulty: settings.difficulty,
       powerups: activePowerup,
       shopUpgrades: shopUpgrades,
+      blockScore: blockScore,
     });
-  }, [settings.difficulty, activePowerup, shopUpgrades]);
+  }, [settings.difficulty, activePowerup, shopUpgrades, blockScore]);
 
   const handleShopBuy = useCallback((upgradeId) => {
     setShopUpgrades(prev => {
