@@ -710,10 +710,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       }
     } else if (b.type === 'laser') {
       const w = 3 + (b.fat || 1) * 2;
-      ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14 + (b.fat || 1) * 4;
+      ctx.shadowColor = '#ff2200'; ctx.shadowBlur = 14 + (b.fat || 1) * 4;
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(b.x - w * 0.3, b.y - 12, w * 0.6, 22);
-      ctx.fillStyle = '#ff44ff';
+      ctx.fillStyle = '#ff2200';
       ctx.fillRect(b.x - w, b.y - 12, w * 2, 22);
     } else if (b.type === 'photon') {
       const sz = b.size || 10;
