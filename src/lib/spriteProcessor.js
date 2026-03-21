@@ -3,7 +3,7 @@
  * Uses a flood-fill from all edges to find connected background regions.
  * Returns a canvas with the background removed, or null on failure.
  */
-export function removeWhiteBackground(img, threshold = 220) {
+export function removeWhiteBackground(img, threshold = 230) {
   const canvas = document.createElement('canvas');
   canvas.width = img.naturalWidth || img.width;
   canvas.height = img.naturalHeight || img.height;
