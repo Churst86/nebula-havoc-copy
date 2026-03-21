@@ -1778,16 +1778,16 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     });
     s.bullets.forEach(b => drawBullet(ctx, b, false));
     s.enemyBullets.forEach(b => drawBullet(ctx, b, true));
-    // Draw harvesters — sprite with white bg removed, orange tint glow
+    // Draw harvesters
     s.harvesters.forEach(h => {
       const harvImg = getSprite('Harvester');
       ctx.save();
       ctx.translate(h.x, h.y);
       const busy = h.state === 'return' && h.carryScore > 0;
       ctx.shadowColor = busy ? '#ff8800' : '#ffaa44';
-      ctx.shadowBlur = busy ? 16 : 8;
+      ctx.shadowBlur = busy ? 20 : 10;
       if (harvImg) {
-        ctx.drawImage(harvImg, -18, -18, 36, 36);
+        ctx.drawImage(harvImg, -24, -24, 48, 48);
       } else {
         ctx.strokeStyle = busy ? '#ff8800' : '#ffaa44'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.stroke();
@@ -1797,19 +1797,19 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       }
       if (h.carryScore > 0) {
         ctx.fillStyle = '#ffdd00'; ctx.font = 'bold 8px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-        ctx.fillText(`+${h.carryScore}`, 0, 14);
+        ctx.fillText(`+${h.carryScore}`, 0, 18);
       }
       ctx.restore();
     });
 
-    // Draw drones — sprite with white bg removed, cyan tint glow
+    // Draw drones
     s.drones.forEach(d => {
       const droneImg = getSprite('Drone');
       ctx.save();
       ctx.translate(d.x, d.y);
-      ctx.shadowColor = '#00ddff'; ctx.shadowBlur = d.state === 'fetch' ? 16 : 8;
+      ctx.shadowColor = '#00ddff'; ctx.shadowBlur = d.state === 'fetch' ? 20 : 10;
       if (droneImg) {
-        ctx.drawImage(droneImg, -16, -16, 32, 32);
+        ctx.drawImage(droneImg, -20, -20, 40, 40);
       } else {
         ctx.strokeStyle = '#00ddff'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.stroke();
