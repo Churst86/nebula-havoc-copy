@@ -20,6 +20,14 @@ const SPRITE_NAMES = [
   'Shopkeeper',
 ];
 
+// Sprites with non-png extensions
+const SPRITE_EXTENSIONS = {
+  'Drone': 'jpg',
+  'Harvester': 'jpg',
+};
+
+const EXTRA_SPRITE_NAMES = ['Drone', 'Harvester'];
+
 // Map of wave number → boss sprite name
 export const BOSS_SPRITE_MAP = {
   5:  'FirstBoss',
@@ -39,18 +47,20 @@ export function getBossSpriteKey(wave) {
 const sprites = {};
 
 export function loadSprites(onComplete) {
+  const allNames = [...SPRITE_NAMES, ...EXTRA_SPRITE_NAMES];
   let loaded = 0;
-  SPRITE_NAMES.forEach(name => {
+  allNames.forEach(name => {
+    const ext = SPRITE_EXTENSIONS[name] || 'png';
     const img = new Image();
-    img.src = BASE + name + '.png';
+    img.src = BASE + name + '.' + ext;
     img.onload = () => {
       sprites[name] = img;
       loaded++;
-      if (loaded === SPRITE_NAMES.length && onComplete) onComplete(sprites);
+      if (loaded === allNames.length && onComplete) onComplete(sprites);
     };
     img.onerror = () => {
       loaded++;
-      if (loaded === SPRITE_NAMES.length && onComplete) onComplete(sprites);
+      if (loaded === allNames.length && onComplete) onComplete(sprites);
     };
   });
 }
