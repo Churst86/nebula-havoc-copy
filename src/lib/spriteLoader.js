@@ -114,8 +114,10 @@ export function getSprite(name) {
 }
 
 /**
- * Draw a sprite onto ctx, automatically applying 'multiply' blend if needed
- * to remove white backgrounds on cross-origin JPEGs.
+ * Draw a sprite onto ctx.
+ * If the sprite has _needsMultiply flag (cross-origin JPEG that couldn't be pixel-processed),
+ * uses 'multiply' blend mode — on the near-black game canvas, white areas become invisible.
+ * For processed canvases (transparent bg), draws normally.
  */
 export function drawSprite(ctx, sprite, x, y, w, h) {
   if (!sprite) return;
