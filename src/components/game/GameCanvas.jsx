@@ -43,6 +43,14 @@ const DROPPER_SPAWN_INTERVAL = 480;
 const GUN_TYPES = ['shotgun', 'laser', 'photon', 'bounce', 'missile'];
 
 const STAR_INVINCIBLE_FRAMES = 420;
+
+// Map powerup types to sprite names in the repo
+const POWERUP_SPRITE_KEYS = {
+  shotgun:  'Shotgun Powerup',
+  photon:   'Photon Powerup',
+  laser:    'Laser Powerup',
+  missile:  'Missile Powerup',
+};
 const DROPPER_ROTATE_FRAMES = 300;
 const STAR_SPAWN_INTERVAL = 1800;
 
