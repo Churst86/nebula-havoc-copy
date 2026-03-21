@@ -1839,24 +1839,63 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const laserTier = s.powerups.laser;
       const beamW = laserTier >= 10 ? (4 + laserTier * 3) * 2 : 4 + laserTier * 3;
       const isPiercingDraw = laserTier >= 10;
-      const beamColor = isPiercingDraw ? '#ffffff' : '#ff44ff';
-      const beamColorRgb = isPiercingDraw ? '255,255,255' : '255,68,255';
-      const beamCenterRgb = isPiercingDraw ? '255,255,255' : '255,200,255';
+      const beamColor = isPiercingDraw ? '#ffffff' : '#ff2200';
+      const beamColorRgb = isPiercingDraw ? '255,255,255' : '255,34,0';
+      const beamCenterRgb = isPiercingDraw ? '255,255,255' : '255,180,160';
 
       if (s.laserBeamActive) {
         const beamEndY = (s.laserBeamBlockY || 0);
         const beamAlpha = 0.7 + Math.sin(Date.now() * 0.03) * 0.3;
+        const burstFrames = 18; // frames for burst-to-beam transition
+        const burstAge = LASER_BEAM_FRAMES - s.laserBeamTimer; // 0 = just fired
+        const burstPct = Math.min(burstAge / burstFrames, 1); // 0→1 over first burstFrames frames
+
         ctx.save();
-        // Single shadow pass — set once and draw outer + core together
-        ctx.shadowColor = beamColor; ctx.shadowBlur = 24;
-        ctx.strokeStyle = `rgba(${beamColorRgb},${beamAlpha * 0.35})`; ctx.lineWidth = beamW * 3;
+
+        // Burst origin flare (expands and fades as beam straightens)
+        if (burstPct < 1) {
+          const flareR = 8 + (1 - burstPct) * 40;
+          const flareAlpha = (1 - burstPct) * 0.9;
+          ctx.shadowColor = beamColor; ctx.shadowBlur = 40;
+          // Radial burst rays
+          for (let ri = 0; ri < 8; ri++) {
+            const rayAngle = (ri / 8) * Math.PI * 2;
+            const rayLen = flareR * (0.6 + Math.random() * 0.4);
+            ctx.strokeStyle = `rgba(${beamColorRgb},${flareAlpha})`;
+            ctx.lineWidth = 3 - burstPct * 2;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y - 18);
+            ctx.lineTo(p.x + Math.cos(rayAngle) * rayLen, p.y - 18 + Math.sin(rayAngle) * rayLen);
+            ctx.stroke();
+          }
+          // Central burst glow
+          const grad = ctx.createRadialGradient(p.x, p.y - 18, 0, p.x, p.y - 18, flareR);
+          grad.addColorStop(0, `rgba(255,255,255,${flareAlpha})`);
+          grad.addColorStop(0.4, `rgba(${beamColorRgb},${flareAlpha * 0.7})`);
+          grad.addColorStop(1, `rgba(${beamColorRgb},0)`);
+          ctx.fillStyle = grad;
+          ctx.beginPath(); ctx.arc(p.x, p.y - 18, flareR, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // Beam width tapers from wide burst to thin line as burstPct goes 0→1
+        const curBeamW = beamW * (1 + (1 - burstPct) * 4);
+
+        // Outer glow
+        ctx.shadowColor = beamColor; ctx.shadowBlur = 28;
+        ctx.strokeStyle = `rgba(${beamColorRgb},${beamAlpha * 0.35})`; ctx.lineWidth = curBeamW * 3;
         ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, beamEndY); ctx.stroke();
-        ctx.shadowBlur = 0; // disable for inner pass — no need to redraw glow
-        ctx.strokeStyle = `rgba(${beamColorRgb},${beamAlpha})`; ctx.lineWidth = beamW;
+
+        // Main beam
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = `rgba(${beamColorRgb},${beamAlpha})`; ctx.lineWidth = curBeamW;
         ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, beamEndY); ctx.stroke();
-        ctx.strokeStyle = `rgba(${beamCenterRgb},0.9)`; ctx.lineWidth = beamW * 0.3;
+
+        // Bright core
+        ctx.strokeStyle = `rgba(${beamCenterRgb},0.95)`; ctx.lineWidth = curBeamW * 0.3;
         ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, beamEndY); ctx.stroke();
+
         ctx.restore();
+
         const beamPct = s.laserBeamTimer / LASER_BEAM_FRAMES;
         ctx.save();
         ctx.strokeStyle = `rgba(${beamColorRgb},0.6)`; ctx.lineWidth = 3; ctx.shadowBlur = 0;
@@ -1864,7 +1903,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         ctx.stroke(); ctx.restore();
       } else if (s.laserCooldown > 0) {
         ctx.save();
-        ctx.strokeStyle = 'rgba(180,180,180,0.3)'; ctx.lineWidth = 3; ctx.shadowBlur = 0;
+        ctx.strokeStyle = 'rgba(180,100,80,0.3)'; ctx.lineWidth = 3; ctx.shadowBlur = 0;
         ctx.beginPath(); ctx.arc(p.x, p.y, 30, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - s.laserCooldown / LASER_COOLDOWN_FRAMES));
         ctx.stroke(); ctx.restore();
       } else {
