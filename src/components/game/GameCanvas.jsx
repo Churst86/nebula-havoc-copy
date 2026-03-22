@@ -1614,7 +1614,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
 
     s.powerupItems = s.powerupItems.filter(item => {
       const dx = item.x - p.x, dy = item.y - p.y;
-      if (Math.sqrt(dx * dx + dy * dy) < 22) {
+      if (Math.sqrt(dx * dx + dy * dy) < 38) {
         if (item.type === 'star') {
           s.starInvincibleTimer = STAR_INVINCIBLE_FRAMES; sounds.powerup();
         } else if (item.type === 'shield') {
