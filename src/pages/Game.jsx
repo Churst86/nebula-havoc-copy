@@ -373,6 +373,8 @@ export default function Game() {
           continuesLeft={continuesLeft}
           onContinue={handleContinue}
           onDecline={handleDecline}
+          bossMode={bossMode}
+          onRestartBossMode={handleRestartBossMode}
         />
       )}
 
