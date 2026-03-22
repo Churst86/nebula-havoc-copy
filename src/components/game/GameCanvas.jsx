@@ -1494,8 +1494,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             }
             return;
           }
-          // Don't allow damage to boss until it's ready to fire
-          if (e.type === 'boss' && !e._readyToFire) { return; }
+          // Don't allow damage to boss until it has actually fired
+          if (e.type === 'boss' && !e._hasFired) { return; }
           // Check if boss shield blocks this bullet
           if (e.type === 'boss' && (e.tier || 1) === 3) {
             const shieldRadius = getBeholderShieldRadius(e);
