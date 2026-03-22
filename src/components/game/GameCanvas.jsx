@@ -1502,10 +1502,18 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             }
             const pts = e.type === 'boss' ? 5000 : e.type === 'dropper' ? 500 : e.type === 'elite' ? 300 : e.type === 'mine' ? 300 : e.type === 'eater' ? 800 : 100;
             s.score += pts; onScoreChange(s.score); sounds.kill();
-            spawnExplosion(s, e.x, e.y,
-              e.type === 'boss' ? '#ff0066' : e.type === 'dropper' ? (e.color || '#ffd700') : e.type === 'elite' ? '#ff44ff' : e.type === 'mine' ? '#ff8800' : e.type === 'eater' ? '#44ff88' : '#ff4444',
-              e.type === 'boss' ? 40 : e.type === 'mine' ? 30 : e.type === 'eater' ? 20 : 14
-            );
+            if (e.type === 'boss') {
+              spawnExplosion(s, e.x, e.y, '#ff0066', 60);
+              spawnExplosion(s, e.x - 40, e.y - 40, '#ff6600', 30);
+              spawnExplosion(s, e.x + 40, e.y - 40, '#ffaa00', 30);
+              spawnExplosion(s, e.x - 40, e.y + 40, '#ff00aa', 25);
+              spawnExplosion(s, e.x + 40, e.y + 40, '#00ffff', 25);
+            } else {
+              spawnExplosion(s, e.x, e.y,
+                e.type === 'dropper' ? (e.color || '#ffd700') : e.type === 'elite' ? '#ff44ff' : e.type === 'mine' ? '#ff8800' : e.type === 'eater' ? '#44ff88' : '#ff4444',
+                e.type === 'mine' ? 30 : e.type === 'eater' ? 20 : 14
+              );
+            }
             if (e.type === 'dropper') { sounds.killDropper(); s.powerupItems.push({ x: e.x, y: e.y, type: e.dropType, angle: 0 }); }
             if (e.type === 'boss') {
               sounds.stopBossMusicOnClear(); sounds.waveComplete();
