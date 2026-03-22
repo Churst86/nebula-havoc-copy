@@ -1,5 +1,6 @@
 // Boss behavior logic — all boss-specific AI, firing patterns, and special weapons
 import { applyPlayerTracking, applyDistanceManagement } from './bossMovementPatterns.js';
+import { HITBOX_SIZES } from './hitboxConfig.js';
 
 // ─── Boss Warning ────────────────────────────────────────────────────────────
 export function createBossWarning(wave) {
@@ -15,7 +16,8 @@ export function spawnBoss(W, wave, hpMult) {
     type: 'boss',
     x: W / 2,
     y: -80,
-    w: 45, h: 45,
+    w: HITBOX_SIZES.boss.w,
+    h: HITBOX_SIZES.boss.h,
     hp: bossHp, maxHp: bossHp,
     vx: 1.8, vy: 0.4,
     fireTimer: 5,
