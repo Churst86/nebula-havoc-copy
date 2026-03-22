@@ -118,20 +118,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     loadSprites((sprites) => {
       playerShipImageRef.current = sprites['PlayerShip'] || null;
       spritesReadyRef.current = true;
-    });
-    const BASE = 'https://raw.githubusercontent.com/Churst86/Sprites/main/';
-    const extraSprites = ['FinalBoss', 'BeholderBoss', 'PirateBoss', 'DreadnoughtBoss', 'FirstBoss'];
-    extraSprites.forEach(name => {
-      const existing = getSprite(name);
-      if (!existing) {
-        const img = new Image();
-        img.src = BASE + name + '.png?t=' + Date.now();
-        img.onload = () => {
-          img._loaded = true;
-          window.__spriteCache = window.__spriteCache || {};
-          window.__spriteCache[name] = img;
-        };
-      }
+    }, (progress) => {
+      if (onLoadProgress) onLoadProgress(progress);
     });
   }, []);
 
