@@ -13,7 +13,7 @@ import IntroCrawl from '../components/game/IntroCrawl';
 import { loadShopUpgrades, saveShopUpgrades } from '../lib/shopUpgrades';
 import DockingScene from '../components/game/DockingScene';
 import ShopScreen from '../components/game/ShopScreen';
-import LaunchScreen from '../components/game/LaunchScreen';
+import LaunchScreen from '../components/game/LaunchScreen.jsx';
 
 const CONTINUE_SCORE_THRESHOLD = 1000; // score needed to earn a continue
 const MAX_CONTINUES = 3;
