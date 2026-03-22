@@ -4,23 +4,26 @@ import { Button } from '@/components/ui/button';
 import { Trophy, RotateCcw, Home } from 'lucide-react';
 
 const LS_KEY = 'voidstorm_highscores';
+const LS_KEY_BOSS = 'voidstorm_highscores_boss';
 const MAX_SCORES = 10;
 
-export function getHighScores() {
-  try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch { return []; }
+const getStorageKey = (bossMode) => bossMode ? LS_KEY_BOSS : LS_KEY;
+
+export function getHighScores(bossMode = false) {
+  try { return JSON.parse(localStorage.getItem(getStorageKey(bossMode))) || []; } catch { return []; }
 }
 
-export function isHighScore(score) {
-  const scores = getHighScores();
+export function isHighScore(score, bossMode = false) {
+  const scores = getHighScores(bossMode);
   return scores.length < MAX_SCORES || score > (scores[scores.length - 1]?.score || 0);
 }
 
-export function saveHighScore(name, score, wave) {
-  const scores = getHighScores();
+export function saveHighScore(name, score, wave, bossMode = false) {
+  const scores = getHighScores(bossMode);
   scores.push({ name: name.toUpperCase().slice(0, 3), score, wave, date: Date.now() });
   scores.sort((a, b) => b.score - a.score);
   const trimmed = scores.slice(0, MAX_SCORES);
-  localStorage.setItem(LS_KEY, JSON.stringify(trimmed));
+  localStorage.setItem(getStorageKey(bossMode), JSON.stringify(trimmed));
   return trimmed;
 }
 
