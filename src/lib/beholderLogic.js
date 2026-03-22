@@ -116,6 +116,7 @@ export function updateBeholderFire(e, p, s, sounds) {
     }
     sounds && sounds.hit && sounds.hit();
     e._laserAtPlayerTimer = 300;
+    e._hasFired = true;
   }
 
   // Sweep laser from corner to corner — fires every 3 seconds (180 frames)
