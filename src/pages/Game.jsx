@@ -385,6 +385,7 @@ export default function Game() {
           mode={dockingMode}
           onDockComplete={() => { setShowDocking(false); setShowShop(true); sounds.playTitleMusic(); }}
           onDepartComplete={() => {
+            setCarryOverPowerups({ ...activePowerup });
             setShowDocking(false);
             setGameState('playing');
           }}
