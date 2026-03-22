@@ -18,7 +18,6 @@ const CRAWL_DURATION = 22000;
 export default function IntroCrawl({ onDone }) {
   const [fading, setFading] = useState(false);
   const [crawlDone, setCrawlDone] = useState(false);
-  const [showPrompt, setShowPrompt] = useState(false);
   const doneRef = useRef(false);
 
   // Preload title music immediately so it's cached and plays instantly on title screen
