@@ -430,7 +430,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
 
   function drawEnemy(ctx, e) {
     ctx.save();
-    ctx.translate(e.x, e.y);
+    // Apply damage shake offset
+    const shakeX = e._shakeX || 0;
+    const shakeY = e._shakeY || 0;
+    ctx.translate(e.x + shakeX, e.y + shakeY);
 
     if (e.type === 'boss') {
       const wave = e._wave || 5;
