@@ -1,4 +1,6 @@
 // Enemy spawner utilities — keeps spawnWave logic cleaner
+import { HITBOX_SIZES } from './hitboxConfig.js';
+
 export function spawnBerserk(enemies, W, wave, hpMult, isHell) {
   const berserkHp = Math.round((8 + wave * 2.5) * hpMult);
   const laserFreqBase = isHell ? 45 : 60; // fires more often in hell
@@ -8,8 +10,8 @@ export function spawnBerserk(enemies, W, wave, hpMult, isHell) {
     type: 'berserk',
     x: Math.random() * (W - 160) + 80,
     y: -60,
-    w: 24,
-    h: 24,
+    w: HITBOX_SIZES.berserk.w,
+    h: HITBOX_SIZES.berserk.h,
     hp: berserkHp,
     maxHp: berserkHp,
     vx: Math.random() * 1 - 0.5,
