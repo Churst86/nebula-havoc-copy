@@ -69,6 +69,7 @@ export default function Game() {
     const milestones = [25, 50, 100];
     const prevWave = w - 1;
     if (prevWave > 0 && prevWave % 5 === 0 && !milestones.includes(prevWave)) {
+      setDockingMode('arriving');
       setShowDocking(true);
     }
   }, []);
