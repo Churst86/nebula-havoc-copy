@@ -98,7 +98,7 @@ export default function ShopScreen({ blockScore, shopUpgrades, onBuy, onReturn, 
       {/* UI overlay */}
       <div className="relative z-10 flex flex-col h-full">
 
-        {/* Header */}
+        {/* Header + Dialogue centered at top */}
         <div className="text-center pt-4 pb-1">
           <div className="text-xs tracking-[0.4em] uppercase text-cyan-500/60 font-mono">Space Station</div>
           <div className="text-xl font-black tracking-widest text-cyan-300" style={{ textShadow: '0 0 16px #00ccff' }}>
@@ -106,8 +106,7 @@ export default function ShopScreen({ blockScore, shopUpgrades, onBuy, onReturn, 
           </div>
         </div>
 
-        {/* Dialogue bubble */}
-        <div className="px-4 min-h-[44px]">
+        <div className="flex justify-center px-4 min-h-[44px]">
           <AnimatePresence>
             {showDialogue &&
             <motion.div
@@ -116,36 +115,50 @@ export default function ShopScreen({ blockScore, shopUpgrades, onBuy, onReturn, 
               exit={{ opacity: 0 }}
               className="rounded-lg border border-cyan-500/40 px-3 py-2 text-xs text-gray-200"
               style={{ background: 'rgba(0,30,60,0.85)' }}>
-              
-                <span className="text-cyan-400 font-bold">Ozma: </span>
-                {displayedText}
-                <span className="animate-pulse">▌</span>
-              </motion.div>
+              <span className="text-cyan-400 font-bold">Ozma: </span>
+              {displayedText}
+              <span className="animate-pulse">▌</span>
+            </motion.div>
             }
           </AnimatePresence>
         </div>
 
-        {/* Artifacts balance */}
-        <div className="px-4 pt-2 pb-1">
+        {/* Block score centered */}
+        <div className="flex justify-center pt-2 pb-1">
           <div className="rounded-lg border border-orange-500/40 px-3 py-1.5 inline-flex items-center gap-2"
-          style={{ background: 'rgba(0,0,0,0.6)' }}>
+            style={{ background: 'rgba(0,0,0,0.6)' }}>
             <span className="text-xs text-orange-400/80 font-mono uppercase">Blocks</span>
             <span className="text-lg font-black text-orange-300">{blockScore.toLocaleString()}</span>
             <span className="text-xs text-orange-500/60">pts</span>
           </div>
         </div>
 
-        {/* Upgrade cards grid */}
-        <div className="flex-1 overflow-y-auto px-4 pb-2">
-          <div className="grid grid-cols-4 gap-1">
-            {UPGRADE_DEFS.map((def) =>
-            <UpgradeCard
-              key={def.id}
-              def={def}
-              currentLevel={shopUpgrades[def.id] || 0}
-              blockScore={blockScore}
-              onBuy={onBuy} />
+        {/* Main area: left cards | center (shopkeeper view) | right cards */}
+        <div className="flex-1 flex flex-row items-center gap-2 px-2 overflow-hidden">
+          {/* Left column */}
+          <div className="flex flex-col gap-2 w-36 shrink-0 overflow-y-auto h-full py-2">
+            {UPGRADE_DEFS.slice(0, Math.ceil(UPGRADE_DEFS.length / 2)).map((def) =>
+              <UpgradeCard
+                key={def.id}
+                def={def}
+                currentLevel={shopUpgrades[def.id] || 0}
+                blockScore={blockScore}
+                onBuy={onBuy} />
+            )}
+          </div>
 
+          {/* Center: empty so shopkeeper is visible */}
+          <div className="flex-1" />
+
+          {/* Right column */}
+          <div className="flex flex-col gap-2 w-36 shrink-0 overflow-y-auto h-full py-2">
+            {UPGRADE_DEFS.slice(Math.ceil(UPGRADE_DEFS.length / 2)).map((def) =>
+              <UpgradeCard
+                key={def.id}
+                def={def}
+                currentLevel={shopUpgrades[def.id] || 0}
+                blockScore={blockScore}
+                onBuy={onBuy} />
             )}
           </div>
         </div>
@@ -164,7 +177,6 @@ export default function ShopScreen({ blockScore, shopUpgrades, onBuy, onReturn, 
               textShadow: '0 0 10px #00ccff',
               boxShadow: '0 0 16px #00ccff33'
             }}>
-            
             ▶ RETURN TO STAGE {nextWave}
           </motion.button>
         </div>
