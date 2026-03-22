@@ -24,7 +24,7 @@ export function saveHighScore(name, score, wave) {
   return trimmed;
 }
 
-export default function HighScores({ score, wave, onRestart, onReturnToTitle, isNewScore }) {
+export default function HighScores({ score, wave, onRestart, onRestartBossMode, bossMode, onReturnToTitle, isNewScore }) {
   const [name, setName] = useState('');
   const [saved, setSaved] = useState(false);
   const [scores, setScores] = useState(getHighScores());
