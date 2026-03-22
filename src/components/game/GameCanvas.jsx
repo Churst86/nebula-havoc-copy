@@ -263,7 +263,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       type: 'dropper',
       dropType,
       x: randomBetween(80, W - 80), y: randomBetween(60, 200),
-      w: 22, h: 22,
+      w: 36, h: 36,
       hp: 1, maxHp: 1,
       vx: randomBetween(-1.2, 1.2), vy: randomBetween(-0.8, 0.8),
       dirTimer: randomBetween(60, 120),
