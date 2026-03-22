@@ -110,8 +110,10 @@ export function updateBossMovement(e, W, H, p) {
     e._shakeY = 0;
   }
 
-  // Mark boss as ready to fire once it reaches position
-  e._readyToFire = true;
+  // Mark boss as ready to fire once it reaches position (only set once)
+  if (!e._readyToFire && Math.abs(e.y - (e._roamTargetY || entryY)) < 20) {
+    e._readyToFire = true;
+  }
 }
 
 // ─── Tier 1 (Wave 5): Single aimed shots fired quickly + occasional homing missiles ──
