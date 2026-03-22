@@ -362,7 +362,15 @@ export default function Game() {
 
       {/* Docking scene → shop flow (after boss waves) */}
       {showDocking && !showShop && (
-        <DockingScene onDockComplete={() => { setShowDocking(false); setShowShop(true); sounds.playTitleMusic(); }} />
+        <DockingScene
+          mode={dockingMode}
+          onDockComplete={() => { setShowDocking(false); setShowShop(true); sounds.playTitleMusic(); }}
+          onDepartComplete={() => {
+            // Clear all leftover game objects by resetting to a clean playing state
+            setShowDocking(false);
+            setGameState('playing');
+          }}
+        />
       )}
       {showShop && (
         <ShopScreen
