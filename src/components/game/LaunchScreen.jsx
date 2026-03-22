@@ -155,8 +155,6 @@ export default function LaunchScreen({ onDone, loadProgress = 0 }) {
       ctx.fillRect(0, 0, w, h);
 
       stars.forEach(st => {
-        st.y += st.speed;
-        if (st.y > 1) st.y = 0;
         ctx.globalAlpha = st.alpha;
         ctx.fillStyle = '#fff';
         ctx.beginPath(); ctx.arc(st.x * w, st.y * h, st.r, 0, Math.PI * 2); ctx.fill();
