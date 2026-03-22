@@ -49,7 +49,10 @@ export default function Game() {
   const [shopUpgrades, setShopUpgrades] = useState(() => ({ armor: 0, repair: 0, drone: 0, harvester: 0 }));
   const [showPauseOptions, setShowPauseOptions] = useState(false);
   const [showDocking, setShowDocking] = useState(false);
+  const [dockingMode, setDockingMode] = useState('arriving');
   const [showShop, setShowShop] = useState(false);
+  const [showLaunch, setShowLaunch] = useState(true);
+  const [loadProgress, setLoadProgress] = useState(0);
   const scoreRef = useRef(0);
   const waveRef = useRef(1);
 
