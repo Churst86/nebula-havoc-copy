@@ -303,6 +303,7 @@ export default function Game() {
         carryOverPowerups={carryOverPowerups}
         shopUpgrades={shopUpgrades}
         startWave={startWave}
+        onLoadProgress={setLoadProgress}
       />
 
       <BossWarning warning={bossWarning} />
