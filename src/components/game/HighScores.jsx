@@ -51,7 +51,7 @@ export default function HighScores({ score, wave, onRestart, onRestartBossMode, 
 
   const handleSave = () => {
     const n = letters.join('').padEnd(3, '_').slice(0, 3);
-    const updated = saveHighScore(n, score, wave);
+    const updated = saveHighScore(n, score, wave, bossMode);
     setScores(updated);
     setSaved(true);
     setCountdown(5);
