@@ -30,7 +30,7 @@ export function saveHighScore(name, score, wave, bossMode = false) {
 export default function HighScores({ score, wave, onRestart, onRestartBossMode, bossMode, onReturnToTitle, isNewScore }) {
   const [name, setName] = useState('');
   const [saved, setSaved] = useState(false);
-  const [scores, setScores] = useState(getHighScores());
+  const [scores, setScores] = useState(getHighScores(bossMode));
   const inputs = [useRef(), useRef(), useRef()];
   const [letters, setLetters] = useState(['', '', '']);
   const [countdown, setCountdown] = useState(null);
