@@ -97,28 +97,10 @@ export default function IntroCrawl({ onDone }) {
         </div>
       </div>
 
-      {/* Prompt shown after crawl or skip */}
-      {showPrompt && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60"
-          style={{ animation: 'fadeIn 0.8s ease-in' }}>
-          <div className="text-center space-y-4">
-            <div className="text-3xl font-black tracking-widest text-cyan-300"
-              style={{ textShadow: '0 0 20px #00ccff' }}>
-              NEBULA HAVOK
-            </div>
-            <div className="text-white/60 text-sm tracking-widest uppercase animate-pulse">
-              Press any key or click to begin
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Hint while crawling */}
-      {!showPrompt && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 text-xs text-white/30 tracking-widest uppercase">
-          Click or press any key to skip
-        </div>
-      )}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 text-xs text-white/30 tracking-widest uppercase">
+        Click or press any key to skip
+      </div>
 
       <style>{`
         @keyframes crawl {
