@@ -56,7 +56,7 @@ export default function StartScreen({ onStart, onContinue, settings, onSettingsC
         <p className="text-muted-foreground text-lg tracking-widest uppercase">
           Bullet Hell Space Shooter
         </p>
-        <p className="text-xs text-muted-foreground/50 font-mono -mt-4">{GAME_VERSION}</p>
+        
 
         <div className="space-y-3 pt-2">
           <Button
@@ -66,16 +66,16 @@ export default function StartScreen({ onStart, onContinue, settings, onSettingsC
             NEW GAME
           </Button>
 
-          {saveFile && (
-            <Button
-              onClick={onContinue}
-              size="lg"
-              variant="outline"
-              className="font-bold text-lg px-10 py-6 rounded-xl w-full gap-2 border-cyan-500 text-cyan-300 hover:bg-cyan-900/30">
+          {saveFile &&
+          <Button
+            onClick={onContinue}
+            size="lg"
+            variant="outline"
+            className="font-bold text-lg px-10 py-6 rounded-xl w-full gap-2 border-cyan-500 text-cyan-300 hover:bg-cyan-900/30">
               <Play className="w-5 h-5" />
               LOAD GAME — {saveFile.difficulty?.toUpperCase() || 'NORMAL'} (Wave 1 + Upgrades)
             </Button>
-          )}
+          }
 
           <div className="flex gap-3">
             <Button
