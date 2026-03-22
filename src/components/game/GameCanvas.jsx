@@ -521,13 +521,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         ctx.beginPath(); ctx.moveTo(0, -16); ctx.lineTo(12, 10); ctx.lineTo(0, 5); ctx.lineTo(-12, 10); ctx.closePath();
         ctx.stroke(); ctx.fillStyle = c + '33'; ctx.fill();
       }
-      // Draw the carried powerup as a small glowing icon centered just below the ship
+      // Draw the carried powerup as a small glowing icon centered inside the dropper body
       ctx.shadowColor = c; ctx.shadowBlur = 16;
       if (dropSprite) {
-        drawSprite(ctx, dropSprite, -20, 40, 40, 40);
+        drawSprite(ctx, dropSprite, -16, -16, 32, 32);
       } else {
         ctx.fillStyle = c; ctx.font = 'bold 12px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(DROPPER_LABELS[e.dropType] || '★', 0, 82);
+        ctx.fillText(DROPPER_LABELS[e.dropType] || '★', 0, 0);
       }
     } else if (e.type === 'mine') {
       const mineImg = getSprite('Mine');
