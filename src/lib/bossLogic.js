@@ -90,6 +90,19 @@ export function updateBossMovement(e, W, H, p) {
     applyPlayerTracking(e, p, H);
     applyDistanceManagement(e, p, W, 180 + bt * 20); // Higher tiers maintain more distance
   }
+
+  // Apply damage shake
+  if (e._shakeTimer > 0) {
+    e._shakeTimer--;
+    e._shakeX = (Math.random() - 0.5) * e._shakeMagnitude;
+    e._shakeY = (Math.random() - 0.5) * e._shakeMagnitude;
+  } else {
+    e._shakeX = 0;
+    e._shakeY = 0;
+  }
+
+  // Mark boss as ready to fire once it reaches position
+  e._readyToFire = true;
 }
 
 // ─── Tier 1 (Wave 5): Single aimed shots fired quickly + occasional homing missiles ──
