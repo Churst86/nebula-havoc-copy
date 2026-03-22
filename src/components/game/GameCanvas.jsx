@@ -117,6 +117,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   useEffect(() => {
     loadSprites((sprites) => {
       playerShipImageRef.current = sprites['PlayerShip'] || null;
+      spritesReadyRef.current = true;
     });
     const BASE = 'https://raw.githubusercontent.com/Churst86/Sprites/main/';
     const extraSprites = ['FinalBoss', 'BeholderBoss', 'PirateBoss', 'DreadnoughtBoss', 'FirstBoss'];
