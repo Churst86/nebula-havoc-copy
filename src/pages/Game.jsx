@@ -423,6 +423,8 @@ export default function Game() {
           score={score}
           wave={wave}
           onRestart={handleStart}
+          onRestartBossMode={handleRestartBossMode}
+          bossMode={bossMode}
           onReturnToTitle={() => {
             const resetUpgrades = { armor: 0, repair: 0, drone: 0, harvester: 0 };
             setShopUpgrades(resetUpgrades);
