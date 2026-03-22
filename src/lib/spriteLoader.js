@@ -80,13 +80,13 @@ export function getBossSpriteKey(wave) {
 
 const sprites = {};
 
-export function loadSprites(onComplete) {
+export function loadSprites(onComplete, onProgress) {
   let loaded = 0;
 
   function finish(name, imgOrCanvas) {
-    // Make each sprite available immediately as it loads
     sprites[name] = imgOrCanvas;
     loaded++;
+    if (onProgress) onProgress(loaded / SPRITE_NAMES.length);
     if (loaded === SPRITE_NAMES.length && onComplete) onComplete(sprites);
   }
 
