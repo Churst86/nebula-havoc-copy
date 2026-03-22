@@ -175,6 +175,10 @@ export default function Game() {
     setGameState('resuming');
   }, []);
 
+  const handleRestartBossMode = useCallback(() => {
+    handleStart(false, true);
+  }, [handleStart]);
+
   const handleContinueUsed = useCallback(() => {
     setContinuesLeft(c => Math.max(0, c - 1));
   }, []);
