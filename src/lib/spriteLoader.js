@@ -26,6 +26,7 @@ function loadImageViaBlobUrl(url, onLoad, onError) {
     .catch(onError);
 }
 
+// All sprites are now PNG
 const SPRITE_NAMES = [
   'PlayerShip',
   'BasicEnemy',
@@ -43,21 +44,6 @@ const SPRITE_NAMES = [
   'PirateBoss',
   'FinalBoss',
   'Shopkeeper',
-];
-
-// Sprites with non-png extensions (key = sprite name, value = extension)
-const SPRITE_EXTENSIONS = {
-  'Drone': 'jpg',
-  'Harvester': 'jpg',
-  'Dropper': 'jpg',
-  'Shotgun Powerup': 'jpg',
-  'Photon Powerup': 'jpg',
-  'BounceshotPowerup': 'jpg',
-  'Laser Powerup': 'png',
-  'Missile Powerup': 'png',
-};
-
-const EXTRA_SPRITE_NAMES = [
   'Drone',
   'Harvester',
   'Dropper',
@@ -68,7 +54,7 @@ const EXTRA_SPRITE_NAMES = [
   'Missile Powerup',
 ];
 
-// Sprites that need white background removal (JPEGs or PNGs with white bg)
+// Sprites that need white background removal (PNGs that may have white bg)
 const NEEDS_BG_REMOVAL = new Set([
   'Drone', 'Harvester', 'Dropper',
   'Shotgun Powerup', 'Photon Powerup', 'BounceshotPowerup', 'Laser Powerup', 'Missile Powerup',
@@ -94,35 +80,24 @@ export function getBossSpriteKey(wave) {
 const sprites = {};
 
 export function loadSprites(onComplete) {
-  const allNames = [...SPRITE_NAMES, ...EXTRA_SPRITE_NAMES];
   let loaded = 0;
 
   function finish(name, imgOrCanvas) {
     sprites[name] = imgOrCanvas;
     loaded++;
-    if (loaded === allNames.length && onComplete) onComplete(sprites);
+    if (loaded === SPRITE_NAMES.length && onComplete) onComplete(sprites);
   }
 
-  allNames.forEach(name => {
-    const ext = SPRITE_EXTENSIONS[name] || 'png';
-    const url = BASE + name + '.' + ext;
+  SPRITE_NAMES.forEach(name => {
+    const url = BASE + name + '.png';
 
     if (NEEDS_BG_REMOVAL.has(name)) {
-      // Fetch as blob to avoid canvas CORS tainting, then process pixels
       loadImageViaBlobUrl(url, (img) => {
         const result = removeWhiteBackground(img);
-        if (result) {
-          // Force multiply blend for JPGs even after pixel processing
-          if (ext === 'jpg') result._needsMultiply = true;
-          finish(name, result);
-        } else {
-          // Fallback: store raw img with multiply flag
-          img._needsMultiply = true;
-          finish(name, img);
-        }
+        finish(name, result || img);
       }, () => {
         loaded++;
-        if (loaded === allNames.length && onComplete) onComplete(sprites);
+        if (loaded === SPRITE_NAMES.length && onComplete) onComplete(sprites);
       });
     } else {
       const img = new Image();
@@ -131,7 +106,7 @@ export function loadSprites(onComplete) {
       img.onload = () => finish(name, img);
       img.onerror = () => {
         loaded++;
-        if (loaded === allNames.length && onComplete) onComplete(sprites);
+        if (loaded === SPRITE_NAMES.length && onComplete) onComplete(sprites);
       };
     }
   });
@@ -143,17 +118,8 @@ export function getSprite(name) {
 
 /**
  * Draw a sprite onto ctx.
- * Sprites loaded via blob URL are pixel-processable (transparent bg canvas).
- * Falls back to multiply blend if raw img was stored (shouldn't happen normally).
  */
 export function drawSprite(ctx, sprite, x, y, w, h) {
   if (!sprite) return;
-  if (sprite._needsMultiply) {
-    ctx.save();
-    ctx.globalCompositeOperation = 'multiply';
-    ctx.drawImage(sprite, x, y, w, h);
-    ctx.restore();
-  } else {
-    ctx.drawImage(sprite, x, y, w, h);
-  }
+  ctx.drawImage(sprite, x, y, w, h);
 }
