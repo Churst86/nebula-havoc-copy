@@ -32,32 +32,25 @@ export default function IntroCrawl({ onDone }) {
     setTimeout(() => onDone(), 1200);
   }
 
-  // After crawl finishes, show "press any key" prompt
+  // After crawl finishes, call finish automatically
   useEffect(() => {
     const t = setTimeout(() => {
       setCrawlDone(true);
-      setShowPrompt(true);
+      finish();
     }, CRAWL_DURATION);
     return () => clearTimeout(t);
   }, []);
 
-  // Interaction: if crawl is done → proceed; otherwise just skip to prompt
+  // Interaction: skip crawl and finish immediately
   useEffect(() => {
-    const handler = () => {
-      if (crawlDone) {
-        finish();
-      } else {
-        setCrawlDone(true);
-        setShowPrompt(true);
-      }
-    };
+    const handler = () => finish();
     window.addEventListener('keydown', handler);
     window.addEventListener('pointerdown', handler);
     return () => {
       window.removeEventListener('keydown', handler);
       window.removeEventListener('pointerdown', handler);
     };
-  }, [crawlDone]);
+  }, []);
 
   return (
     <div
