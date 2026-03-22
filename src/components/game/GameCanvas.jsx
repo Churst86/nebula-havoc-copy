@@ -1039,7 +1039,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           const bt = e.tier || 1;
           if (bt === 1) updateBossTier1Fire(e, p, s, sounds);
           else if (bt === 2) updateBossTier2Fire(e, p, s, sounds);
-          else if (bt === 3) updateBossTier3Fire(e, p, s, W, H, spawnExplosion, sounds, onScoreChange, BLOCK_SIZE, getBlockCells);
+          else if (bt === 3) { if (!e._bInit) { initBeholderMovement(e); e._bInit = true; } updateBeholderMovement(e, W, H); updateBeholderShield(e); updateBeholderFire(e, p, s, sounds); s.W = W; s.H = H; }
           else if (bt === 4) { updateBossTier4Fire(e, p, s, sounds, W, H, spawnExplosion); updateBossTier4Armor(e, s, BLOCK_SIZE, getBlockCells, spawnExplosion); }
           else updateBossTier5Fire(e, p, s, sounds, W, H, spawnExplosion);
         }
