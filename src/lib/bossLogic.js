@@ -417,7 +417,7 @@ export function updateBossTier4Fire(e, p, s, sounds, W, H, spawnExplosion) {
         bouncing: true, bouncesLeft: 10,
       });
     }
-    e._bounceTimer = 280;
+    e._bounceTimer = 180;
   }
 }
 
