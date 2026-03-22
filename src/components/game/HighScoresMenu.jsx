@@ -5,7 +5,30 @@ import { Trophy, ArrowLeft } from 'lucide-react';
 import { getHighScores } from './HighScores';
 
 export default function HighScoresMenu({ onBack }) {
-  const scores = getHighScores();
+  const [mode, setMode] = useState('normal');
+  const scores = getHighScores(mode === 'boss');
+
+  const renderScores = () => (
+    <div className="space-y-2">
+      {scores.length === 0 ? (
+        <p className="text-muted-foreground text-sm">No scores yet</p>
+      ) : (
+        scores.map((s, i) => (
+          <div key={i}
+            className="flex justify-between items-center px-4 py-2 rounded-lg bg-card">
+            <span className={`w-6 font-bold ${
+              i === 0 ? 'text-yellow-400' : i === 1 ? 'text-slate-300' : i === 2 ? 'text-amber-600' : 'text-muted-foreground'
+            }`}>
+              {i + 1}.
+            </span>
+            <span className="flex-1 text-left font-bold text-white ml-3">{s.name}</span>
+            <span className="text-right text-sm">{s.score.toLocaleString()}</span>
+            <span className="text-right ml-3 text-xs opacity-60 w-8">W{s.wave}</span>
+          </div>
+        ))
+      )}
+    </div>
+  );
 
   return (
     <motion.div
@@ -24,25 +47,24 @@ export default function HighScoresMenu({ onBack }) {
           HIGH SCORES
         </h1>
 
-        <div className="space-y-2">
-          {scores.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No scores yet</p>
-          ) : (
-            scores.map((s, i) => (
-              <div key={i}
-                className="flex justify-between items-center px-4 py-2 rounded-lg bg-card">
-                <span className={`w-6 font-bold ${
-                  i === 0 ? 'text-yellow-400' : i === 1 ? 'text-slate-300' : i === 2 ? 'text-amber-600' : 'text-muted-foreground'
-                }`}>
-                  {i + 1}.
-                </span>
-                <span className="flex-1 text-left font-bold text-white ml-3">{s.name}</span>
-                <span className="text-right text-sm">{s.score.toLocaleString()}</span>
-                <span className="text-right ml-3 text-xs opacity-60 w-8">W{s.wave}</span>
-              </div>
-            ))
-          )}
+        <div className="flex gap-2 justify-center">
+          <Button
+            variant={mode === 'normal' ? 'default' : 'outline'}
+            onClick={() => setMode('normal')}
+            className="font-bold"
+          >
+            NORMAL
+          </Button>
+          <Button
+            variant={mode === 'boss' ? 'default' : 'outline'}
+            onClick={() => setMode('boss')}
+            className="font-bold"
+          >
+            BOSS MODE
+          </Button>
         </div>
+
+        {renderScores()}
 
         <Button onClick={onBack} variant="outline" className="gap-2">
           <ArrowLeft className="w-4 h-4" />
