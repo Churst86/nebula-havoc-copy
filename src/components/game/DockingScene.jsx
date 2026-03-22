@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { getSprite } from '../../lib/spriteLoader.js';
 
 // Animated canvas: player ship flies up and docks with a space station
 export default function DockingScene({ onDockComplete }) {
