@@ -8,12 +8,12 @@ export default function LaunchScreen({ onDone, loadProgress = 0 }) {
   const [fading, setFading] = useState(false);
   const doneCalledRef = useRef(false);
 
-  // Trigger fade-out when fully loaded — call onDone immediately so game is ready
+  // Trigger fade-out when fully loaded, then call onDone after fade
   useEffect(() => {
     if (loadProgress >= 1 && !doneCalledRef.current) {
       doneCalledRef.current = true;
-      onDone(); // call immediately so GameCanvas starts initializing
       setFading(true);
+      setTimeout(() => onDone(), 700);
     }
   }, [loadProgress, onDone]);
 
