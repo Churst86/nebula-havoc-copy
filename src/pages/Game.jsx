@@ -321,6 +321,7 @@ export default function Game() {
         shopUpgrades={shopUpgrades}
         startWave={startWave}
         onLoadProgress={setLoadProgress}
+        bossMode={bossMode}
       />
 
       <BossWarning warning={bossWarning} />
