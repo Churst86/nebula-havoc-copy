@@ -854,7 +854,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   }
 
   const loop = useCallback((timestamp) => {
-    if (!stateRef.current.running || isPausedRef.current) {
+    if (!stateRef.current.running || isPausedRef.current || !spritesReadyRef.current) {
       animRef.current = requestAnimationFrame(loop);
       return;
     }
