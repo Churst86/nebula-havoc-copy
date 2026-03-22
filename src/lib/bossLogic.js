@@ -145,104 +145,129 @@ export function updateBossTier2Fire(e, p, s, sounds) {
   }
 }
 
-// ─── Tier 3 (Wave 15): Dual outward lasers with 3s charge, random directions ──
-// Each laser fires outward from boss edge, NOT from center
+// ─── Tier 3 (Wave 15): Eye sweep lasers targeting player + super laser ──────
+// Timeline (cumulative frames at 60fps):
+//   0s  — Laser 1 starts cycling every 3s (180f): 60f charge → 120f active sweep
+//   9s  — Laser 2 joins, also cycling every 3s
+//   15s — Super laser starts cycling every 9s (540f): 90f charge → 90f active
+//
+// Each sweep laser fires from the boss eye toward the player's position at the
+// moment it charges, then sweeps in a slow arc across the screen.
 export function updateBossTier3Fire(e, p, s, W, H, spawnExplosion, sounds, onScoreChange, BLOCK_SIZE, getBlockCells) {
-  const BOSS_RADIUS = 80; // offset from boss center to edge
+  const LASER_LEN = Math.max(W, H) * 1.6;
+  const BOSS_RADIUS = 30; // eye is close to boss center
 
-  // Initialize state
-  if (e._sweepState === undefined) { e._sweepState = 'cooldown'; e._sweepStateTimer = 120; }
+  // Global elapsed counter
+  e._t3Elapsed = (e._t3Elapsed || 0) + 1;
+  const elapsed = e._t3Elapsed;
 
-  e._sweepStateTimer--;
+  // ── Helper: fire one sweep laser (L1 or L2) ──
+  function tickSweepLaser(idx) {
+    // Each laser has its own state object
+    const key = `_sweep${idx}`;
+    if (!e[key]) e[key] = { state: 'cooldown', timer: idx === 1 ? 60 : 0 }; // L2 starts immediately when unlocked
+    const ls = e[key];
 
-  if (e._sweepState === 'cooldown') {
-    e._sweepHitsPlayer = false;
-    if (e._sweepStateTimer <= 0) {
-      // Pick 2 random outward angles (not toward player — away from center)
-      e._laserAngle = Math.random() * Math.PI * 2;
-      e._laserAngle2 = e._laserAngle + Math.PI + (Math.random() - 0.5) * 1.2;
-      e._sweepState = 'charging';
-      e._sweepStateTimer = 180; // 3 second charge at 60fps
-    }
-  } else if (e._sweepState === 'charging') {
-    // Slow rotation during charge for visual interest
-    e._laserAngle += 0.005;
-    e._laserAngle2 += 0.005;
-    if (e._sweepStateTimer <= 0) {
-      e._sweepState = 'active';
-      e._sweepStateTimer = 200; // ~3.3s active
-    }
-  } else if (e._sweepState === 'active') {
-    // Sweep rotation
-    e._laserAngle += 0.020;
-    e._laserAngle2 = e._laserAngle + Math.PI;
+    ls.timer--;
 
-    const LASER_LEN = Math.max(W, H) * 1.4;
-    // Lasers start from boss EDGE, not center
-    const l1StartX = e.x + Math.cos(e._laserAngle) * BOSS_RADIUS;
-    const l1StartY = e.y + Math.sin(e._laserAngle) * BOSS_RADIUS;
-    const l1EndX = e.x + Math.cos(e._laserAngle) * LASER_LEN;
-    const l1EndY = e.y + Math.sin(e._laserAngle) * LASER_LEN;
-    const l2StartX = e.x + Math.cos(e._laserAngle2) * BOSS_RADIUS;
-    const l2StartY = e.y + Math.sin(e._laserAngle2) * BOSS_RADIUS;
-    const l2EndX = e.x + Math.cos(e._laserAngle2) * LASER_LEN;
-    const l2EndY = e.y + Math.sin(e._laserAngle2) * LASER_LEN;
+    if (ls.state === 'cooldown') {
+      if (ls.timer <= 0) {
+        // Aim toward player's CURRENT position at charge time
+        const dx = p.x - e.x, dy = p.y - e.y;
+        ls.angle = Math.atan2(dy, dx);
+        ls.sweepDir = Math.random() < 0.5 ? 1 : -1;
+        ls.state = 'charging';
+        ls.timer = 60; // 1s charge
+      }
+    } else if (ls.state === 'charging') {
+      if (ls.timer <= 0) {
+        ls.state = 'active';
+        ls.timer = 120; // 2s active sweep
+      }
+    } else if (ls.state === 'active') {
+      // Sweep angle toward player, rotating outward slowly
+      ls.angle += ls.sweepDir * 0.018;
 
-    e._sweepLaserStartX = l1StartX; e._sweepLaserStartY = l1StartY;
-    e._sweepLaserEndX = l1EndX; e._sweepLaserEndY = l1EndY;
-    e._sweepLaserStartX2 = l2StartX; e._sweepLaserStartY2 = l2StartY;
-    e._sweepLaserEndX2 = l2EndX; e._sweepLaserEndY2 = l2EndY;
+      const sx = e.x + Math.cos(ls.angle) * BOSS_RADIUS;
+      const sy = e.y + Math.sin(ls.angle) * BOSS_RADIUS;
+      const ex2 = e.x + Math.cos(ls.angle) * LASER_LEN;
+      const ey2 = e.y + Math.sin(ls.angle) * LASER_LEN;
 
-    // Damage check every 8 frames for performance
-    e._laserDmgTimer = (e._laserDmgTimer || 0) - 1;
-    if (e._laserDmgTimer <= 0) {
-      e._laserDmgTimer = 8;
-      const lasers = [
-        [l1StartX, l1StartY, l1EndX, l1EndY],
-        [l2StartX, l2StartY, l2EndX, l2EndY],
-      ];
-      lasers.forEach(([sx, sy, ex, ey]) => {
-        // Damage blocks (skip invulnerable)
+      // Store draw coords
+      ls.startX = sx; ls.startY = sy;
+      ls.endX = ex2; ls.endY = ey2;
+
+      // Damage check every 6 frames
+      ls.dmgTimer = (ls.dmgTimer || 0) - 1;
+      if (ls.dmgTimer <= 0) {
+        ls.dmgTimer = 6;
         s.blocks.forEach(block => {
           if (block.dead || block.invulnerable) return;
           getBlockCells(block).forEach(cell => {
             const cx = cell.x + BLOCK_SIZE / 2, cy = cell.y + BLOCK_SIZE / 2;
-            if (pointNearLine(cx, cy, sx, sy, ex, ey, 14)) {
+            if (pointNearLine(cx, cy, sx, sy, ex2, ey2, 14)) {
               block.hp -= 1;
               spawnExplosion(s, cx, cy, '#ff44ff', 2);
               if (block.hp <= 0) block.dead = true;
             }
           });
         });
-      });
-      // Player hit check
-      e._sweepHitsPlayer =
-        pointNearLine(p.x, p.y, l1StartX, l1StartY, l1EndX, l1EndY, 16) ||
-        pointNearLine(p.x, p.y, l2StartX, l2StartY, l2EndX, l2EndY, 16);
-    }
+        ls.hitsPlayer = pointNearLine(p.x, p.y, sx, sy, ex2, ey2, 16);
+      }
 
-    if (e._sweepStateTimer <= 0) {
-      e._sweepState = 'cooldown';
-      e._sweepStateTimer = 200;
-      e._sweepLaserEndX = null;
-      e._sweepLaserEndX2 = null;
-      e._sweepHitsPlayer = false;
+      // Propagate player hit to top-level flag
+      if (idx === 1) e._sweepHitsPlayer = ls.hitsPlayer || false;
+      else e._sweepHitsPlayer = e._sweepHitsPlayer || ls.hitsPlayer || false;
+
+      if (ls.timer <= 0) {
+        ls.state = 'cooldown';
+        ls.timer = 120; // 2s cooldown before next shot (total cycle ~5s)
+        ls.startX = undefined;
+        ls.hitsPlayer = false;
+        if (idx === 1) e._sweepHitsPlayer = false;
+      }
     }
   }
 
-  // Super laser: fires straight down from boss
-  e._superLaserTimer = (e._superLaserTimer || 420) - 1;
-  if (!e._superLaserCharging && !e._superLaserActive && e._superLaserTimer <= 0) {
-    e._superLaserCharging = true;
-    e._superLaserChargeTimer = 120;
-    e._superLaserTimer = 540;
+  // ── Laser 1: always active from the start ──
+  tickSweepLaser(1);
+
+  // ── Laser 2: unlocks after 9 seconds (540f) ──
+  if (elapsed >= 540) tickSweepLaser(2);
+
+  // Expose draw data for drawBossSweepLaser
+  const l1 = e._sweep1;
+  const l2 = e._sweep2;
+  e._sweepLaserStartX  = l1 && l1.startX !== undefined ? l1.startX : undefined;
+  e._sweepLaserStartY  = l1 && l1.startY !== undefined ? l1.startY : undefined;
+  e._sweepLaserEndX    = l1 && l1.endX !== undefined ? l1.endX : undefined;
+  e._sweepLaserEndY    = l1 && l1.endY !== undefined ? l1.endY : undefined;
+  e._sweepLaserStartX2 = l2 && l2.startX !== undefined ? l2.startX : undefined;
+  e._sweepLaserStartY2 = l2 && l2.startY !== undefined ? l2.startY : undefined;
+  e._sweepLaserEndX2   = l2 && l2.endX !== undefined ? l2.endX : undefined;
+  e._sweepLaserEndY2   = l2 && l2.endY !== undefined ? l2.endY : undefined;
+
+  // Expose charging state for drawBossSweepLaser
+  e._sweepState = (l1 && l1.state === 'charging') || (l2 && l2.state === 'charging') ? 'charging' : 'active';
+  e._sweepCharging1 = l1 && l1.state === 'charging' ? l1.angle : undefined;
+  e._sweepCharging2 = l2 && l2.state === 'charging' ? l2.angle : undefined;
+
+  // ── Super laser: unlocks after 15 seconds (900f), fires every 9s (540f) ──
+  if (elapsed >= 900) {
+    e._superLaserTimer = (e._superLaserTimer || 1) - 1;
+    if (!e._superLaserCharging && !e._superLaserActive && e._superLaserTimer <= 0) {
+      e._superLaserCharging = true;
+      e._superLaserChargeTimer = 90;
+      e._superLaserTargetX = p.x; // aim at player position when charging starts
+      e._superLaserTimer = 540;
+    }
   }
   if (e._superLaserCharging) {
     e._superLaserChargeTimer--;
     if (e._superLaserChargeTimer <= 0) {
       e._superLaserCharging = false;
       e._superLaserActive = true;
-      e._superLaserDuration = 120;
+      e._superLaserDuration = 90;
       e._superLaserDmgTimer = 0;
     }
   }
@@ -251,18 +276,18 @@ export function updateBossTier3Fire(e, p, s, W, H, spawnExplosion, sounds, onSco
     e._superLaserDmgTimer = (e._superLaserDmgTimer || 0) - 1;
     if (e._superLaserDmgTimer <= 0) {
       e._superLaserDmgTimer = 6;
-      const bx = e.x;
+      const bx = e._superLaserTargetX || e.x;
       s.blocks.forEach(block => {
         if (block.dead) return;
         getBlockCells(block).forEach(cell => {
-          if (Math.abs(cell.x + BLOCK_SIZE / 2 - bx) < 20) {
+          if (Math.abs(cell.x + BLOCK_SIZE / 2 - bx) < 22) {
             block.hp -= 2;
             spawnExplosion(s, cell.x + BLOCK_SIZE / 2, cell.y, '#ffffff', 3);
             if (block.hp <= 0) block.dead = true;
           }
         });
       });
-      e._superHitsPlayer = Math.abs(p.x - bx) < 22;
+      e._superHitsPlayer = Math.abs(p.x - bx) < 24;
     }
     if (e._superLaserDuration <= 0) {
       e._superLaserActive = false;
