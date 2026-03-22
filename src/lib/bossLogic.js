@@ -1,4 +1,5 @@
 // Boss behavior logic — all boss-specific AI, firing patterns, and special weapons
+import { applyPlayerTracking, applyDistanceManagement } from './bossMovementPatterns.js';
 
 // ─── Boss Warning ────────────────────────────────────────────────────────────
 export function createBossWarning(wave) {
