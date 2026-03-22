@@ -19,6 +19,7 @@ import {
 
 // Import laser logic
 import { updateLaserBeam, LASER_CHARGE_FRAMES, LASER_BEAM_FRAMES, LASER_COOLDOWN_FRAMES } from '../../lib/laserLogic.js';
+import { spawnWave, progressWave } from '../../lib/waveSpawner.js';
 
 // Spread shotgun constants
 const SPREAD_SHOTS_PER_RELOAD = 2;
