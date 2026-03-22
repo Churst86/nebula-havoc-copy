@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { getSprite } from '../../lib/spriteLoader.js';
+import { getSprite, loadSprites } from '../../lib/spriteLoader.js';
 
 export default function LaunchScreen({ onDone, loadProgress = 0 }) {
   const canvasRef = useRef(null);
