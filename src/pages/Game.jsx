@@ -104,13 +104,19 @@ export default function Game() {
     const savedShopUpgrades = save.shopUpgrades || { armor: 0, repair: 0, drone: 0, harvester: 0 };
     setShopUpgrades(savedShopUpgrades);
     saveShopUpgrades(savedShopUpgrades);
-    // Restore powerups, start at wave 1 with last difficulty
-    setCarryOverPowerups(save.powerups || {});
+    // Restore powerups
+    const savedPowerups = save.powerups || {};
+    setCarryOverPowerups(savedPowerups);
+    // Immediately seed the HUD powerup display
+    setActivePowerup({ ...savedPowerups });
+    if (savedPowerups.armorHp !== undefined) setArmorHp(savedPowerups.armorHp);
     // Restore block score so player keeps their currency
     setBlockScore(save.blockScore || 0);
-    waveRef.current = 1;
-    setWave(1);
-    setStartWave(1);
+    // Resume at the saved wave
+    const savedWave = save.wave || 1;
+    waveRef.current = savedWave;
+    setWave(savedWave);
+    setStartWave(savedWave);
     scoreRef.current = 0;
     setScore(0);
     setLives(3);
