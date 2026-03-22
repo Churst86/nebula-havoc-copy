@@ -165,6 +165,7 @@ export default function DockingScene({ mode = 'arriving', onDockComplete, onDepa
     <div
       className="fixed inset-0 z-40 flex items-center justify-center"
       style={{
+        background: '#020510',
         opacity: fading ? 0 : 1,
         transition: 'opacity 0.8s ease-in-out',
         pointerEvents: fading ? 'none' : 'all',
