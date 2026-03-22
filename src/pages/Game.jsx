@@ -55,6 +55,11 @@ export default function Game() {
   const [showLaunch, setShowLaunch] = useState(false);
   const [loadProgress, setLoadProgress] = useState(0);
   const scoreRef = useRef(0);
+
+  // Preload sprites immediately on mount so LaunchScreen has them ready
+  React.useEffect(() => {
+    loadSprites(() => {}, (progress) => setLoadProgress(progress));
+  }, []);
   const waveRef = useRef(1);
 
   const handleScoreChange = useCallback((s) => {
