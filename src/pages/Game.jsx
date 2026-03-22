@@ -131,7 +131,9 @@ export default function Game() {
     setContinuesLeft(0);
     setShowDocking(false);
     setShowShop(false);
-    setGameState('playing');
+    setShowLaunch(true);
+    setLoadProgress(0);
+    // gameState will be set to 'playing' by LaunchScreen.onDone
   }, [settings]);
 
   // Called by canvas when lives hit 0 or wave milestone reached
