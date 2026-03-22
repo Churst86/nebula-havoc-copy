@@ -1485,7 +1485,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             }
             return;
           }
+          // Don't allow damage to boss until it's ready to fire
+          if (e.type === 'boss' && !e._readyToFire) { return; }
           e.hp--; sounds.hit(); b.hit = true;
+          if (e.type === 'boss' && e._readyToFire) {
+            // Apply damage shake
+            e._shakeTimer = 8;
+            e._shakeMagnitude = 6;
+          }
           if (e.type === 'mine' && e.hp === e.maxHp - 1 && !e._charging) {
             const dx2 = p.x - e.x, dy2 = p.y - e.y;
             const len = Math.hypot(dx2, dy2) || 1;
