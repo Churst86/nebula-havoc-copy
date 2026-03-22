@@ -114,6 +114,8 @@ export function updateBossMovement(e, W, H, p) {
 
 // ─── Tier 1 (Wave 5): Single aimed shots fired quickly + occasional homing missiles ──
 export function updateBossTier1Fire(e, p, s, sounds) {
+  const isStage2 = e._stage2Triggered;
+  
   e.fireTimer--;
   if (e.fireTimer <= 0) {
     const dx = p.x - e.x, dy = p.y - e.y;
@@ -121,14 +123,15 @@ export function updateBossTier1Fire(e, p, s, sounds) {
     // Single aimed shot with a tiny random spread
     const a = baseAngle + (Math.random() - 0.5) * 0.15;
     s.enemyBullets.push({ x: e.x, y: e.y, vx: Math.cos(a) * 5.5, vy: Math.sin(a) * 5.5, boss: true });
-    e.fireTimer = 18;
+    e.fireTimer = isStage2 ? 10 : 18;
   }
 
   e._specialTimer = (e._specialTimer || 90) - 1;
   if (e._specialTimer <= 0) {
-    // Fire 3 homing missiles from top side, they circle and home in
-    for (let i = 0; i < 3; i++) {
-      const topOffset = (i - 1) * 25;
+    const missileCount = isStage2 ? 5 : 3;
+    // Fire homing missiles from top side, they circle and home in
+    for (let i = 0; i < missileCount; i++) {
+      const topOffset = (i - Math.floor(missileCount / 2)) * 25;
       s.enemyBullets.push({
         x: e.x + topOffset, y: e.y - 100, // Fire from top side, outside sprite
         vx: 0, vy: 2,
@@ -143,7 +146,7 @@ export function updateBossTier1Fire(e, p, s, sounds) {
       });
     }
     sounds && sounds.hit && sounds.hit();
-    e._specialTimer = 90;
+    e._specialTimer = isStage2 ? 50 : 90;
   }
 }
 
