@@ -96,7 +96,7 @@ export default function Game() {
     setContinuesLeft(0);
     setShowDocking(false);
     setShowShop(false);
-    setGameState('playing');
+    // gameState will be set to 'playing' by LaunchScreen.onDone
   }, []);
 
   const handleLoadGame = useCallback(() => {
