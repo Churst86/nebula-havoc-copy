@@ -1891,7 +1891,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       s.drones = [];
       s.running = true;
       onWaveChange(s.wave);
-      spawnWave(W, s);
+      spawnWaveLocal(W, s);
       lastTimeRef.current = performance.now();
       animRef.current = requestAnimationFrame(loop);
     } else if (gameState === 'resuming') {
