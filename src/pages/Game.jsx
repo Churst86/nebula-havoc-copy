@@ -385,12 +385,8 @@ export default function Game() {
           mode={dockingMode}
           onDockComplete={() => { setShowDocking(false); setShowShop(true); sounds.playTitleMusic(); }}
           onDepartComplete={() => {
-            // Keep docking scene visible during state transition to avoid flashing
-            setGameState('idle');
-            setTimeout(() => {
-              setShowDocking(false);
-              setTimeout(() => setGameState('playing'), 16);
-            }, 50);
+            setShowDocking(false);
+            setGameState('playing');
           }}
         />
       )}
