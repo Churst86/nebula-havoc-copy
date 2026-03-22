@@ -91,8 +91,8 @@ export function updateBeholderShield(e) {
 export function updateBeholderFire(e, p, s, sounds) {
   const isStage2 = e._stage2Triggered && e.hp <= e.maxHp / 3;
 
-  // Initialize laser timer to fire immediately
-  if (e._laserAtPlayerTimer === undefined) e._laserAtPlayerTimer = 0;
+  // Initialize laser timer
+  if (e._laserAtPlayerTimer === undefined) e._laserAtPlayerTimer = 30;
   
   e._laserAtPlayerTimer--;
 
