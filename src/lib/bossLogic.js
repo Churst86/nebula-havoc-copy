@@ -39,58 +39,45 @@ export function spawnBoss(W, wave, hpMult) {
 // ─── Boss Movement ────────────────────────────────────────────────────────────
 export function updateBossMovement(e, W, H) {
   const bt = e.tier || 1;
-  e.phase = (e.phase || 0) + (bt >= 4 ? 0.012 : bt >= 3 ? 0.010 : bt >= 2 ? 0.008 : 0.006);
-  const targetY = bt >= 3 ? H * 0.25 : H * 0.18;
+  const entryY = bt >= 3 ? H * 0.20 : H * 0.14;
 
-  // Smooth slide down from top — lerp toward position, no early return so firing is not interrupted
-  if (e.y < targetY - 10) {
-    e.y += Math.min((targetY - e.y) * 0.04 + 0.8, 8);
-    e.x += (W / 2 - e.x) * 0.05;
-    // Don't return — allow firing to proceed below
+  // Slide in from top on first entry
+  if (e.y < entryY) {
+    e.y += Math.min((entryY - e.y) * 0.05 + 1.2, 10);
+    e.x += (W / 2 - e.x) * 0.06;
+    return;
   }
 
+  // Handle charge dash (tier 5 uses this)
   if (e._charging) {
     e.x += e._chargeDx * 5;
     e.y += e._chargeDy * 5;
     e._chargeDuration = (e._chargeDuration || 0) - 1;
-    if (e._chargeDuration <= 0) {
-      e._charging = false;
-      e._chargeTimer = 240;
-    }
+    if (e._chargeDuration <= 0) { e._charging = false; e._chargeTimer = 180; }
     if (e.x < 60) { e.x = 60; e._chargeDx = Math.abs(e._chargeDx); }
     if (e.x > W - 60) { e.x = W - 60; e._chargeDx = -Math.abs(e._chargeDx); }
     if (e.y < 30) { e.y = 30; e._chargeDy = Math.abs(e._chargeDy); }
-    if (e.y > H * 0.55) { e.y = H * 0.55; e._chargeDy = -Math.abs(e._chargeDy); e._charging = false; e._chargeTimer = 240; }
+    if (e.y > H * 0.55) { e.y = H * 0.55; e._chargeDy = -Math.abs(e._chargeDy); e._charging = false; e._chargeTimer = 180; }
     return;
   }
 
-  // Compute desired — keep boss in upper portion of screen only
-  const margin = W * 0.20;
-  let desiredX, desiredY;
-  if (bt === 1) {
-    desiredX = W / 2 + Math.sin(e.phase) * (W * 0.28);
-    desiredY = targetY + Math.sin(e.phase * 1.3) * 30;
-  } else if (bt === 2) {
-    desiredX = W / 2 + Math.sin(e.phase) * (W * 0.32);
-    desiredY = targetY + Math.sin(e.phase * 1.5) * 40;
-  } else if (bt === 3) {
-    desiredX = W / 2 + Math.cos(e.phase) * (W * 0.32);
-    desiredY = targetY + Math.sin(e.phase * 1.7) * 50;
-  } else if (bt === 4) {
-    desiredX = W / 2 + Math.cos(e.phase) * (W * 0.24);
-    desiredY = targetY + Math.sin(e.phase * 2) * 40;
-  } else {
-    desiredX = W / 2 + Math.cos(e.phase) * (W * 0.28);
-    desiredY = targetY + Math.sin(e.phase * 2) * 50;
+  // Pick a new random roam target periodically
+  const roamInterval = bt >= 4 ? 120 : bt >= 3 ? 150 : 180;
+  e._roamTimer = (e._roamTimer || 0) - 1;
+  if (e._roamTimer <= 0) {
+    const margin = W * 0.18;
+    // Randomly roam across the upper portion of the screen, including vertical variation
+    const yMin = H * 0.08;
+    const yMax = bt >= 3 ? H * 0.42 : H * 0.38;
+    e._roamTargetX = margin + Math.random() * (W - margin * 2);
+    e._roamTargetY = yMin + Math.random() * (yMax - yMin);
+    e._roamTimer = roamInterval + Math.floor(Math.random() * 60);
   }
 
-  // Clamp desired to safe zone — boss stays in top 40% of screen
-  desiredX = Math.max(margin, Math.min(W - margin, desiredX));
-  desiredY = Math.max(targetY - 20, Math.min(H * 0.42, desiredY));
-
-  // Smooth lerp
-  e.x += (desiredX - e.x) * 0.05;
-  e.y += (desiredY - e.y) * 0.05;
+  // Smooth lerp toward roam target
+  const lerpSpeed = 0.028 + bt * 0.004;
+  e.x += ((e._roamTargetX || W / 2) - e.x) * lerpSpeed;
+  e.y += ((e._roamTargetY || entryY) - e.y) * lerpSpeed;
 }
 
 // ─── Tier 1 (Wave 5): Rapid basic shots + occasional missiles ────────────────
