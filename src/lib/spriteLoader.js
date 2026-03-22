@@ -83,6 +83,7 @@ export function loadSprites(onComplete) {
   let loaded = 0;
 
   function finish(name, imgOrCanvas) {
+    // Make each sprite available immediately as it loads
     sprites[name] = imgOrCanvas;
     loaded++;
     if (loaded === SPRITE_NAMES.length && onComplete) onComplete(sprites);
@@ -96,15 +97,13 @@ export function loadSprites(onComplete) {
         const result = removeWhiteBackground(img);
         finish(name, result || img);
       }, () => {
-        loaded++;
-        if (loaded === SPRITE_NAMES.length && onComplete) onComplete(sprites);
+        finish(name, null);
       });
     } else {
       loadImageViaBlobUrl(url, (img) => {
         finish(name, img);
       }, () => {
-        loaded++;
-        if (loaded === SPRITE_NAMES.length && onComplete) onComplete(sprites);
+        finish(name, null);
       });
     }
   });
