@@ -431,10 +431,10 @@ export function updateBossTier5Fire(e, p, s, sounds, W, H, spawnExplosion) {
     fireBoss5Weapon(gun, e, p, s);
     e._shotCount = (e._shotCount || 0) + 1;
     if (e._shotCount >= 3) { e._shotCount = 0; e._weaponIdx++; }
-    e._weaponTimer = 25;
+    e._weaponTimer = 16;
   }
 
-  e._chargeTimer = (e._chargeTimer || 300) - 1;
+  e._chargeTimer = (e._chargeTimer || 200) - 1;
   if (e._chargeTimer <= 0 && !e._charging) {
     const dx = p.x - e.x, dy = p.y - e.y;
     const len = Math.hypot(dx, dy) || 1;
