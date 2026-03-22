@@ -91,10 +91,14 @@ export function updateBeholderShield(e) {
 export function updateBeholderFire(e, p, s, sounds) {
   const isStage2 = e._stage2Triggered && e.hp <= e.maxHp / 3;
 
-  // Initialize timers
-  e._laserAtPlayerTimer = (e._laserAtPlayerTimer || 0) - 1;
-  e._sweepLaserTimer = (e._sweepLaserTimer || 0) - 1;
-  e._lvl10LaserTimer = (e._lvl10LaserTimer || 0) - 1;
+  // Initialize timers with starting values
+  if (e._laserAtPlayerTimer === undefined) e._laserAtPlayerTimer = 60;
+  if (e._sweepLaserTimer === undefined) e._sweepLaserTimer = 60;
+  if (e._lvl10LaserTimer === undefined) e._lvl10LaserTimer = 60;
+  
+  e._laserAtPlayerTimer--;
+  e._sweepLaserTimer--;
+  e._lvl10LaserTimer--;
 
   // Laser at player position — fires every 5 seconds (300 frames)
   if (e._laserAtPlayerTimer <= 0) {
