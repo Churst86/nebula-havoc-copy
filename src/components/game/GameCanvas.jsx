@@ -1789,7 +1789,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         ctx.fillRect(e.x - 60, e.y - 60, 120, 120);
         ctx.restore();
       }
-      if (bt === 3) { drawBossSweepLaser(ctx, e); drawBossSuperLaser(ctx, e); }
+      if (bt === 3) drawBeholderShield(ctx, e);
       if (bt === 4) { drawBossTier4Armor(ctx, e, BLOCK_SIZE); }
     });
     s.bullets.forEach(b => drawBullet(ctx, b, false));
