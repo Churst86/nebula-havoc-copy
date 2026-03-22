@@ -38,7 +38,7 @@ export function spawnBoss(W, wave, hpMult) {
 }
 
 // ─── Boss Movement ────────────────────────────────────────────────────────────
-export function updateBossMovement(e, W, H) {
+export function updateBossMovement(e, W, H, p) {
   const bt = e.tier || 1;
   const entryY = bt >= 3 ? H * 0.20 : H * 0.14;
 
@@ -84,6 +84,12 @@ export function updateBossMovement(e, W, H) {
   const lerpSpeed = 0.045 + bt * 0.005;
   e.x += ((e._roamTargetX || W / 2) - e.x) * lerpSpeed;
   e.y += ((e._roamTargetY || entryY) - e.y) * lerpSpeed;
+
+  // Apply new movement patterns with player tracking and distance management
+  if (p) {
+    applyPlayerTracking(e, p, H);
+    applyDistanceManagement(e, p, W, 180 + bt * 20); // Higher tiers maintain more distance
+  }
 }
 
 // ─── Tier 1 (Wave 5): Single aimed shots fired quickly + occasional homing missiles ──
