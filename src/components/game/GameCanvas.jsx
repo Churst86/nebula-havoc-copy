@@ -16,7 +16,7 @@ import {
   drawBossAnchor, drawBossSweepLaser, drawBossSuperLaser,
   updateBossTier4Armor, drawBossTier4Armor,
 } from '../../lib/bossLogic.js';
-import { initBeholderMovement, updateBeholderMovement, updateBeholderShield, updateBeholderFire } from '../../lib/beholderLogic.js';
+import { initBeholderMovement, updateBeholderMovement, updateBeholderShield, updateBeholderFire, getBeholderShieldRadius } from '../../lib/beholderLogic.js';
 import { drawBeholderShield } from '../../lib/beholderDrawing.js';
 import { drawBossHUD } from '../../lib/bossHudUtils.js';
 
