@@ -1,6 +1,7 @@
 import { createBossWarning } from './bossLogic.js';
 import { spawnEater } from './enemySpawners.js';
 import { sounds } from '../hooks/useSound.js';
+import { HITBOX_SIZES } from './hitboxConfig.js';
 
 function randomBetween(a, b) { return a + Math.random() * (b - a); }
 
@@ -36,7 +37,8 @@ export function spawnWave(W, s, difficultyConfig, bossMode, onBossWarning) {
         type: isElite ? 'elite' : 'basic',
         x: randomBetween(40, W - 40),
         y: -60 - i * 40,
-        w: isElite ? 34 : 34, h: isElite ? 34 : 34,
+        w: HITBOX_SIZES[isElite ? 'elite' : 'basicEnemy'].w,
+        h: HITBOX_SIZES[isElite ? 'elite' : 'basicEnemy'].h,
         hp, maxHp: hp,
         vx: (isElite ? randomBetween(-1.2, 1.2) : randomBetween(-0.5, 0.5)) * (1 + wave * 0.04),
         vy: (isElite ? (0.7 + wave * 0.08) : (0.35 + wave * 0.06)) * (Math.random() * 0.4 + 0.7),
@@ -52,7 +54,8 @@ export function spawnWave(W, s, difficultyConfig, bossMode, onBossWarning) {
           type: 'mine',
           x: randomBetween(50, W - 50),
           y: -60 - i * 60,
-          w: 32, h: 32,
+          w: HITBOX_SIZES.mine.w,
+          h: HITBOX_SIZES.mine.h,
           hp: mineHp, maxHp: mineHp,
           vx: randomBetween(-0.6, 0.6),
           vy: (0.4 + wave * 0.05),
