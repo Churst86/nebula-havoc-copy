@@ -82,7 +82,7 @@ export default function IntroCrawl({ onDone }) {
         style={{ height: '40%', background: 'linear-gradient(to bottom, #000 0%, transparent 100%)' }} />
 
       {/* Scrolling text container */}
-      <div className="relative z-20 w-full max-w-3xl px-8 pb-0"
+      <div className="relative z-20 w-full max-w-6xl px-8 pb-0"
         style={{ perspective: '500px', perspectiveOrigin: '50% 100%', height: '100vh', overflow: 'hidden' }}>
         <div style={{
           transformOrigin: '50% 100%',
