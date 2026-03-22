@@ -149,7 +149,7 @@ export default function HighScores({ score, wave, onRestart, onRestartBossMode, 
           </p>
         )}
 
-        <Button onClick={onRestart} size="lg"
+        <Button onClick={bossMode ? onRestartBossMode : onRestart} size="lg"
           className="bg-primary hover:bg-primary/80 text-primary-foreground font-bold text-lg px-8 py-6 rounded-xl gap-2 w-full">
           <RotateCcw className="w-5 h-5" />
           PLAY AGAIN
