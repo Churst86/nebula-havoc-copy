@@ -375,6 +375,7 @@ export function updateBossTier5Fire(e, p, s, sounds, W, H, spawnExplosion) {
     e._shotCount = (e._shotCount || 0) + 1;
     if (e._shotCount >= 3) { e._shotCount = 0; e._weaponIdx++; }
     e._weaponTimer = 16;
+    e._hasFired = true;
   }
 
   e._chargeTimer = (e._chargeTimer || 200) - 1;
