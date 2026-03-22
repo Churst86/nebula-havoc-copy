@@ -74,11 +74,11 @@ export default function Game() {
     // But not at milestone waves (25, 50, 100) which trigger congratulations instead
     const milestones = [25, 50, 100];
     const prevWave = w - 1;
-    if (prevWave > 0 && prevWave % 5 === 0 && !milestones.includes(prevWave)) {
+    if (prevWave > 0 && prevWave % 5 === 0 && !milestones.includes(prevWave) && !showDocking && !showShop) {
       setDockingMode('arriving');
       setShowDocking(true);
     }
-  }, []);
+  }, [showDocking, showShop]);
 
   const handleStart = useCallback((keepPowerups = false) => {
     setShowLaunch(true);
