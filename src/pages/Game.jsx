@@ -289,7 +289,7 @@ export default function Game() {
       {showLaunch && (
         <LaunchScreen
           loadProgress={loadProgress}
-          onDone={() => { setShowLaunch(false); setGameState('playing'); }}
+          onDone={() => { setGameState('playing'); setShowLaunch(false); }}
         />
       )}
 
