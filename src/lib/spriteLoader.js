@@ -136,6 +136,15 @@ export function getSprite(name) {
   return sprites[name] || null;
 }
 
+export function isSpritesLoaded() {
+  return _loadComplete;
+}
+
+export function getSpritesProgress() {
+  // Count how many are loaded (non-null or explicitly set)
+  return _loadComplete ? 1 : 0;
+}
+
 /**
  * Draw a sprite onto ctx.
  */
