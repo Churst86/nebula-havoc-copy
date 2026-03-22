@@ -525,7 +525,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.shadowColor = c; ctx.shadowBlur = 18;
       // Draw dropper ship body — same size as basic enemy (169x169)
       if (dropperBodySprite) {
-        drawSprite(ctx, dropperBodySprite, -84, -84, 169, 169);
+        drawSprite(ctx, dropperBodySprite, -84, -84, 120, 120);
       } else {
         ctx.strokeStyle = c; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(0, -16); ctx.lineTo(12, 10); ctx.lineTo(0, 5); ctx.lineTo(-12, 10); ctx.closePath();
