@@ -405,6 +405,8 @@ export default function Game() {
             setStartWave(waveRef.current);
             setDockingMode('departing');
             setShowDocking(true);
+            // Force game state to idle to reset timers when departing
+            setGameState('idle');
           }}
           nextWave={wave}
         />
