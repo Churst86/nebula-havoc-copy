@@ -89,7 +89,7 @@ export function loadSprites(onComplete) {
   }
 
   SPRITE_NAMES.forEach(name => {
-    const url = BASE + name + '.png';
+    const url = BASE + name + '.png?t=' + Date.now();
 
     if (NEEDS_BG_REMOVAL.has(name)) {
       loadImageViaBlobUrl(url, (img) => {
@@ -100,14 +100,12 @@ export function loadSprites(onComplete) {
         if (loaded === SPRITE_NAMES.length && onComplete) onComplete(sprites);
       });
     } else {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = url;
-      img.onload = () => finish(name, img);
-      img.onerror = () => {
+      loadImageViaBlobUrl(url, (img) => {
+        finish(name, img);
+      }, () => {
         loaded++;
         if (loaded === SPRITE_NAMES.length && onComplete) onComplete(sprites);
-      };
+      });
     }
   });
 }
