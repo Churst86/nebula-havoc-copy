@@ -271,6 +271,10 @@ export default function Game() {
 
   const difficultyConfig = DIFFICULTY_CONFIG[settings.difficulty] || DIFFICULTY_CONFIG.normal;
 
+  if (showLaunch) {
+    return <LaunchScreen loadProgress={loadProgress} onDone={() => setShowLaunch(false)} />;
+  }
+
   if (showIntro) {
     return <IntroCrawl onDone={() => setShowIntro(false)} />;
   }
