@@ -63,10 +63,15 @@ export function updateBossMovement(e, W, H) {
 
   // Pick a new random roam target periodically
   const roamInterval = bt >= 4 ? 120 : bt >= 3 ? 150 : 180;
-  e._roamTimer = (e._roamTimer || 0) - 1;
+  // Initialize timer to a positive value to avoid instant jump on first frame
+  if (e._roamTimer === undefined) {
+    e._roamTimer = roamInterval;
+    e._roamTargetX = e.x;
+    e._roamTargetY = e.y;
+  }
+  e._roamTimer--;
   if (e._roamTimer <= 0) {
     const margin = W * 0.18;
-    // Randomly roam across the upper portion of the screen, including vertical variation
     const yMin = H * 0.08;
     const yMax = bt >= 3 ? H * 0.42 : H * 0.38;
     e._roamTargetX = margin + Math.random() * (W - margin * 2);
@@ -74,8 +79,8 @@ export function updateBossMovement(e, W, H) {
     e._roamTimer = roamInterval + Math.floor(Math.random() * 60);
   }
 
-  // Smooth lerp toward roam target
-  const lerpSpeed = 0.028 + bt * 0.004;
+  // Smooth lerp toward roam target — increased speed for fluid motion
+  const lerpSpeed = 0.045 + bt * 0.005;
   e.x += ((e._roamTargetX || W / 2) - e.x) * lerpSpeed;
   e.y += ((e._roamTargetY || entryY) - e.y) * lerpSpeed;
 }
