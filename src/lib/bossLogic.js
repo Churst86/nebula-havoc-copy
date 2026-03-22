@@ -81,7 +81,14 @@ export function updateBossMovement(e, W, H, p) {
   }
 
   // Smooth lerp toward roam target — increased speed for fluid motion
-  const lerpSpeed = 0.045 + bt * 0.005;
+  const hpThreshold = e.maxHp / 3;
+  const isStage2 = e.hp <= hpThreshold && !e._stage2Triggered;
+  if (isStage2) {
+    e._stage2Triggered = true;
+    e._stage2Timer = 0;
+  }
+  const speedMult = (e._stage2Triggered ? 1.4 : 1);
+  const lerpSpeed = (0.045 + bt * 0.005) * speedMult;
   e.x += ((e._roamTargetX || W / 2) - e.x) * lerpSpeed;
   e.y += ((e._roamTargetY || entryY) - e.y) * lerpSpeed;
 
