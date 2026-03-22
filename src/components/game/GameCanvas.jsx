@@ -1007,7 +1007,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       if (e.type === 'boss') {
         updateBossMovement(e, W, H, p);
         const bossTargetY = (e.tier || 1) >= 3 ? H * 0.30 : H * 0.22;
-        if (e.y >= bossTargetY - 5) {
+        if (e.y >= bossTargetY - 5 || (e.tier || 1) === 4) { // tier 4 fires during entry
           const bt = e.tier || 1;
           if (bt === 1) updateBossTier1Fire(e, p, s, sounds);
           else if (bt === 2) updateBossTier2Fire(e, p, s, sounds);
