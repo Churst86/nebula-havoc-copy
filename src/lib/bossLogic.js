@@ -352,7 +352,7 @@ export function updateBossTier4Fire(e, p, s, sounds, W, H, spawnExplosion) {
         dreadnoughtGreen: true,
       });
     }
-    e._ringFireTimer = isStage2 ? 180 : 240;
+    e._ringFireTimer = isStage2 ? 120 : 160;
     sounds && sounds.hit && sounds.hit();
     e._hasFired = true;
   }
