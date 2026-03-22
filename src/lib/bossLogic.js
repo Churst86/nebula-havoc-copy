@@ -172,6 +172,7 @@ export function updateBossTier2Fire(e, p, s, sounds) {
     }
     e._omniTimer = 65;
     e._omniCooldown = 20;
+    e._hasFired = true;
   }
 
   e._specialTimer = (e._specialTimer || 180) - 1;
