@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 
 const CONTINUE_COUNTDOWN = 10; // seconds
 
-export default function ContinueScreen({ score, onContinue, onDecline }) {
+export default function ContinueScreen({ score, onContinue, onDecline, bossMode, onRestartBossMode }) {
   const [timeLeft, setTimeLeft] = useState(CONTINUE_COUNTDOWN);
 
   useEffect(() => {
