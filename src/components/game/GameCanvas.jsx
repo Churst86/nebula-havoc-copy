@@ -1496,6 +1496,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           }
           // Don't allow damage to boss until it's ready to fire
           if (e.type === 'boss' && !e._readyToFire) { return; }
+          // Check if boss shield blocks this bullet
+          if (e.type === 'boss' && (e.tier || 1) === 3) {
+            const shieldRadius = getBeholderShieldRadius(e);
+            if (shieldRadius > 0) {
+             const dist = Math.hypot(b.x - e.x, b.y - e.y);
+             if (dist < shieldRadius) { b.hit = true; spawnExplosion(s, b.x, b.y, '#00ccff', 3); return; }
+           }
+          }
           e.hp--; sounds.hit(); b.hit = true;
           if (e.type === 'boss' && e._readyToFire) {
             // Apply damage shake
