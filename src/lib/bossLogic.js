@@ -127,11 +127,11 @@ export function updateBossTier2Fire(e, p, s, sounds) {
         boss: true,
       });
     }
-    e._omniTimer = 90;
-    e._omniCooldown = 30;
+    e._omniTimer = 65;
+    e._omniCooldown = 20;
   }
 
-  e._specialTimer = (e._specialTimer || 300) - 1;
+  e._specialTimer = (e._specialTimer || 180) - 1;
   if (e._specialTimer <= 0) {
     s.enemyBullets.push({
       x: e.x, y: e.y,
@@ -141,7 +141,7 @@ export function updateBossTier2Fire(e, p, s, sounds) {
       homing: true, target: p,
       homingStrength: 0.12,
     });
-    e._specialTimer = 300;
+    e._specialTimer = 180;
   }
 }
 
