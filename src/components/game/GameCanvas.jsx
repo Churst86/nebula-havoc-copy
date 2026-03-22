@@ -1517,7 +1517,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
                 sounds.stopBossMusicOnClear(); sounds.waveComplete();
                 s.maxLives++; s.lives = Math.min(s.lives + 1, s.maxLives); onLivesChange(s.lives); onMaxLivesChange(s.maxLives);
                 const milestoneBossWaves = [25, 50, 100];
-                if (milestoneBossWaves.includes(s.wave)) { sounds.stopAllMusic(); s.running = false; setGameState('congratulations'); return; }
+                if (bossMode && s.wave === 25) { sounds.stopAllMusic(); s.running = false; setGameState('congratulations'); return; }
+                if (!bossMode && milestoneBossWaves.includes(s.wave)) { sounds.stopAllMusic(); s.running = false; setGameState('congratulations'); return; }
               }
             }
             return;
