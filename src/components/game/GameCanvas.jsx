@@ -1412,15 +1412,12 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       return b.y < H + 20 && b.x > -20 && b.x < W + 20 && b.y > -20;
     });
 
-    // Powerup items bounce off walls and never leave the screen
+    // Powerup items drift slowly and bounce off walls
     s.powerupItems.forEach(item => {
-      if (!item.vx) item.vx = (Math.random() - 0.5) * 1.5;
-      if (!item.vy) item.vy = 1.2;
-      // Only move with drone-assigned velocity, not self-propelled
-      item.x += (item._droneVx || item.vx);
-      item.y += (item._droneVy || item.vy);
-      item._droneVx = undefined;
-      item._droneVy = undefined;
+      if (!item.vx) item.vx = (Math.random() - 0.5) * 0.4;
+      if (!item.vy) item.vy = 0.3;
+      item.x += item.vx;
+      item.y += item.vy;
       item.angle = (item.angle || 0) + 0.04;
       // Bounce off left/right walls
       if (item.x < 16) { item.x = 16; item.vx = Math.abs(item.vx); }
