@@ -82,7 +82,7 @@ export default function Game() {
 
   const handleStart = useCallback((keepPowerups = false) => {
     setShowLaunch(true);
-    setLoadProgress(0);
+    setLoadProgress(isSpritesLoaded() ? 1 : 0);
     scoreRef.current = 0;
     waveRef.current = 1;
     setScore(0);
