@@ -536,7 +536,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       // Draw the carried powerup as a small glowing icon centered just below the ship
       ctx.shadowColor = c; ctx.shadowBlur = 16;
       if (dropSprite) {
-        drawSprite(ctx, dropSprite, -26, 64, 52, 52);
+        drawSprite(ctx, dropSprite, -26, 62, 52, 52);
       } else {
         ctx.fillStyle = c; ctx.font = 'bold 12px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(DROPPER_LABELS[e.dropType] || '★', 0, 28);
