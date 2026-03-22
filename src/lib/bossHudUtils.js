@@ -2,7 +2,7 @@
 export function drawBossHUD(ctx, W, bossEnemy) {
   if (!bossEnemy) return;
 
-  const bossNames = ['Dreadnought', 'Sentinel', 'Beholder', 'Corsair', 'Leviathan'];
+  const bossNames = ['Fang', 'Dreadnought', 'Beholder', 'Pirate', 'Xelgnark'];
   const bossName = bossNames[Math.min((bossEnemy.tier || 1) - 1, 4)];
   const bw = 400, bh = 14, bx = W / 2 - bw / 2, by = 20;
   const bossBarColor = ['#ff0066', '#ff6600', '#aa00ff', '#00ccff'][Math.min((bossEnemy.tier || 1) - 1, 3)];
