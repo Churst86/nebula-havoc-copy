@@ -42,7 +42,7 @@ export default function DockingScene({ onDockComplete }) {
     function drawStation(ctx, cx, sy) {
       ctx.save();
       ctx.translate(cx, sy);
-      const img = stationImgRef.current;
+      const img = stationImgRef.current || getSprite('Spacestation');
       if (img) {
         const sz = 220;
         ctx.shadowColor = '#44aaff'; ctx.shadowBlur = 24;
