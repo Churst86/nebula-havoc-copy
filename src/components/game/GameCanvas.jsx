@@ -1401,29 +1401,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       s.blockSpawnTimer = Math.max(20, Math.round((160 - s.wave * 8) / blockSpawnMult));
     }
 
-    s.blocks.forEach(block => {
-      if (block.settled) return;
-      block.y += block.vy;
-      const cells = getBlockCells(block);
-      let shouldSettle = false;
-      cells.forEach(cell => {
-        if (cell.y + BLOCK_SIZE >= H) { shouldSettle = true; }
-        s.piledCells.forEach(pc => {
-          if (Math.abs(cell.x - pc.x) < BLOCK_SIZE * 0.8 && Math.abs((cell.y + BLOCK_SIZE) - pc.y) < 4) shouldSettle = true;
-        });
-      });
-      if (shouldSettle) {
-        block.settled = true;
-        cells.forEach(cell => {
-          const snappedY = Math.min(Math.round(cell.y / BLOCK_SIZE) * BLOCK_SIZE, H - BLOCK_SIZE);
-          s.piledCells.push({ x: Math.round(cell.x / BLOCK_SIZE) * BLOCK_SIZE, y: snappedY, color: block.color });
-        });
-      }
-    });
-    s.blocks = s.blocks.filter(b => !b.settled);
-
-    if (s.piledCells.length > 200) s.piledCells = s.piledCells.slice(-200);
-    s.piledCells = s.piledCells.filter(c => c.y < H);
+    updateBlockSettling(s, H, BLOCK_SIZE, getBlockCells);
 
     function explodeSpread(b, newBullets) {
       if (b.type !== 'spread') return;
