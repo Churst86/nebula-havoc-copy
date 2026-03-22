@@ -170,7 +170,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       enemies.push({
       type: isElite ? 'elite' : 'basic',
       x: randomBetween(40, W - 40),
-      y: -240 - i * 40,
+      y: -400 - i * 40,
         w: isElite ? 34 : 34, h: isElite ? 34 : 34,
         hp, maxHp: hp,
         vx: (isElite ? randomBetween(-1.2, 1.2) : randomBetween(-0.5, 0.5)) * (1 + wave * 0.04),
