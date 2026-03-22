@@ -199,7 +199,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           type: 'mine',
           x: randomBetween(50, W - 50),
           y: -50 - i * 40,
-          w: 20, h: 20,
+          w: 32, h: 32,
           hp: mineHp, maxHp: mineHp,
           vx: randomBetween(-0.6, 0.6),
           vy: (0.4 + wave * 0.05),
