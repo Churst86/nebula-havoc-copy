@@ -523,9 +523,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const dropSprite = dropSpriteKey ? getSprite(dropSpriteKey) : null;
       const dropperBodySprite = getSprite('Dropper');
       ctx.shadowColor = c; ctx.shadowBlur = 18;
-      // Draw dropper ship body
+      // Draw dropper ship body — same size as basic enemy (169x169)
       if (dropperBodySprite) {
-        drawSprite(ctx, dropperBodySprite, -35, -35, 70, 70);
+        drawSprite(ctx, dropperBodySprite, -84, -84, 169, 169);
       } else {
         ctx.strokeStyle = c; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(0, -16); ctx.lineTo(12, 10); ctx.lineTo(0, 5); ctx.lineTo(-12, 10); ctx.closePath();
@@ -534,7 +534,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       // Draw the carried powerup as a small glowing icon below the ship
       ctx.shadowColor = c; ctx.shadowBlur = 16;
       if (dropSprite) {
-        drawSprite(ctx, dropSprite, -14, 16, 28, 28);
+        drawSprite(ctx, dropSprite, -18, 60, 36, 36);
       } else {
         ctx.fillStyle = c; ctx.font = 'bold 12px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(DROPPER_LABELS[e.dropType] || '★', 0, 28);
