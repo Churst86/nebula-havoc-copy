@@ -1962,9 +1962,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   useEffect(() => {
     const down = e => { keysRef.current[e.key] = true; };
     const up = e => { keysRef.current[e.key] = false; };
+    const blur = () => { keysRef.current = {}; }; // Reset all keys on focus loss
     window.addEventListener('keydown', down);
     window.addEventListener('keyup', up);
-    return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); };
+    window.addEventListener('blur', blur);
+    return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); window.removeEventListener('blur', blur); };
   }, []);
 
   return (
