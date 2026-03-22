@@ -1,6 +1,5 @@
-import { createBossWarning, spawnBoss } from './bossLogic.js';
+import { createBossWarning } from './bossLogic.js';
 import { spawnEater } from './enemySpawners.js';
-import { spawnBerserk } from './berserkUtils.js';
 import { sounds } from '../hooks/useSound.js';
 
 function randomBetween(a, b) { return a + Math.random() * (b - a); }
