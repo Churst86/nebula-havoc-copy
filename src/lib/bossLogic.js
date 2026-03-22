@@ -106,11 +106,11 @@ export function updateBossTier1Fire(e, p, s, sounds) {
 
   e._specialTimer = (e._specialTimer || 90) - 1;
   if (e._specialTimer <= 0) {
-    // Fire 3 homing missiles from back, they circle and home in
+    // Fire 3 homing missiles from top side, they circle and home in
     for (let i = 0; i < 3; i++) {
-      const backOffset = (i - 1) * 25;
+      const topOffset = (i - 1) * 25;
       s.enemyBullets.push({
-        x: e.x + backOffset, y: e.y + 30, // Fire from back side
+        x: e.x + topOffset, y: e.y - 100, // Fire from top side, outside sprite
         vx: 0, vy: 2,
         boss: true, big: true,
         tier1Missile: true,
