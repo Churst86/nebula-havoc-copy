@@ -1412,10 +1412,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       return b.y < H + 20 && b.x > -20 && b.x < W + 20 && b.y > -20;
     });
 
-    // Powerup items drift slowly and bounce off walls
+    // Powerup items drift in a random direction and bounce off walls
     s.powerupItems.forEach(item => {
-      if (!item.vx) item.vx = (Math.random() - 0.5) * 0.4;
-      if (!item.vy) item.vy = 0.8;
+      if (item.vx === undefined) {
+        const angle = Math.random() * Math.PI * 2;
+        const spd = 1.2 + Math.random() * 1.0;
+        item.vx = Math.cos(angle) * spd;
+        item.vy = Math.sin(angle) * spd;
+      }
       item.x += item.vx;
       item.y += item.vy;
       item.angle = (item.angle || 0) + 0.04;
