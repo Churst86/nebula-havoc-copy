@@ -46,7 +46,7 @@ export default function ContinueScreen({ score, onContinue, onDecline, bossMode,
           Score: {score.toLocaleString()}
         </p>
 
-        <div className="flex gap-4 justify-center">
+        <div className="flex gap-4 justify-center flex-wrap">
           <Button
             onClick={onContinue}
             size="lg"
@@ -54,6 +54,16 @@ export default function ContinueScreen({ score, onContinue, onDecline, bossMode,
           >
             CONTINUE
           </Button>
+          {bossMode && (
+            <Button
+              onClick={onRestartBossMode}
+              size="lg"
+              variant="outline"
+              className="border-red-600 text-red-400 hover:bg-red-900/30 font-bold text-lg px-8 py-6 rounded-xl"
+            >
+              RESTART BOSS MODE
+            </Button>
+          )}
           <Button
             onClick={onDecline}
             size="lg"
