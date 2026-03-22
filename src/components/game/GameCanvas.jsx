@@ -1657,7 +1657,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
 
     s.enemyBullets = s.enemyBullets.filter(b => {
       const dx = b.x - p.x, dy = b.y - p.y;
-      if (Math.sqrt(dx * dx + dy * dy) < 14) {
+      if (Math.sqrt(dx * dx + dy * dy) < 30) {
         spawnExplosion(s, p.x, p.y, '#00f0ff', 10); takeDamage(s); return false;
       }
       return true;
