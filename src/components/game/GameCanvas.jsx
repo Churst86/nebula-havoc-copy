@@ -444,12 +444,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       if (img) {
         ctx.shadowColor = '#ff0066'; ctx.shadowBlur = 48;
         ctx.drawImage(img, -sz / 2, -sz / 2, sz, sz);
-        // Stage 2 red flash overlay on top of sprite
+        // Stage 2 red flash tint on sprite
         if (isStage2 && Math.floor(Date.now() / 80) % 2 === 0) {
-          ctx.globalAlpha = 0.4;
+          ctx.globalCompositeOperation = 'source-atop';
+          ctx.globalAlpha = 0.5;
           ctx.fillStyle = '#ff4444';
           ctx.fillRect(-sz / 2, -sz / 2, sz, sz);
           ctx.globalAlpha = 1;
+          ctx.globalCompositeOperation = 'source-over';
         }
       } else {
         ctx.shadowColor = '#ff0066'; ctx.shadowBlur = 32;
