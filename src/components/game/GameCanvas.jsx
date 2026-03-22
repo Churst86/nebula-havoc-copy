@@ -1415,7 +1415,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     // Powerup items drift slowly and bounce off walls
     s.powerupItems.forEach(item => {
       if (!item.vx) item.vx = (Math.random() - 0.5) * 0.4;
-      if (!item.vy) item.vy = 0.3;
+      if (!item.vy) item.vy = 0.8;
       item.x += item.vx;
       item.y += item.vy;
       item.angle = (item.angle || 0) + 0.04;
