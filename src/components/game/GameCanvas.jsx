@@ -524,7 +524,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       // Draw the carried powerup as a small glowing icon centered inside the dropper body
       ctx.shadowColor = c; ctx.shadowBlur = 16;
       if (dropSprite) {
-        drawSprite(ctx, dropSprite, -16, 24, 32, 32);
+        drawSprite(ctx, dropSprite, -16, 12, 32, 32);
       } else {
         ctx.fillStyle = c; ctx.font = 'bold 12px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(DROPPER_LABELS[e.dropType] || '★', 0, 0);
