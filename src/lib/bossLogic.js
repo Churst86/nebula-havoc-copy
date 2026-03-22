@@ -402,10 +402,10 @@ export function updateBossTier4Fire(e, p, s, sounds, W, H, spawnExplosion) {
         piercing: true,
       });
     });
-    e._photonTimer = 80;
+    e._photonTimer = 50;
   }
 
-  e._bounceTimer = (e._bounceTimer || 200) - 1;
+  e._bounceTimer = (e._bounceTimer || 150) - 1;
   if (e._bounceTimer <= 0) {
     const SHOTS = 8;
     for (let i = 0; i < SHOTS; i++) {
