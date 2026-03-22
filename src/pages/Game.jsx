@@ -402,6 +402,7 @@ export default function Game() {
           onReturn={() => {
             sounds.stopAllMusic();
             setShowShop(false);
+            setStartWave(waveRef.current);
             setDockingMode('departing');
             setShowDocking(true);
           }}
