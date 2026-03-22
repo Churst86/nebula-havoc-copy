@@ -1658,13 +1658,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     } else if (combatEnemies.length === 0) {
       s.waveTimer++;
       if (s.waveTimer > 90) {
-        s.wave++; onWaveChange(s.wave); sounds.waveComplete();
-        // Milestone levels (25/50/100) are boss waves — congratulations fires when boss dies (handled in kill logic)
-        const milestoneLevels = [25, 50, 100];
-        if (milestoneLevels.includes(s.wave)) {
-          // Don't auto-congratulate here — let boss kill handle it
-          // just continue and spawn the boss wave
+        s.wave += progressWave(bossMode);
+        if (bossMode && s.wave > 25) {
+          sounds.stopAllMusic();
+          s.running = false;
+          setGameState('congratulations');
+          return;
         }
+        onWaveChange(s.wave); sounds.waveComplete();
         s.waveTimer = 0;
         // Restore some armor each wave (repair upgrade)
         const repairLevel = shopUpgradesRef.current?.repair || 0;
@@ -1673,7 +1674,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           s.armorHp = Math.min(s.armorHp + repairLevel, maxArmor);
         }
         const survivingPersistent = s.enemies.filter(e => e.type === 'dropper' || e.type === 'eater');
-        spawnWave(W, s);
+        spawnWaveLocal(W, s);
         s.enemies.push(...survivingPersistent);
       }
     } else {
