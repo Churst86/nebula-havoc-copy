@@ -262,7 +262,7 @@ export default function Game() {
   // Auto-save when game ends so Load Game is available on title screen
   useEffect(() => {
     if (gameState === 'gameover') {
-      sounds.playGameOverMusic();
+      if (!bossMode) sounds.playGameOverMusic();
       writeSaveFile({
         wave: waveRef.current,
         difficulty: settings.difficulty,
@@ -271,7 +271,7 @@ export default function Game() {
         blockScore: blockScore,
       });
     }
-  }, [gameState]);
+  }, [gameState, bossMode]);
 
   // Play win music on congratulations screen
   useEffect(() => {
