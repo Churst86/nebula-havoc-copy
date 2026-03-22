@@ -12,7 +12,7 @@ function UpgradeCard({ def, currentLevel, blockScore, onBuy }) {
 
   return (
     <motion.div
-      whileHover={!maxed ? { scale: 1.05 } : {}} className="mt-3 mr-48 p-2 rounded border flex flex-col gap-1"
+      whileHover={!maxed ? { scale: 1.05 } : {}} className="p-2 rounded border flex flex-col gap-1"
 
       style={{
         background: 'rgba(5,10,25,0.82)',
