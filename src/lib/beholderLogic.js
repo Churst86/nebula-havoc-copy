@@ -91,16 +91,12 @@ export function updateBeholderShield(e) {
 export function updateBeholderFire(e, p, s, sounds) {
   const isStage2 = e._stage2Triggered && e.hp <= e.maxHp / 3;
 
-  // Initialize timers with starting values
+  // Initialize laser timer
   if (e._laserAtPlayerTimer === undefined) e._laserAtPlayerTimer = 60;
-  if (e._sweepLaserTimer === undefined) e._sweepLaserTimer = 60;
-  if (e._lvl10LaserTimer === undefined) e._lvl10LaserTimer = 60;
   
   e._laserAtPlayerTimer--;
-  e._sweepLaserTimer--;
-  e._lvl10LaserTimer--;
 
-  // Laser at player position — fires every 5 seconds (300 frames)
+  // Laser at player position — fires every 3 seconds (180 frames)
   if (e._laserAtPlayerTimer <= 0) {
     const dx = p.x - e.x;
     const dy = p.y - e.y;
@@ -119,63 +115,8 @@ export function updateBeholderFire(e, p, s, sounds) {
       });
     }
     sounds && sounds.hit && sounds.hit();
-    e._laserAtPlayerTimer = 300;
+    e._laserAtPlayerTimer = isStage2 ? 120 : 180;
     e._hasFired = true;
-  }
-
-  // Sweep laser from corner to corner — fires every 3 seconds (180 frames)
-  if (e._sweepLaserTimer <= 0) {
-    const corners = [
-      { x: 0, y: 0 },
-      { x: s.W || 800, y: 0 },
-      { x: s.W || 800, y: s.H || 600 },
-      { x: 0, y: s.H || 600 },
-    ];
-    const startCorner = corners[Math.floor(Math.random() * corners.length)];
-    const endCorner = corners[Math.floor(Math.random() * corners.length)];
-
-    const dx = endCorner.x - startCorner.x;
-    const dy = endCorner.y - startCorner.y;
-    const len = Math.hypot(dx, dy) || 1;
-
-    // Fire sweep projectiles along the corner-to-corner line
-    const steps = 12;
-    for (let i = 0; i < steps; i++) {
-      const t = i / steps;
-      const px = startCorner.x + dx * t;
-      const py = startCorner.y + dy * t;
-      s.enemyBullets.push({
-        x: px,
-        y: py,
-        vx: (dx / len) * 4,
-        vy: (dy / len) * 4,
-        boss: true,
-        big: true,
-      });
-    }
-    sounds && sounds.hit && sounds.hit();
-    e._sweepLaserTimer = 180;
-  }
-
-  // Level 10 laser — only fires in stage 2, every 5 seconds
-  if (isStage2 && e._lvl10LaserTimer <= 0) {
-    const dx = p.x - e.x;
-    const dy = p.y - e.y;
-    const len = Math.hypot(dx, dy) || 1;
-
-    // Fire 7 lasers in spread toward player
-    for (let i = 0; i < 7; i++) {
-      const angle = Math.atan2(dy, dx) + (i - 3) * 0.2;
-      s.enemyBullets.push({
-        x: e.x,
-        y: e.y,
-        vx: Math.cos(angle) * 6,
-        vy: Math.sin(angle) * 6,
-        boss: true,
-      });
-    }
-    sounds && sounds.hit && sounds.hit();
-    e._lvl10LaserTimer = 300;
   }
 }
 
