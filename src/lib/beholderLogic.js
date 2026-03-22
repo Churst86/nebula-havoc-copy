@@ -175,10 +175,9 @@ export function updateBeholderFire(e, p, s, sounds) {
 }
 
 export function getBeholderShieldRadius(e) {
-  // Shield hitbox is larger than sprite (which is ~90px)
-  // Return radius of shield collision circle
+  // Shield hitbox is much larger than sprite to actually block projectiles
   if (e._shieldActive) {
-    return 110; // Larger than sprite for generous hit zone
+    return 280; // Significantly larger than the boss sprite
   }
   return 0; // No shield active
 }
