@@ -51,7 +51,7 @@ export default function Game() {
   const [showDocking, setShowDocking] = useState(false);
   const [dockingMode, setDockingMode] = useState('arriving');
   const [showShop, setShowShop] = useState(false);
-  const [showLaunch, setShowLaunch] = useState(true);
+  const [showLaunch, setShowLaunch] = useState(false);
   const [loadProgress, setLoadProgress] = useState(0);
   const scoreRef = useRef(0);
   const waveRef = useRef(1);
