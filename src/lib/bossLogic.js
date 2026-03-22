@@ -205,9 +205,9 @@ export function updateBossTier4Armor(e, s, BLOCK_SIZE, getBlockCells, spawnExplo
       cells.forEach(cell => {
         const dx = (cell.x + BLOCK_SIZE / 2) - e.x;
         const dy = (cell.y + BLOCK_SIZE / 2) - e.y;
-        // Clamp to orbit ring: 60–120px from boss center
+        // Position just outside sprite boundary (~220px radius for 440px sprite)
         const dist = Math.hypot(dx, dy) || 1;
-        const targetDist = Math.max(60, Math.min(120, dist));
+        const targetDist = 240;
         const ndx = (dx / dist) * targetDist;
         const ndy = (dy / dist) * targetDist;
         e._armorBlocks.push({ dx: ndx, dy: ndy, color: block.color, hp: 3 });
@@ -227,7 +227,7 @@ export function updateBossTier4Armor(e, s, BLOCK_SIZE, getBlockCells, spawnExplo
       const dx = enemy.x - e.x;
       const dy = enemy.y - e.y;
       const nd = Math.max(dist, 1);
-      const targetDist = Math.max(60, Math.min(130, nd));
+      const targetDist = 240;
       const ndx = (dx / nd) * targetDist;
       const ndy = (dy / nd) * targetDist;
       e._armorBlocks.push({ dx: ndx, dy: ndy, color: '#ff4444', hp: 4, isShip: true });
