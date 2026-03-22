@@ -1,12 +1,28 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { getSprite, loadSprites } from '../../lib/spriteLoader.js';
 
-export default function LaunchScreen({ onDone, loadProgress = 0 }) {
+export default function LaunchScreen({ onDone, loadProgress: externalProgress = 0 }) {
   const canvasRef = useRef(null);
   const animRef = useRef(null);
   const frameRef = useRef(0);
   const [fading, setFading] = useState(false);
+  const [internalProgress, setInternalProgress] = useState(externalProgress);
   const doneCalledRef = useRef(false);
+
+  // Subscribe directly to sprite loader so we always get progress even if prop arrives late
+  useEffect(() => {
+    loadSprites(
+      () => setInternalProgress(1),
+      (p) => setInternalProgress(p)
+    );
+  }, []);
+
+  // Also sync with external prop (whichever is higher)
+  useEffect(() => {
+    setInternalProgress(prev => Math.max(prev, externalProgress));
+  }, [externalProgress]);
+
+  const loadProgress = internalProgress;
 
   // Trigger fade-out when fully loaded, then call onDone after fade
   useEffect(() => {
