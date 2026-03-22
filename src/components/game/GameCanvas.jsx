@@ -22,6 +22,7 @@ import { drawBeholderShield } from '../../lib/beholderDrawing.js';
 // Import laser logic
 import { updateLaserBeam, LASER_CHARGE_FRAMES, LASER_BEAM_FRAMES, LASER_COOLDOWN_FRAMES } from '../../lib/laserLogic.js';
 import { spawnWave, progressWave } from '../../lib/waveSpawner.js';
+import { HITBOX_SIZES } from '../../lib/hitboxConfig.js';
 
 // Spread shotgun constants
 const SPREAD_SHOTS_PER_RELOAD = 2;
@@ -196,7 +197,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       type: 'dropper',
       dropType,
       x: randomBetween(80, W - 80), y: -randomBetween(40, 120),
-      w: 36, h: 36,
+      w: HITBOX_SIZES.dropper.w, h: HITBOX_SIZES.dropper.h,
       hp: 1, maxHp: 1,
       vx: randomBetween(-1.2, 1.2), vy: randomBetween(-0.8, 0.8),
       dirTimer: randomBetween(60, 120),
