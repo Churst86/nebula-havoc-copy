@@ -79,15 +79,37 @@ export function getBossSpriteKey(wave) {
 }
 
 const sprites = {};
+let _loadStarted = false;
+let _loadComplete = false;
+const _completionCallbacks = [];
+const _progressCallbacks = [];
 
 export function loadSprites(onComplete, onProgress) {
+  // If already fully loaded, fire callbacks immediately
+  if (_loadComplete) {
+    if (onProgress) onProgress(1);
+    if (onComplete) onComplete(sprites);
+    return;
+  }
+
+  if (onComplete) _completionCallbacks.push(onComplete);
+  if (onProgress) _progressCallbacks.push(onProgress);
+
+  // Only kick off the actual fetch once
+  if (_loadStarted) return;
+  _loadStarted = true;
+
   let loaded = 0;
 
   function finish(name, imgOrCanvas) {
     sprites[name] = imgOrCanvas;
     loaded++;
-    if (onProgress) onProgress(loaded / SPRITE_NAMES.length);
-    if (loaded === SPRITE_NAMES.length && onComplete) onComplete(sprites);
+    const progress = loaded / SPRITE_NAMES.length;
+    _progressCallbacks.forEach(cb => cb(progress));
+    if (loaded === SPRITE_NAMES.length) {
+      _loadComplete = true;
+      _completionCallbacks.forEach(cb => cb(sprites));
+    }
   }
 
   SPRITE_NAMES.forEach(name => {
