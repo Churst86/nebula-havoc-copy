@@ -112,6 +112,8 @@ export function loadSprites(onComplete) {
       loadImageViaBlobUrl(url, (img) => {
         const result = removeWhiteBackground(img);
         if (result) {
+          // Force multiply blend for JPGs even after pixel processing
+          if (ext === 'jpg') result._needsMultiply = true;
           finish(name, result);
         } else {
           // Fallback: store raw img with multiply flag
