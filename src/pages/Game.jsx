@@ -431,7 +431,7 @@ export default function Game() {
             saveShopUpgrades(resetUpgrades);
             setGameState('start');
           }}
-          isNewScore={isHighScore(score)}
+          isNewScore={isHighScore(score, bossMode)}
         />
       )}
     </div>
