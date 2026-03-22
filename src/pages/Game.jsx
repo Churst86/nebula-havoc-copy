@@ -104,6 +104,7 @@ export default function Game() {
         setCarryOverPowerups(startPowerups);
         setActivePowerup(startPowerups);
       } else {
+        // Normal game: never carry over powerups from boss mode
         setCarryOverPowerups(null);
         setActivePowerup({});
       }
