@@ -1728,6 +1728,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     s.enemies.forEach(e => {
       if (e.type !== 'boss') return;
       const bt = e.tier || 1;
+      // Tier 4 stage 2 flash effect
+      if (bt === 4 && e._flashIntensity) {
+        ctx.save();
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = '#ff4444';
+        ctx.fillRect(e.x - 60, e.y - 60, 120, 120);
+        ctx.restore();
+      }
       if (bt === 3) { drawBossSweepLaser(ctx, e); drawBossSuperLaser(ctx, e); }
       if (bt === 4) { drawBossTier4Armor(ctx, e, BLOCK_SIZE); }
     });
