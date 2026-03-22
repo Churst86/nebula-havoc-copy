@@ -455,11 +455,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         ctx.strokeStyle = '#ff0066'; ctx.lineWidth = 3;
         ctx.beginPath(); ctx.arc(0, 0, 60, 0, Math.PI * 2); ctx.stroke();
       }
-      // Single health bar — no duplicate
-      const bw = 120, bh = 7, by = sz / 2 - 180;
-      ctx.fillStyle = '#222'; ctx.fillRect(-bw / 2, by, bw, bh);
-      const bossBarColor = ['#ff0066','#ff6600','#aa00ff','#00ccff'][Math.min((e.tier || 1) - 1, 3)];
-      ctx.fillStyle = bossBarColor; ctx.fillRect(-bw / 2, by, bw * (e.hp / e.maxHp), bh);
+
     } else if (e.type === 'dropper') {
       const c = e.color || '#ffd700';
       const dropSpriteKey = POWERUP_SPRITE_KEYS[e.dropType];
@@ -1785,6 +1781,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     });
     s.bullets.forEach(b => drawBullet(ctx, b, false));
     s.enemyBullets.forEach(b => drawBullet(ctx, b, true));
+
+    // Draw boss HUD at top
+    const bossEnemy = s.enemies.find(e => e.type === 'boss');
+    if (bossEnemy) drawBossHUD(ctx, W, bossEnemy);
     // Draw harvesters
     s.harvesters.forEach(h => {
       const harvImg = getSprite('Harvester');
