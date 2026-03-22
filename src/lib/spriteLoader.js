@@ -47,6 +47,7 @@ const SPRITE_NAMES = [
   'Drone',
   'Harvester',
   'Dropper',
+  'Spacestation',
   'Shotgun Powerup',
   'Photon Powerup',
   'BounceshotPowerup',
