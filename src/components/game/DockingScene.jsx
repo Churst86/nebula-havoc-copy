@@ -10,9 +10,16 @@ export default function DockingScene({ onDockComplete }) {
   const stationImgRef = useRef(null);
 
   useEffect(() => {
-    const img = new Image();
-    img.src = 'https://raw.githubusercontent.com/Churst86/Sprites/main/Spacestation.jpg';
-    img.onload = () => { stationImgRef.current = img; };
+    fetch('https://raw.githubusercontent.com/Churst86/Sprites/main/Spacestation.png?t=' + Date.now())
+      .then(r => r.ok ? r.blob() : Promise.reject())
+      .catch(() => fetch('https://raw.githubusercontent.com/Churst86/Sprites/main/Spacestation.jpg?t=' + Date.now()).then(r => r.blob()))
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => { stationImgRef.current = img; URL.revokeObjectURL(url); };
+        img.src = url;
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
