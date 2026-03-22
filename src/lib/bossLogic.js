@@ -173,7 +173,7 @@ export function updateBossTier2Fire(e, p, s, sounds) {
   }
 }
 
-// ─── Tier 3 (Wave 15): Eye sweep lasers targeting player + super laser ──────
+// ─── Tier 3 (Wave 15): Beholder Boss — handled in beholderLogic.js ──────
 // Timeline (cumulative frames at 60fps):
 //   0s  — Laser 1 starts cycling every 3s (180f): 60f charge → 120f active sweep
 //   9s  — Laser 2 joins, also cycling every 3s
