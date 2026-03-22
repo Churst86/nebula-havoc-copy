@@ -1043,8 +1043,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           else if (bt === 4) { updateBossTier4Fire(e, p, s, sounds, W, H, spawnExplosion); updateBossTier4Armor(e, s, BLOCK_SIZE, getBlockCells, spawnExplosion); }
           else updateBossTier5Fire(e, p, s, sounds, W, H, spawnExplosion);
         }
-        if ((e.tier || 1) === 3 && e._sweepHitsPlayer) takeDamage(s);
-        if ((e.tier || 1) === 3 && e._superHitsPlayer) takeDamage(s);
+        if ((e.tier || 1) === 3 && e._shieldActive) {
+          // Boss is shielded — no damage from laser. Just remove the lines that check for sweep/super hits.
+        } else if ((e.tier || 1) === 3 && e._sweepHitsPlayer) takeDamage(s);
       } else if (e.type === 'mine') {
         e._chargeTimer = (e._chargeTimer === undefined ? randomBetween(30, 60) : e._chargeTimer) - 1;
         e._rechargeCooldown = Math.max(0, (e._rechargeCooldown || 0) - 1);
