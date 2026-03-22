@@ -66,6 +66,14 @@ export default function StartScreen({ onStart, onContinue, settings, onSettingsC
             NEW GAME
           </Button>
 
+          <Button
+            onClick={() => onStart(false, true)}
+            size="lg"
+            variant="outline"
+            className="font-bold text-lg px-10 py-6 rounded-xl w-full border-red-500/60 text-red-400 hover:bg-red-950/30">
+            ⚔ BOSS MODE
+          </Button>
+
           {saveFile &&
           <Button
             onClick={onContinue}
