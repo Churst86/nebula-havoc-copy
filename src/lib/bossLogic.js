@@ -342,7 +342,6 @@ export function updateBossTier4Fire(e, p, s, sounds, W, H, spawnExplosion) {
   e._ringFireTimer--;
   if (e._ringFireTimer <= 0) {
     const RING_SHOTS = 12;
-    const fireInterval = isStage2 ? 240 : 240; // same base, but we'll vary by stage elsewhere
     for (let i = 0; i < RING_SHOTS; i++) {
       const angle = (i / RING_SHOTS) * Math.PI * 2;
       s.enemyBullets.push({
@@ -355,6 +354,24 @@ export function updateBossTier4Fire(e, p, s, sounds, W, H, spawnExplosion) {
     e._ringFireTimer = isStage2 ? 120 : 160;
     sounds && sounds.hit && sounds.hit();
     e._hasFired = true;
+  }
+
+  // ── Missile barrage every 3 seconds ──
+  e._missileTimer = (e._missileTimer || 0) - 1;
+  if (e._missileTimer <= 0) {
+    const missileCount = isStage2 ? 6 : 4;
+    for (let i = 0; i < missileCount; i++) {
+      const spread = (i - Math.floor(missileCount / 2)) * 0.4;
+      s.enemyBullets.push({
+        x: e.x, y: e.y,
+        vx: Math.sin(spread) * 3, vy: 5,
+        boss: true, big: true,
+        homing: true, target: p,
+        homingStrength: 0.12,
+      });
+    }
+    e._missileTimer = isStage2 ? 120 : 180;
+    sounds && sounds.hit && sounds.hit();
   }
 
   // ── Stage 2: flash effect and increased difficulty ──
