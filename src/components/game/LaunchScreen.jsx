@@ -33,7 +33,7 @@ export default function LaunchScreen({ onDone, loadProgress = 0 }) {
     const stars = Array.from({ length: 160 }, () => ({
       x: Math.random(), y: Math.random(),
       r: Math.random() * 1.4 + 0.3,
-      speed: Math.random() * 0.3 + 0.05,
+      speed: 0,
       alpha: Math.random() * 0.7 + 0.3,
     }));
 
