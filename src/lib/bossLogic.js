@@ -460,6 +460,7 @@ export function updateBossTier4Fire(e, p, s, sounds, W, H, spawnExplosion) {
         x: e.x, y: e.y,
         vx: Math.cos(angle) * 4, vy: Math.sin(angle) * 4,
         boss: true, big: true,
+        dreadnoughtGreen: true,
       });
     }
     e._ringFireTimer = isStage2 ? 180 : 240;
