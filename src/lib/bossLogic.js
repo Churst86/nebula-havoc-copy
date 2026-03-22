@@ -128,6 +128,7 @@ export function updateBossTier1Fire(e, p, s, sounds) {
     const a = baseAngle + (Math.random() - 0.5) * 0.15;
     s.enemyBullets.push({ x: e.x, y: e.y, vx: Math.cos(a) * 5.5, vy: Math.sin(a) * 5.5, boss: true });
     e.fireTimer = isStage2 ? 10 : 18;
+    e._hasFired = true;
   }
 
   e._specialTimer = (e._specialTimer || 90) - 1;
