@@ -1952,6 +1952,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       if (onContinueUsed) onContinueUsed();
       lastTimeRef.current = performance.now();
       animRef.current = requestAnimationFrame(loop);
+    } else if (gameState === 'idle') {
+      stateRef.current.running = false;
+      if (animRef.current) cancelAnimationFrame(animRef.current);
     } else {
       sounds.stopAllMusic();
       stateRef.current.running = false;
