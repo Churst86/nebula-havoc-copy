@@ -510,52 +510,48 @@ function pointNearLine(px, py, x1, y1, x2, y2, threshold) {
 // ─── Draw boss anchor (stub) ─────────────────────────────────────────────────
 export function drawBossAnchor(ctx, e) {}
 
-// ─── Draw tier 3 dual sweep lasers ───────────────────────────────────────────
+// ─── Draw tier 3 sweep lasers ─────────────────────────────────────────────────
 export function drawBossSweepLaser(ctx, e) {
-  const isCharging = e._sweepState === 'charging';
-  const isActive = e._sweepState === 'active';
+  ctx.save();
 
-  // Charging indicator — pulsing rings at boss edge
-  if (isCharging) {
-    const pct = Math.max(0, 1 - (e._sweepStateTimer / 180));
-    ctx.save();
-    // Two charging points on boss edge
-    const BOSS_RADIUS = 80;
-    [e._laserAngle, e._laserAngle2].forEach((angle, i) => {
-      if (angle === undefined) return;
-      const sx = e.x + Math.cos(angle) * BOSS_RADIUS;
-      const sy = e.y + Math.sin(angle) * BOSS_RADIUS;
-      ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 20 * pct;
-      ctx.strokeStyle = `rgba(255,${68 + i * 80},255,${pct * 0.9})`;
-      ctx.lineWidth = 3 + pct * 4;
-      ctx.beginPath(); ctx.arc(sx, sy, 8 + pct * 20, 0, Math.PI * 2); ctx.stroke();
-    });
-    ctx.restore();
-    return;
+  // Draw charging indicators
+  [
+    { angle: e._sweepCharging1, color: '#ff44ff' },
+    { angle: e._sweepCharging2, color: '#cc44ff' },
+  ].forEach(({ angle, color }) => {
+    if (angle === undefined) return;
+    const sx = e.x + Math.cos(angle) * 30;
+    const sy = e.y + Math.sin(angle) * 30;
+    const pulse = 0.5 + Math.sin(Date.now() * 0.015) * 0.5;
+    ctx.shadowColor = color; ctx.shadowBlur = 20 * pulse;
+    ctx.strokeStyle = color.replace(')', `,${pulse * 0.9})`).replace('rgb', 'rgba').replace('#ff44ff', 'rgba(255,68,255,').replace('#cc44ff', 'rgba(200,68,255,') + ')';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3 + pulse * 4;
+    ctx.beginPath(); ctx.arc(sx, sy, 8 + pulse * 16, 0, Math.PI * 2); ctx.stroke();
+  });
+
+  // Draw active laser 1
+  if (e._sweepLaserEndX !== undefined) {
+    const sx1 = e._sweepLaserStartX ?? e.x;
+    const sy1 = e._sweepLaserStartY ?? e.y;
+    ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 24;
+    ctx.strokeStyle = 'rgba(255,68,255,0.75)'; ctx.lineWidth = 8;
+    ctx.beginPath(); ctx.moveTo(sx1, sy1); ctx.lineTo(e._sweepLaserEndX, e._sweepLaserEndY); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,210,255,0.95)'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(sx1, sy1); ctx.lineTo(e._sweepLaserEndX, e._sweepLaserEndY); ctx.stroke();
   }
 
-  if (!isActive || !e._sweepLaserEndX) return;
-
-  ctx.save();
-  // Draw laser 1 from edge
-  const sx1 = e._sweepLaserStartX ?? e.x;
-  const sy1 = e._sweepLaserStartY ?? e.y;
-  ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 22;
-  ctx.strokeStyle = 'rgba(255,68,255,0.7)'; ctx.lineWidth = 7;
-  ctx.beginPath(); ctx.moveTo(sx1, sy1); ctx.lineTo(e._sweepLaserEndX, e._sweepLaserEndY); ctx.stroke();
-  ctx.strokeStyle = 'rgba(255,200,255,0.95)'; ctx.lineWidth = 2.5;
-  ctx.beginPath(); ctx.moveTo(sx1, sy1); ctx.lineTo(e._sweepLaserEndX, e._sweepLaserEndY); ctx.stroke();
-
-  // Draw laser 2 from edge
-  if (e._sweepLaserEndX2) {
+  // Draw active laser 2
+  if (e._sweepLaserEndX2 !== undefined) {
     const sx2 = e._sweepLaserStartX2 ?? e.x;
     const sy2 = e._sweepLaserStartY2 ?? e.y;
-    ctx.shadowColor = '#cc44ff';
-    ctx.strokeStyle = 'rgba(200,68,255,0.7)'; ctx.lineWidth = 7;
+    ctx.shadowColor = '#cc44ff'; ctx.shadowBlur = 24;
+    ctx.strokeStyle = 'rgba(200,68,255,0.75)'; ctx.lineWidth = 8;
     ctx.beginPath(); ctx.moveTo(sx2, sy2); ctx.lineTo(e._sweepLaserEndX2, e._sweepLaserEndY2); ctx.stroke();
     ctx.strokeStyle = 'rgba(220,180,255,0.95)'; ctx.lineWidth = 2.5;
     ctx.beginPath(); ctx.moveTo(sx2, sy2); ctx.lineTo(e._sweepLaserEndX2, e._sweepLaserEndY2); ctx.stroke();
   }
+
   ctx.restore();
 }
 
