@@ -184,8 +184,9 @@ export default function Game() {
   }, []);
 
   const handleDecline = useCallback(() => {
+    if (!bossMode) sounds.stopAllMusic();
     setGameState('gameover');
-  }, []);
+  }, [bossMode]);
 
   const handleProgressToDifficulty = useCallback(() => {
     const nextDifficulty = NEXT_DIFFICULTY[settings.difficulty];
