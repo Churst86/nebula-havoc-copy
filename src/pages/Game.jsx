@@ -385,10 +385,12 @@ export default function Game() {
           mode={dockingMode}
           onDockComplete={() => { setShowDocking(false); setShowShop(true); sounds.playTitleMusic(); }}
           onDepartComplete={() => {
-            // Force GameCanvas to reinitialize cleanly (clears all old enemies/blocks/bullets)
-            setShowDocking(false);
+            // Keep docking scene visible during state transition to avoid flashing
             setGameState('idle');
-            setTimeout(() => setGameState('playing'), 50);
+            setTimeout(() => {
+              setShowDocking(false);
+              setTimeout(() => setGameState('playing'), 16);
+            }, 50);
           }}
         />
       )}
