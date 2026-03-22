@@ -540,6 +540,29 @@ function fireBoss5Weapon(gun, e, p, s) {
 // ─── Homing bullet updater ──────────────────────────────────────────────────
 export function updateHomingBullets(enemyBullets) {
   enemyBullets.forEach(b => {
+    // Handle tier 1 circling missiles
+    if (b.tier1Missile) {
+      b.homingDelay--;
+      if (b.homingDelay <= 0) {
+        // Switch to homing mode
+        b.tier1Missile = false;
+        b.homing = true;
+      } else {
+        // Circle around center point
+        b.circlePhase += b.circleSpeed;
+        const cx = b.target.x;
+        const cy = b.target.y;
+        const nx = cx + Math.cos(b.circlePhase) * b.circleRadius;
+        const ny = cy + Math.sin(b.circlePhase) * b.circleRadius;
+        const dx = nx - b.x;
+        const dy = ny - b.y;
+        const len = Math.hypot(dx, dy) || 1;
+        b.vx = (dx / len) * 3;
+        b.vy = (dy / len) * 3;
+      }
+      return;
+    }
+
     if (!b.homing || !b.target) return;
     const tx = b.target.x, ty = b.target.y;
     const dx = tx - b.x, dy = ty - b.y;
