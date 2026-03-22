@@ -186,7 +186,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         enemies.push({
           type: 'mine',
           x: randomBetween(50, W - 50),
-          y: -400 - i * 60,
+          y: -60 - i * 60,
           w: 32, h: 32,
           hp: mineHp, maxHp: mineHp,
           vx: randomBetween(-0.6, 0.6),
