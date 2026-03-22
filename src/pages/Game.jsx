@@ -95,8 +95,18 @@ export default function Game() {
     setWave(isBossMode ? 5 : 1);
     setStartWave(isBossMode ? 5 : 1);
     if (!keepPowerups) {
-      setCarryOverPowerups(null);
-      setActivePowerup({});
+      if (isBossMode) {
+        // Start boss mode with 3 random gun powerups
+        const guns = ['shotgun', 'laser', 'photon', 'bounce', 'missile'];
+        const shuffled = [...guns].sort(() => Math.random() - 0.5);
+        const startPowerups = {};
+        shuffled.slice(0, 3).forEach(gun => { startPowerups[gun] = 1; });
+        setCarryOverPowerups(startPowerups);
+        setActivePowerup(startPowerups);
+      } else {
+        setCarryOverPowerups(null);
+        setActivePowerup({});
+      }
       const resetUpgrades = { armor: 0, repair: 0, drone: 0, harvester: 0 };
       setShopUpgrades(resetUpgrades);
       saveShopUpgrades(resetUpgrades);
