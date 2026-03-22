@@ -24,6 +24,7 @@ import { drawBossHUD } from '../../lib/bossHudUtils.js';
 import { updateLaserBeam, LASER_CHARGE_FRAMES, LASER_BEAM_FRAMES, LASER_COOLDOWN_FRAMES } from '../../lib/laserLogic.js';
 import { spawnWave, progressWave } from '../../lib/waveSpawner.js';
 import { HITBOX_SIZES } from '../../lib/hitboxConfig.js';
+import { updateBlockSettling } from '../../lib/blockSettling.js';
 
 // Spread shotgun constants
 const SPREAD_SHOTS_PER_RELOAD = 2;
