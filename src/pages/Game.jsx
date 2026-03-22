@@ -275,10 +275,6 @@ export default function Game() {
 
   const difficultyConfig = DIFFICULTY_CONFIG[settings.difficulty] || DIFFICULTY_CONFIG.normal;
 
-  if (showLaunch) {
-    return <LaunchScreen loadProgress={loadProgress} onDone={() => { setShowLaunch(false); setGameState('playing'); }} />;
-  }
-
   if (showIntro) {
     return <IntroCrawl onDone={() => setShowIntro(false)} />;
   }
@@ -289,6 +285,14 @@ export default function Game() {
       tabIndex={-1}
       style={{ filter: `brightness(${settings.brightness})` }}
     >
+      {/* LaunchScreen overlays the game — GameCanvas is always mounted and initializing underneath */}
+      {showLaunch && (
+        <LaunchScreen
+          loadProgress={loadProgress}
+          onDone={() => { setShowLaunch(false); setGameState('playing'); }}
+        />
+      )}
+
       <GameCanvas
         gameState={gameState}
         setGameState={handleSetGameState}
