@@ -369,7 +369,12 @@ export default function Game() {
           blockScore={blockScore}
           shopUpgrades={shopUpgrades}
           onBuy={handleShopBuy}
-          onReturn={() => { setShowShop(false); sounds.stopAllMusic(); }}
+          onReturn={() => {
+            sounds.stopAllMusic();
+            setShowShop(false);
+            setDockingMode('departing');
+            setShowDocking(true);
+          }}
           nextWave={wave}
         />
       )}
