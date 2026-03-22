@@ -65,9 +65,6 @@ export function spawnWave(W, s, difficultyConfig, bossMode, onBossWarning) {
     if (wave > 10 && (wave % 2 === 0 || (isHell && wave > 25))) {
       spawnEater(enemies, W, wave, hpMult);
     }
-    if (wave > 15 && (wave % 2 === 1 || (isHell && wave > 25))) {
-      spawnBerserk(enemies, W, wave, hpMult, isHell);
-    }
   }
   s.enemies = enemies;
   return null;
