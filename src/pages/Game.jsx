@@ -80,17 +80,20 @@ export default function Game() {
     }
   }, [showDocking, showShop]);
 
-  const handleStart = useCallback((keepPowerups = false) => {
+  const [bossMode, setBossMode] = useState(false);
+
+  const handleStart = useCallback((keepPowerups = false, isBossMode = false) => {
+    setBossMode(isBossMode);
     setShowLaunch(true);
     setLoadProgress(isSpritesLoaded() ? 1 : 0);
     scoreRef.current = 0;
-    waveRef.current = 1;
+    waveRef.current = isBossMode ? 5 : 1;
     setScore(0);
     setBlockScore(0);
     setLives(3);
     setMaxLives(3);
-    setWave(1);
-    setStartWave(1);
+    setWave(isBossMode ? 5 : 1);
+    setStartWave(isBossMode ? 5 : 1);
     if (!keepPowerups) {
       setCarryOverPowerups(null);
       setActivePowerup({});
