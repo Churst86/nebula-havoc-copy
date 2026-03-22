@@ -445,9 +445,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const isStage2 = e.hp <= e.maxHp / 3 && e._stage2Triggered;
       
       if (img) {
-        // Stage 2 red flash
+        // Stage 2 red flash for all bosses
         if (isStage2 && Math.floor(Date.now() / 80) % 2 === 0) {
-          // Draw with red tint
           ctx.globalAlpha = 0.4;
           ctx.fillStyle = '#ff4444';
           ctx.fillRect(-sz / 2, -sz / 2, sz, sz);
