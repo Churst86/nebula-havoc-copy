@@ -1,54 +1,54 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { getSprite } from '../../lib/spriteLoader.js';
 
-// Animated canvas: player ship flies up and docks with a space station
-export default function DockingScene({ onDockComplete }) {
+// mode: 'arriving' — ship flies up and docks
+// mode: 'departing' — ship undocks and flies away (triggered by onDepart)
+export default function DockingScene({ onDockComplete, onDepartComplete, mode = 'arriving' }) {
   const canvasRef = useRef(null);
   const animRef = useRef(null);
-  const shipY = useRef(null);
-  const docked = useRef(false);
+  const frameRef = useRef(0);
+  const phaseRef = useRef(mode); // 'arriving' | 'docked' | 'departing'
+  const shipYRef = useRef(null);
+  const dockedRef = useRef(false);
+  const [statusText, setStatusText] = useState('Docking with Space Station Ozma...');
 
-  const stationImgRef = useRef(null);
-
+  // Allow parent to trigger departure
   useEffect(() => {
-    fetch('https://raw.githubusercontent.com/Churst86/Sprites/main/Spacestation.png?t=' + Date.now())
-      .then(r => r.ok ? r.blob() : Promise.reject())
-      .catch(() => fetch('https://raw.githubusercontent.com/Churst86/Sprites/main/Spacestation.jpg?t=' + Date.now()).then(r => r.blob()))
-      .then(blob => {
-        const url = URL.createObjectURL(blob);
-        const img = new Image();
-        img.onload = () => { stationImgRef.current = img; URL.revokeObjectURL(url); };
-        img.src = url;
-      })
-      .catch(() => {});
-  }, []);
+    if (mode === 'departing') {
+      phaseRef.current = 'departing';
+      setStatusText('Departing Space Station Ozma...');
+    }
+  }, [mode]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-    const W = canvas.width, H = canvas.height;
+    const resize = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
 
-    shipY.current = H - 80;
-    const stationY = H * 0.2;
-    const stars = Array.from({ length: 100 }, () => ({
-      x: Math.random() * W, y: Math.random() * H,
-      r: Math.random() * 1.5 + 0.3, speed: Math.random() * 0.5 + 0.2,
+    const stars = Array.from({ length: 120 }, () => ({
+      x: Math.random(), y: Math.random(),
+      r: Math.random() * 1.5 + 0.3, speed: Math.random() * 0.4 + 0.15,
     }));
 
-    let frame = 0;
+    shipYRef.current = canvas.height - 80;
 
-    function drawStation(ctx, cx, sy) {
+    function getW() { return canvas.width; }
+    function getH() { return canvas.height; }
+
+    function drawStation(ctx, cx, sy, frame) {
       ctx.save();
       ctx.translate(cx, sy);
-      const img = stationImgRef.current || getSprite('Spacestation');
+      const img = getSprite('Spacestation');
       if (img) {
         const sz = 220;
         ctx.shadowColor = '#44aaff'; ctx.shadowBlur = 24;
         ctx.drawImage(img, -sz / 2, -sz / 2, sz, sz);
       } else {
-        // Fallback procedural station
         ctx.strokeStyle = '#88bbff'; ctx.lineWidth = 6;
         ctx.shadowColor = '#44aaff'; ctx.shadowBlur = 18;
         ctx.beginPath(); ctx.ellipse(0, 0, 70, 18, 0, 0, Math.PI * 2); ctx.stroke();
@@ -57,7 +57,6 @@ export default function DockingScene({ onDockComplete }) {
         ctx.strokeStyle = '#44aaff'; ctx.lineWidth = 3;
         ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2); ctx.stroke();
       }
-      // Blinking lights always shown
       const blink = Math.floor(frame / 15) % 2 === 0;
       ctx.fillStyle = blink ? '#ff4400' : '#331100';
       ctx.beginPath(); ctx.arc(-80, 0, 5, 0, Math.PI * 2); ctx.fill();
@@ -66,87 +65,124 @@ export default function DockingScene({ onDockComplete }) {
       ctx.restore();
     }
 
-    function drawShip(ctx, cx, sy) {
+    function drawShip(ctx, cx, sy, frame, flipped = false) {
       ctx.save();
       ctx.translate(cx, sy);
-      ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 16;
-      ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(0, -18); ctx.lineTo(13, 12); ctx.lineTo(0, 6); ctx.lineTo(-13, 12); ctx.closePath();
-      ctx.stroke();
-      ctx.fillStyle = 'rgba(0,240,255,0.15)'; ctx.fill();
+      if (flipped) ctx.scale(1, -1); // point downward when departing
+
+      const shipImg = getSprite('PlayerShip');
+      if (shipImg) {
+        ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 18;
+        ctx.drawImage(shipImg, -42, -42, 84, 84);
+      } else {
+        ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 16;
+        ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, -18); ctx.lineTo(13, 12); ctx.lineTo(0, 6); ctx.lineTo(-13, 12); ctx.closePath();
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(0,240,255,0.15)'; ctx.fill();
+      }
+
       // Thruster flame
-      const flickLen = 8 + Math.sin(frame * 0.4) * 6;
-      const grad = ctx.createLinearGradient(0, 12, 0, 12 + flickLen);
-      grad.addColorStop(0, 'rgba(0,240,255,0.9)');
-      grad.addColorStop(1, 'rgba(255,80,0,0)');
-      ctx.fillStyle = grad;
-      ctx.beginPath(); ctx.ellipse(0, 12 + flickLen / 2, 3, flickLen / 2, 0, 0, Math.PI * 2); ctx.fill();
+      const flickLen = 12 + Math.sin(frame * 0.4) * 7;
+      const g1 = ctx.createLinearGradient(-5, 12, -5, 12 + flickLen);
+      g1.addColorStop(0, 'rgba(0,240,255,0.9)');
+      g1.addColorStop(1, 'rgba(255,80,0,0)');
+      ctx.fillStyle = g1;
+      ctx.beginPath(); ctx.ellipse(-5, 12 + flickLen / 2, 3, flickLen / 2, 0, 0, Math.PI * 2); ctx.fill();
+      const g2 = ctx.createLinearGradient(5, 12, 5, 12 + flickLen);
+      g2.addColorStop(0, 'rgba(0,240,255,0.9)');
+      g2.addColorStop(1, 'rgba(255,80,0,0)');
+      ctx.fillStyle = g2;
+      ctx.beginPath(); ctx.ellipse(5, 12 + flickLen / 2, 3, flickLen / 2, 0, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
     }
 
+    let departSpeed = 0;
+
     function loop() {
-      frame++;
+      frameRef.current++;
+      const f = frameRef.current;
       const ctx = canvas.getContext('2d');
+      const W = getW(), H = getH();
+
       ctx.fillStyle = '#050510';
       ctx.fillRect(0, 0, W, H);
 
-      // Stars scroll down slowly (ship moves up)
+      // Stars scroll
       stars.forEach(st => {
-        st.y += st.speed;
-        if (st.y > H) { st.y = 0; st.x = Math.random() * W; }
+        st.y += st.speed / H * (phaseRef.current === 'departing' ? 3 : 1);
+        if (st.y > 1) st.y = 0;
         ctx.globalAlpha = 0.6;
         ctx.fillStyle = '#fff';
-        ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(st.x * W, st.y * H, st.r, 0, Math.PI * 2); ctx.fill();
         ctx.globalAlpha = 1;
       });
 
-      const stationY_abs = H * 0.22;
-      drawStation(ctx, W / 2, stationY_abs);
+      const stationY = H * 0.22;
+      drawStation(ctx, W / 2, stationY, f);
 
-      // Move ship up
-      const dockTargetY = stationY_abs + 34;
-      if (shipY.current > dockTargetY + 2) {
-        shipY.current -= 1.8;
-      } else if (!docked.current) {
-        docked.current = true;
-        // Docked — flash then callback
-        setTimeout(() => {
+      const dockTargetY = stationY + 38;
+
+      if (phaseRef.current === 'arriving') {
+        // Ship flies up from bottom
+        if (shipYRef.current > dockTargetY + 2) {
+          shipYRef.current -= 1.8;
+        } else if (!dockedRef.current) {
+          dockedRef.current = true;
+          phaseRef.current = 'docked';
+          shipYRef.current = dockTargetY;
+          setTimeout(() => {
+            cancelAnimationFrame(animRef.current);
+            if (onDockComplete) onDockComplete();
+          }, 500);
+        }
+        drawShip(ctx, W / 2, shipYRef.current, f, false);
+
+        // Docking beam
+        if (shipYRef.current < stationY + 90) {
+          const pct = Math.max(0, Math.min(1 - (shipYRef.current - dockTargetY) / 90, 0.7));
+          ctx.save();
+          ctx.globalAlpha = pct;
+          ctx.strokeStyle = '#00ccff'; ctx.lineWidth = 2;
+          ctx.setLineDash([6, 6]);
+          ctx.beginPath();
+          ctx.moveTo(W / 2, stationY + 38);
+          ctx.lineTo(W / 2, shipYRef.current - 18);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.restore();
+        }
+      } else if (phaseRef.current === 'docked') {
+        // Hold docked position
+        drawShip(ctx, W / 2, dockTargetY, f, false);
+      } else if (phaseRef.current === 'departing') {
+        // Ship flips and flies downward off screen
+        departSpeed += 0.12;
+        shipYRef.current += departSpeed;
+        drawShip(ctx, W / 2, shipYRef.current, f, true);
+
+        if (shipYRef.current > H + 80) {
           cancelAnimationFrame(animRef.current);
-          onDockComplete();
-        }, 600);
-      }
-
-      drawShip(ctx, W / 2, shipY.current);
-
-      // Docking beam when close
-      if (shipY.current < stationY_abs + 80) {
-        const pct = 1 - (shipY.current - dockTargetY) / 80;
-        ctx.save();
-        ctx.globalAlpha = Math.min(pct, 0.6);
-        ctx.strokeStyle = '#00ccff';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([6, 6]);
-        ctx.beginPath();
-        ctx.moveTo(W / 2, stationY_abs + 34);
-        ctx.lineTo(W / 2, shipY.current - 18);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.restore();
+          if (onDepartComplete) onDepartComplete();
+        }
       }
 
       animRef.current = requestAnimationFrame(loop);
     }
 
     animRef.current = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(animRef.current);
-  }, [onDockComplete]);
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
 
   return (
     <div className="fixed inset-0 z-40 bg-black">
       <canvas ref={canvasRef} className="w-full h-full" />
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-cyan-400 text-sm font-mono tracking-widest animate-pulse uppercase">
-        Docking with Space Station Ozma...
+        {statusText}
       </div>
     </div>
   );
