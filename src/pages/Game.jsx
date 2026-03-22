@@ -138,7 +138,7 @@ export default function Game() {
     setShowDocking(false);
     setShowShop(false);
     setShowLaunch(true);
-    setLoadProgress(0);
+    setLoadProgress(isSpritesLoaded() ? 1 : 0);
     // gameState will be set to 'playing' by LaunchScreen.onDone
   }, [settings]);
 
