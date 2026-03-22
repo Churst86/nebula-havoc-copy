@@ -1417,6 +1417,12 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       // Bounce off top, and bounce off bottom wall
       if (item.y < 16) { item.y = 16; item.vy = Math.abs(item.vy); }
       if (item.y > H - 16) { item.y = H - 16; item.vy = -Math.abs(item.vy); }
+      // Cap velocity after bounces to prevent speed accumulation
+      const vel = Math.hypot(item.vx, item.vy);
+      if (vel > 5.5) {
+        item.vx = (item.vx / vel) * 5.5;
+        item.vy = (item.vy / vel) * 5.5;
+      }
     });
     // Never remove powerup items — they stay until collected
 
