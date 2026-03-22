@@ -33,8 +33,8 @@ export function spawnEater(enemies, W, wave, hpMult) {
     type: 'eater',
     x: Math.random() * (W - 160) + 80,
     y: -60,
-    w: 20,
-    h: 20,
+    w: HITBOX_SIZES.eater.w,
+    h: HITBOX_SIZES.eater.h,
     hp: eaterHp,
     maxHp: eaterHp,
     _spawnHp: eaterHp, // used for mini eater HP calculation
