@@ -354,6 +354,7 @@ export function updateBossTier4Fire(e, p, s, sounds, W, H, spawnExplosion) {
     }
     e._ringFireTimer = isStage2 ? 180 : 240;
     sounds && sounds.hit && sounds.hit();
+    e._hasFired = true;
   }
 
   // ── Stage 2: flash effect and increased difficulty ──
