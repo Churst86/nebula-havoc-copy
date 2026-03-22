@@ -688,7 +688,21 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       drawMissile(ctx, b);
     } else if (isEnemy) {
       const isBoss = b.boss;
-      if (b.photonOrb) {
+      if (b.dreadnoughtGreen) {
+        const r = 10;
+        ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 28;
+        ctx.fillStyle = '#00ff88';
+        ctx.beginPath(); ctx.arc(b.x, b.y, r, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#44ffaa';
+        ctx.beginPath(); ctx.arc(b.x, b.y, r * 0.5, 0, Math.PI * 2); ctx.fill();
+      } else if (b.tier1Missile) {
+        const r = 8;
+        ctx.shadowColor = '#ff6600'; ctx.shadowBlur = 18;
+        ctx.fillStyle = '#ff8844';
+        ctx.beginPath(); ctx.arc(b.x, b.y, r, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ffaa66';
+        ctx.beginPath(); ctx.arc(b.x, b.y, r * 0.4, 0, Math.PI * 2); ctx.fill();
+      } else if (b.photonOrb) {
         const sz = b.orbSize || 14;
         ctx.shadowColor = '#44ffaa'; ctx.shadowBlur = sz * 2;
         ctx.fillStyle = 'rgba(68,255,170,0.3)';
