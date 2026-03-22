@@ -91,10 +91,10 @@ export function updateBossTier1Fire(e, p, s, sounds) {
       const a = baseAngle + i * 0.18;
       s.enemyBullets.push({ x: e.x, y: e.y, vx: Math.cos(a) * 5.5, vy: Math.sin(a) * 5.5, boss: true });
     }
-    e.fireTimer = 5;
+    e.fireTimer = 4;
   }
 
-  e._specialTimer = (e._specialTimer || 80) - 1;
+  e._specialTimer = (e._specialTimer || 55) - 1;
   if (e._specialTimer <= 0) {
     for (let i = 0; i < 3; i++) {
       const spread = (i - 1) * 0.35;
@@ -108,7 +108,7 @@ export function updateBossTier1Fire(e, p, s, sounds) {
       });
     }
     sounds && sounds.hit && sounds.hit();
-    e._specialTimer = 80;
+    e._specialTimer = 55;
   }
 }
 
