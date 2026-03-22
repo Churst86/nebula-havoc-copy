@@ -441,15 +441,15 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const isStage2 = e.hp <= e.maxHp / 3 && e._stage2Triggered;
       
       if (img) {
-        // Stage 2 red flash for all bosses
+        ctx.shadowColor = '#ff0066'; ctx.shadowBlur = 48;
+        ctx.drawImage(img, -sz / 2, -sz / 2, sz, sz);
+        // Stage 2 red flash overlay on top of sprite
         if (isStage2 && Math.floor(Date.now() / 80) % 2 === 0) {
           ctx.globalAlpha = 0.4;
           ctx.fillStyle = '#ff4444';
           ctx.fillRect(-sz / 2, -sz / 2, sz, sz);
           ctx.globalAlpha = 1;
         }
-        ctx.shadowColor = '#ff0066'; ctx.shadowBlur = 48;
-        ctx.drawImage(img, -sz / 2, -sz / 2, sz, sz);
       } else {
         ctx.shadowColor = '#ff0066'; ctx.shadowBlur = 32;
         ctx.strokeStyle = '#ff0066'; ctx.lineWidth = 3;
