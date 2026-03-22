@@ -436,7 +436,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     const playerImage = playerShipImageRef.current;
     if (playerImage) {
       ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 18;
-      ctx.drawImage(playerImage, -60, -60, 120, 120);
+      ctx.drawImage(playerImage, -84, -84, 169, 169);
     } else {
       ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 18;
       ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2;
