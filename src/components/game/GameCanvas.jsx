@@ -153,19 +153,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   }
 
   function getNextDropperType(s) {
-    const lockedGuns = s.lockedPowerups.filter(p => GUN_TYPES.includes(p));
-    const atGunLimit = lockedGuns.length >= 3;
-
     for (let i = 0; i < DROPPER_ROTATION.length; i++) {
       const idx = (s.dropperRotationIdx + i) % DROPPER_ROTATION.length;
       const t = DROPPER_ROTATION[idx];
       if ((s.powerups[t] || 0) >= 10) continue;
-      if (atGunLimit && GUN_TYPES.includes(t) && !s.lockedPowerups.includes(t)) continue;
       s.dropperRotationIdx = idx;
       return t;
     }
-    const nonGuns = DROPPER_ROTATION.filter(t => !GUN_TYPES.includes(t));
-    return nonGuns[0] || DROPPER_ROTATION[0];
+    return DROPPER_ROTATION[0];
   }
 
   function spawnMiniEaters(W, s, parent) {
@@ -1623,10 +1618,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         } else if (item.type === 'reverse') {
           s.powerups.reverse = Math.min((s.powerups.reverse || 0) + 1, 10); sounds.powerup();
         } else {
-          const isLocked = s.lockedPowerups.includes(item.type);
-          const canAdd = s.lockedPowerups.length < 3;
-          if (!isLocked && !canAdd) { onPowerupChange({ ...s.powerups, shieldHp: s.shieldHp }); return false; }
-          if (!isLocked) s.lockedPowerups.push(item.type);
           s.powerups[item.type] = Math.min((s.powerups[item.type] || 0) + 1, 10);
           sounds.powerup();
         }
