@@ -1029,15 +1029,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     s.enemies.forEach(e => {
       if (e.type === 'boss') {
         updateBossMovement(e, W, H, p);
-        const bossTargetY = (e.tier || 1) >= 3 ? H * 0.30 : H * 0.22;
-        if (e.y >= bossTargetY - 5 || (e.tier || 1) === 4) { // tier 4 fires during entry
-          const bt = e.tier || 1;
-          if (bt === 1) updateBossTier1Fire(e, p, s, sounds);
-          else if (bt === 2) updateBossTier2Fire(e, p, s, sounds);
-          else if (bt === 3) { if (!e._bInit) { initBeholderMovement(e); e._bInit = true; } updateBeholderMovement(e, W, H); updateBeholderShield(e); updateBeholderFire(e, p, s, sounds); s.W = W; s.H = H; }
-          else if (bt === 4) { updateBossTier4Fire(e, p, s, sounds, W, H, spawnExplosion); updateBossTier4Armor(e, s, BLOCK_SIZE, getBlockCells, spawnExplosion); }
-          else updateBossTier5Fire(e, p, s, sounds, W, H, spawnExplosion);
-        }
+        e._hasFired = true; // Boss is ready to be damaged from the start
+        const bt = e.tier || 1;
+        if (bt === 1) updateBossTier1Fire(e, p, s, sounds);
+        else if (bt === 2) updateBossTier2Fire(e, p, s, sounds);
+        else if (bt === 3) { if (!e._bInit) { initBeholderMovement(e); e._bInit = true; } updateBeholderMovement(e, W, H); updateBeholderShield(e); updateBeholderFire(e, p, s, sounds); s.W = W; s.H = H; }
+        else if (bt === 4) { updateBossTier4Fire(e, p, s, sounds, W, H, spawnExplosion); updateBossTier4Armor(e, s, BLOCK_SIZE, getBlockCells, spawnExplosion); }
+        else updateBossTier5Fire(e, p, s, sounds, W, H, spawnExplosion);
         if ((e.tier || 1) === 3 && e._shieldActive) {
           // Boss is shielded — no damage from laser. Just remove the lines that check for sweep/super hits.
         } else if ((e.tier || 1) === 3 && e._sweepHitsPlayer) takeDamage(s);
