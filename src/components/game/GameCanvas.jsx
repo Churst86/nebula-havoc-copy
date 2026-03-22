@@ -18,6 +18,7 @@ import {
 } from '../../lib/bossLogic.js';
 import { initBeholderMovement, updateBeholderMovement, updateBeholderShield, updateBeholderFire } from '../../lib/beholderLogic.js';
 import { drawBeholderShield } from '../../lib/beholderDrawing.js';
+import { drawBossHUD } from '../../lib/bossHudUtils.js';
 
 // Import laser logic
 import { updateLaserBeam, LASER_CHARGE_FRAMES, LASER_BEAM_FRAMES, LASER_COOLDOWN_FRAMES } from '../../lib/laserLogic.js';
