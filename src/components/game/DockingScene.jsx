@@ -162,21 +162,26 @@ export default function DockingScene({ mode = 'arriving', onDockComplete, onDepa
   }, [mode]);
 
   return (
-    <div
-      className="fixed inset-0 z-40 flex items-center justify-center"
-      style={{
-        background: '#020510',
-        opacity: fading ? 0 : 1,
-        transition: 'opacity 0.8s ease-in-out',
-        pointerEvents: fading ? 'none' : 'all',
-      }}
-    >
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
-      <div className="relative z-10 text-center" style={{ marginTop: '65%' }}>
-        <div className="text-xs tracking-[0.3em] text-cyan-500/60 uppercase font-mono animate-pulse">
-          {mode === 'arriving' ? 'Docking...' : 'Departing...'}
+    <>
+      {/* Background layer — always opaque */}
+      <div className="fixed inset-0 z-40 bg-black" style={{ pointerEvents: fading ? 'none' : 'all' }} />
+      
+      {/* Content layer — fades out */}
+      <div
+        className="fixed inset-0 z-40 flex items-center justify-center"
+        style={{
+          opacity: fading ? 0 : 1,
+          transition: 'opacity 0.8s ease-in-out',
+          pointerEvents: fading ? 'none' : 'all',
+        }}
+      >
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+        <div className="relative z-10 text-center" style={{ marginTop: '65%' }}>
+          <div className="text-xs tracking-[0.3em] text-cyan-500/60 uppercase font-mono animate-pulse">
+            {mode === 'arriving' ? 'Docking...' : 'Departing...'}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
