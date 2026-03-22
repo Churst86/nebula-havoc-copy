@@ -395,40 +395,81 @@ export function drawBossTier4Armor(ctx, e, BLOCK_SIZE) {
   });
 }
 
-// ─── Tier 4 (Wave 20): Multi-position photon guns + max bounce shot ───────────
+// ─── Tier 4 (Wave 20): Dreadnought - corner-to-corner movement + ring shots ───────────
 export function updateBossTier4Fire(e, p, s, sounds, W, H, spawnExplosion) {
-  e._photonTimer = (e._photonTimer || 0) - 1;
-  if (e._photonTimer <= 0) {
-    const offsets = [-80, -40, 0, 40, 80];
-    offsets.forEach(ox => {
-      const fx = e.x + ox;
-      const fy = e.y + 20;
-      const dx = p.x - fx, dy = p.y - fy;
-      const len = Math.hypot(dx, dy) || 1;
-      s.enemyBullets.push({
-        x: fx, y: fy,
-        vx: (dx / len) * 3.5, vy: (dy / len) * 3.5,
-        boss: true, big: true,
-        photonOrb: true, orbSize: 16,
-        piercing: true,
-      });
-    });
-    e._photonTimer = 50;
+  // Initialize dreadnought movement state
+  if (!e._dreadnoughtInit) {
+    e._dreadnoughtInit = true;
+    e._dreadnoughtPhase = 'entry'; // entry → moving → corner
+    e._cornerIndex = 0;
+    e._ringFireTimer = 0;
+    e._stage2Triggered = false;
   }
 
-  e._bounceTimer = (e._bounceTimer || 150) - 1;
-  if (e._bounceTimer <= 0) {
-    const SHOTS = 8;
-    for (let i = 0; i < SHOTS; i++) {
-      const angle = (i / SHOTS) * Math.PI * 2;
+  const hpThreshold = e.maxHp / 3;
+  const isStage2 = e.hp <= hpThreshold && !e._stage2Triggered;
+  if (isStage2) {
+    e._stage2Triggered = true;
+    e._stage2Timer = 0;
+  }
+
+  // ── Movement: after entry, move to corners diagonally ──
+  if (e._dreadnoughtPhase === 'entry') {
+    if (e.y >= H * 0.20) {
+      e._dreadnoughtPhase = 'moving';
+      e._moveStartTime = 0;
+      e._cornerSequence = [0, 2, 1, 3]; // top-left, bottom-right, top-right, bottom-left
+    }
+  }
+
+  if (e._dreadnoughtPhase === 'moving') {
+    // Define corners
+    const corners = [
+      { x: W * 0.15, y: H * 0.12 },  // top-left
+      { x: W * 0.85, y: H * 0.12 },  // top-right
+      { x: W * 0.85, y: H * 0.42 },  // bottom-right
+      { x: W * 0.15, y: H * 0.42 },  // bottom-left
+    ];
+
+    const cornerIdx = e._cornerSequence[e._cornerIndex % 4];
+    const targetCorner = corners[cornerIdx];
+
+    const dx = targetCorner.x - e.x;
+    const dy = targetCorner.y - e.y;
+    const dist = Math.hypot(dx, dy);
+
+    if (dist > 8) {
+      const spd = isStage2 ? 4.5 : 3.5; // faster in stage 2
+      e.x += (dx / dist) * spd;
+      e.y += (dy / dist) * spd;
+    } else {
+      // Reached corner, move to next
+      e._cornerIndex++;
+      e._moveStartTime = 0;
+    }
+  }
+
+  // ── Firing: ring shot every 4 seconds (240 frames) ──
+  e._ringFireTimer--;
+  if (e._ringFireTimer <= 0) {
+    const RING_SHOTS = 12;
+    const fireInterval = isStage2 ? 240 : 240; // same base, but we'll vary by stage elsewhere
+    for (let i = 0; i < RING_SHOTS; i++) {
+      const angle = (i / RING_SHOTS) * Math.PI * 2;
       s.enemyBullets.push({
         x: e.x, y: e.y,
-        vx: Math.cos(angle) * 5, vy: Math.sin(angle) * 5,
+        vx: Math.cos(angle) * 4, vy: Math.sin(angle) * 4,
         boss: true, big: true,
-        bouncing: true, bouncesLeft: 10,
       });
     }
-    e._bounceTimer = 180;
+    e._ringFireTimer = isStage2 ? 180 : 240;
+    sounds && sounds.hit && sounds.hit();
+  }
+
+  // ── Stage 2: flash effect and increased difficulty ──
+  if (e._stage2Triggered) {
+    e._stage2Timer++;
+    e._flashIntensity = Math.floor(e._stage2Timer / 6) % 2; // flash every 6 frames
   }
 }
 
