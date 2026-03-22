@@ -92,13 +92,13 @@ export default function IntroCrawl({ onDone }) {
           <div style={{
             color: '#ffe87a',
             fontFamily: 'Georgia, serif',
-            fontSize: 'clamp(1rem, 50vw, 1rem)',
+            fontSize: 'clamp(2rem, 50vw, 2rem)',
             lineHeight: 2.1,
             textAlign: 'justify',
             textShadow: '0 0 24px rgba(255,232,122,0.7)',
             whiteSpace: 'pre-wrap',
-            paddingTop: '100vh',
-            paddingBottom: '60vh',
+            paddingTop: '20vh',
+            paddingBottom: '20vh',
           }}>
             {CRAWL_TEXT}
           </div>
