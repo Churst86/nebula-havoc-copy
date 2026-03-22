@@ -24,12 +24,18 @@ export default function LaunchScreen({ onDone, loadProgress: externalProgress = 
 
   const loadProgress = internalProgress;
 
-  // Trigger fade-out when fully loaded, then call onDone after fade
+  const startTimeRef = useRef(Date.now());
+
+  // Trigger fade-out when fully loaded (min 3 seconds), then call onDone after fade
   useEffect(() => {
     if (loadProgress >= 1 && !doneCalledRef.current) {
+      const elapsed = Date.now() - startTimeRef.current;
+      const remaining = Math.max(0, 3000 - elapsed);
       doneCalledRef.current = true;
-      setFading(true);
-      setTimeout(() => onDone(), 700);
+      setTimeout(() => {
+        setFading(true);
+        setTimeout(() => onDone(), 700);
+      }, remaining);
     }
   }, [loadProgress, onDone]);
 
