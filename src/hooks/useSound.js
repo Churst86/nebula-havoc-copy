@@ -473,6 +473,73 @@ export const sounds = {
       setTimeout(() => playToneSfx({ freq: 330 + i * 110, type: 'sine', duration: 0.1, gain: 0.25 }), t * 1000);
     });
   },
+  weaponPickup() {
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    // 1) Detection bip — short sine ping
+    (() => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.exponentialRampToValueAtTime(1100, now + 0.05);
+      g.gain.setValueAtTime(0.25, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+      osc.connect(g); g.connect(sfxGain);
+      osc.start(now); osc.stop(now + 0.07);
+    })();
+
+    // 2) Metallic clamp/chunk — low thud + sharp click
+    setTimeout(() => {
+      // Low thud
+      const thud = ctx.createOscillator();
+      const tg = ctx.createGain();
+      thud.type = 'sawtooth';
+      thud.frequency.setValueAtTime(90, ctx.currentTime);
+      thud.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.12);
+      tg.gain.setValueAtTime(0.55, ctx.currentTime);
+      tg.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      thud.connect(tg); tg.connect(sfxGain);
+      thud.start(); thud.stop(ctx.currentTime + 0.12);
+      // Sharp metallic click (noise burst)
+      playNoiseSfx({ duration: 0.04, gain: 0.5, filterFreq: 3500 });
+      // Hull reverb tail (quiet low noise)
+      playNoiseSfx({ duration: 0.18, gain: 0.12, filterFreq: 180 });
+    }, 120);
+
+    // 3) Servo whirr — rising filtered saw
+    setTimeout(() => {
+      const srv = ctx.createOscillator();
+      const sg = ctx.createGain();
+      const filt = ctx.createBiquadFilter();
+      srv.type = 'sawtooth';
+      srv.frequency.setValueAtTime(180, ctx.currentTime);
+      srv.frequency.exponentialRampToValueAtTime(520, ctx.currentTime + 0.18);
+      filt.type = 'bandpass';
+      filt.frequency.setValueAtTime(600, ctx.currentTime);
+      filt.Q.value = 3;
+      sg.gain.setValueAtTime(0.0, ctx.currentTime);
+      sg.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05);
+      sg.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+      srv.connect(filt); filt.connect(sg); sg.connect(sfxGain);
+      srv.start(); srv.stop(ctx.currentTime + 0.22);
+    }, 260);
+
+    // 4) Power-up confirmation — G4 → C5 two-note ding
+    setTimeout(() => {
+      [{ f: 392, t: 0 }, { f: 523, t: 0.11 }].forEach(({ f, t }) => {
+        const o = ctx.createOscillator();
+        const og = ctx.createGain();
+        o.type = 'square';
+        o.frequency.setValueAtTime(f, ctx.currentTime + t);
+        og.gain.setValueAtTime(0.22, ctx.currentTime + t);
+        og.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.18);
+        o.connect(og); og.connect(sfxGain);
+        o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.2);
+      });
+    }, 460);
+  },
   shield()       { playToneSfx({ freq: 200, type: 'sine', duration: 0.3, gain: 0.3, freqEnd: 600 }); },
   shieldHit()    { playToneSfx({ freq: 600, type: 'triangle', duration: 0.12, gain: 0.3, freqEnd: 200 }); },
   shieldBreak() {
