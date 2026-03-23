@@ -90,7 +90,7 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
           </span>
         </div>
         {blockScore > 0 && (
-          <div className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-0.5 md:py-1 rounded-lg" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', border: '1px solid rgba(100,200,255,0.2)' }}>
+          <div className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-0.5 md:py-1 rounded-lg" style={{ background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(4px)', border: '1px solid rgba(100,200,255,0.35)' }}>
             <span className="text-xs font-bold text-cyan-400">BLOCKS</span>
             <span className="text-xs md:text-sm font-black text-cyan-300 tabular-nums">{blockScore.toLocaleString()}</span>
           </div>
