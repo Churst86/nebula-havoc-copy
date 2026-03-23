@@ -129,6 +129,17 @@ export default function ControllerOptionsScreen({ settings, onSettingsChange, on
             
             {motionEnabled && (
               <>
+                <div className="space-y-2 pl-2">
+                  <label className="text-xs text-green-400/80 block">Accelerometer Speed</label>
+                  <div className="flex items-center justify-between gap-3 mb-1 text-xs text-muted-foreground">
+                    <span>1×</span>
+                    <span>10×</span>
+                  </div>
+                  <Slider color="#44ff88" min={1} max={10} step={0.5}
+                    value={settings.accelerometerSpeed ?? 1.0}
+                    onChange={v => update('accelerometerSpeed', v)}
+                    label={`${(settings.accelerometerSpeed ?? 1.0).toFixed(1)}×`} />
+                </div>
                 <div className="flex items-center justify-between pl-2">
                   <label className="text-xs text-green-400/80">Invert X Axis</label>
                   <button
