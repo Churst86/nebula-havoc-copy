@@ -1399,6 +1399,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       s.blockSpawnTimer = Math.max(20, Math.round((160 - s.wave * 8) / blockSpawnMult));
     }
 
+    s.blocks.forEach(b => { if (b.invulnerable && b.invulnerableTimer > 0) { b.invulnerableTimer--; if (b.invulnerableTimer <= 0) b.invulnerable = false; } });
     updateBlockSettling(s, H, BLOCK_SIZE, getBlockCells);
 
     function explodeSpread(b, newBullets) {
