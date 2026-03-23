@@ -173,7 +173,7 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
         <div className="absolute bottom-24 md:bottom-32 right-3 md:right-6 flex flex-col gap-0.5 md:gap-1 items-end" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.8))' }}>
           {shopKeys.map(([key, lvl]) => (
             <div key={key} className="font-bold px-1.5 md:px-2 py-0.5 rounded-full"
-              style={{ color: SHOP_COLORS[key], border: `1px solid ${SHOP_COLORS[key]}`, background: `${SHOP_COLORS[key]}22`, fontSize: '9px' }}>
+              style={{ color: SHOP_COLORS[key], border: `1px solid ${SHOP_COLORS[key]}`, background: `${SHOP_COLORS[key]}55`, fontSize: '9px' }}>
               {SHOP_ICONS[key]} {key.toUpperCase()} Lv{lvl}
             </div>
           ))}
