@@ -26,7 +26,7 @@ export const UPGRADE_DEFS = [
     color: '#ffdd00',
     description: (lvl) => `1 drone, ${lvl <= 3 ? 'slow' : lvl <= 6 ? 'medium' : lvl <= 8 ? 'fast' : 'ultra'} fetch speed (Lv${lvl})`,
     maxLevel: 10,
-    cost: (lvl) => (lvl + 1) * 80,
+    cost: (lvl) => (lvl + 1) * 250,
   },
   {
     id: 'harvester',
