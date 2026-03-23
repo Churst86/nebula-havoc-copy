@@ -1481,6 +1481,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
              if (dist < shieldRadius) { b.hit = true; spawnExplosion(s, b.x, b.y, '#00ccff', 3); return; }
            }
           }
+          if (s.starInvincibleTimer > 0) { b.hit = true; return; }
           e.hp--; sounds.hit(); b.hit = true;
           if (e.type === 'boss' && e._readyToFire) {
             // Apply damage shake
