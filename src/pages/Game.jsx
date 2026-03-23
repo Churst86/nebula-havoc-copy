@@ -229,9 +229,19 @@ export default function Game() {
   }, [isPaused, showPauseOptions]);
 
   const handleSettingsChange = useCallback((next) => {
+    const prevDifficulty = settings.difficulty;
     setSettings(next);
     saveSettings(next);
-  }, []);
+    // If difficulty changed during gameplay, reload current wave with new config
+    if (next.difficulty !== prevDifficulty && (gameState === 'playing' || gameState === 'resuming')) {
+      setStartWave(waveRef.current);
+      setCarryOverPowerups({ ...activePowerup });
+      setShowPauseOptions(false);
+      setIsPaused(false);
+      setShowLaunch(true);
+      setLoadProgress(isSpritesLoaded() ? 1 : 0);
+    }
+  }, [settings.difficulty, gameState, activePowerup]);
 
   const handleSaveGame = useCallback(() => {
     writeSaveFile({
