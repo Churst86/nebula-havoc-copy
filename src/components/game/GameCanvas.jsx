@@ -48,7 +48,7 @@ function randomBetween(a, b) { return a + Math.random() * (b - a); }
 const DROPPER_SPAWN_INTERVAL = 480;
 const GUN_TYPES = ['shotgun', 'laser', 'photon', 'bounce', 'missile'];
 
-const STAR_INVINCIBLE_FRAMES = 420;
+const STAR_INVINCIBLE_FRAMES = 150;
 
 // Map powerup types to sprite names in the repo
 const POWERUP_SPRITE_KEYS = {
