@@ -1666,6 +1666,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         getBlockCells(block).forEach(cell => {
           if (p.x >= cell.x - 10 && p.x <= cell.x + BLOCK_SIZE + 10 &&
               p.y >= cell.y - 10 && p.y <= cell.y + BLOCK_SIZE + 10) {
+            if (s.starInvincibleTimer > 0) return;
             if (!block._dmgCooldown || block._dmgCooldown <= 0) { takeDamage(s); spawnExplosion(s, p.x, p.y, block.color, 8); block._dmgCooldown = 60; }
           }
         });
