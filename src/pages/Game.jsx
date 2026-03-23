@@ -373,10 +373,10 @@ export default function Game() {
         mobileSpeed={settings.mobileSpeed ?? 1.0}
         joystickVisible={settings.joystickVisible !== false && !settings.motionControlEnabled}
         joystickSize={settings.joystickSize ?? 1.0}
-        motionControlEnabled={settings.motionControlEnabled ?? false}
-        motionInvertX={settings.motionInvertX ?? false}
+        motionControlEnabled={settings.motionControlEnabled ?? true}
+        motionInvertX={settings.motionInvertX ?? true}
         motionInvertY={settings.motionInvertY ?? false}
-        motionAccelSpeed={settings.accelerometerSpeed ?? 1.0}
+        motionAccelSpeed={settings.accelerometerSpeed ?? 5.0}
       />
 
       <BossWarning warning={bossWarning} />
