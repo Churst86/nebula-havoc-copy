@@ -54,9 +54,9 @@ export default function OptionsScreen({ settings, onSettingsChange, onBack, game
         initial={{ scale: 0.88, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.05, type: 'spring', stiffness: 200 }}
-        className="w-full max-w-sm space-y-5 p-8"
+        className="w-full max-w-sm space-y-4 md:space-y-5 p-4 md:p-8"
       >
-        <h1 className="text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-cyan-300 to-cyan-600 text-center">
+        <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-cyan-300 to-cyan-600 text-center">
           OPTIONS
         </h1>
 

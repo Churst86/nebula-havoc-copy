@@ -23,14 +23,14 @@ export default function ContinueScreen({ score, onContinue, onDecline, bossMode,
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
-        className="text-center space-y-6 p-10"
+        className="text-center space-y-4 md:space-y-6 p-6 md:p-10"
       >
-        <h1 className="text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-cyan-300 to-cyan-600">
+        <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-cyan-300 to-cyan-600">
           CONTINUE?
         </h1>
 
         {/* Countdown ring */}
-        <div className="relative w-24 h-24 mx-auto">
+        <div className="relative w-20 h-20 md:w-24 md:h-24 mx-auto">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
             <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1a2040" strokeWidth="3" />
             <circle cx="18" cy="18" r="15.9" fill="none" stroke="#00f0ff" strokeWidth="3"
@@ -50,7 +50,7 @@ export default function ContinueScreen({ score, onContinue, onDecline, bossMode,
           <Button
             onClick={onContinue}
             size="lg"
-            className="bg-primary hover:bg-primary/80 text-primary-foreground font-bold text-lg px-8 py-6 rounded-xl"
+            className="bg-primary hover:bg-primary/80 text-primary-foreground font-bold text-base md:text-lg px-6 md:px-8 py-4 md:py-6 rounded-xl"
           >
             CONTINUE
           </Button>
@@ -59,16 +59,16 @@ export default function ContinueScreen({ score, onContinue, onDecline, bossMode,
               onClick={onRestartBossMode}
               size="lg"
               variant="outline"
-              className="border-red-600 text-red-400 hover:bg-red-900/30 font-bold text-lg px-8 py-6 rounded-xl"
+              className="border-red-600 text-red-400 hover:bg-red-900/30 font-bold text-base md:text-lg px-6 md:px-8 py-4 md:py-6 rounded-xl"
             >
-              RESTART BOSS MODE
+              RESTART
             </Button>
           )}
           <Button
             onClick={onDecline}
             size="lg"
             variant="outline"
-            className="border-red-600 text-red-400 hover:bg-red-900/30 font-bold text-lg px-8 py-6 rounded-xl"
+            className="border-red-600 text-red-400 hover:bg-red-900/30 font-bold text-base md:text-lg px-6 md:px-8 py-4 md:py-6 rounded-xl"
           >
             QUIT
           </Button>

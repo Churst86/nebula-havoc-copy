@@ -91,7 +91,7 @@ export default function HighScores({ score, wave, onRestart, onRestartBossMode, 
         initial={{ scale: 0.85, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.1, type: 'spring', stiffness: 180 }}
-        className="relative z-10 text-center space-y-5 p-8 max-w-sm w-full"
+        className="relative z-10 text-center space-y-4 md:space-y-5 p-4 md:p-8 max-w-sm w-full"
       >
         <div className="flex items-center justify-center gap-2">
           <Trophy className="w-5 h-5 text-yellow-400" />
@@ -153,8 +153,8 @@ export default function HighScores({ score, wave, onRestart, onRestartBossMode, 
         )}
 
         <Button onClick={bossMode ? onRestartBossMode : onRestart} size="lg"
-          className="bg-primary hover:bg-primary/80 text-primary-foreground font-bold text-lg px-8 py-6 rounded-xl gap-2 w-full">
-          <RotateCcw className="w-5 h-5" />
+          className="bg-primary hover:bg-primary/80 text-primary-foreground font-bold text-base md:text-lg px-6 md:px-8 py-4 md:py-6 rounded-xl gap-2 w-full">
+          <RotateCcw className="w-4 h-4 md:w-5 md:h-5" />
           PLAY AGAIN
         </Button>
       </motion.div>

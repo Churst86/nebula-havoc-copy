@@ -42,27 +42,19 @@ export default function StartScreen({ onStart, onContinue, settings, onSettingsC
       {/* Dark overlay for text legibility */}
       <div className="absolute inset-0 bg-black/50" />
       
-      <div className="relative z-10 text-center space-y-8">
-        <motion.div
-          animate={{ y: [0, -8, 0] }}
-          transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}>
-          
-          
-        </motion.div>
-
-        <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-cyan-300 to-cyan-600">
+      <div className="relative z-10 text-center space-y-4 md:space-y-8 px-4 w-full max-w-xs md:max-w-sm">
+        <h1 className="text-4xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-cyan-300 to-cyan-600">
           NEBULA HAVOK
         </h1>
-        <p className="text-muted-foreground text-lg tracking-widest uppercase">
+        <p className="text-muted-foreground text-sm md:text-lg tracking-widest uppercase">
           Bullet Hell Space Shooter
         </p>
-        
 
-        <div className="space-y-3 pt-2">
+        <div className="space-y-2 md:space-y-3 pt-1 md:pt-2">
           <Button
             onClick={onStart}
             size="lg"
-            className="bg-primary hover:bg-primary/80 text-primary-foreground font-bold text-lg px-10 py-6 rounded-xl w-full">
+            className="bg-primary hover:bg-primary/80 text-primary-foreground font-bold text-base md:text-lg px-8 md:px-10 py-4 md:py-6 rounded-xl w-full">
             NEW GAME
           </Button>
 
@@ -70,7 +62,7 @@ export default function StartScreen({ onStart, onContinue, settings, onSettingsC
             onClick={() => onStart(false, true)}
             size="lg"
             variant="outline"
-            className="font-bold text-lg px-10 py-6 rounded-xl w-full border-red-500/60 text-red-400 hover:bg-red-950/30">
+            className="font-bold text-base md:text-lg px-8 md:px-10 py-4 md:py-6 rounded-xl w-full border-red-500/60 text-red-400 hover:bg-red-950/30">
             ⚔ BOSS MODE
           </Button>
 
@@ -79,32 +71,32 @@ export default function StartScreen({ onStart, onContinue, settings, onSettingsC
             onClick={onContinue}
             size="lg"
             variant="outline"
-            className="font-bold text-lg px-10 py-6 rounded-xl w-full gap-2 border-cyan-500 text-cyan-300 hover:bg-cyan-900/30">
-              <Play className="w-5 h-5" />
-              LOAD GAME — {saveFile.difficulty?.toUpperCase() || 'NORMAL'} · Wave {saveFile.wave || 1}
+            className="font-bold text-sm md:text-lg px-6 md:px-10 py-4 md:py-6 rounded-xl w-full gap-2 border-cyan-500 text-cyan-300 hover:bg-cyan-900/30">
+              <Play className="w-4 h-4 md:w-5 md:h-5" />
+              LOAD — {saveFile.difficulty?.toUpperCase() || 'NORMAL'} · Wave {saveFile.wave || 1}
             </Button>
           }
 
-          <div className="flex gap-3">
+          <div className="flex gap-2 md:gap-3">
             <Button
               onClick={() => setShowScores(true)}
               variant="outline"
               size="lg"
-              className="font-bold px-6 py-6 rounded-xl gap-2 flex-1">
-              <Trophy className="w-5 h-5" />
+              className="font-bold px-4 md:px-6 py-4 md:py-6 rounded-xl gap-2 flex-1 text-sm md:text-base">
+              <Trophy className="w-4 h-4 md:w-5 md:h-5" />
               SCORES
             </Button>
             <Button
               onClick={() => setShowOptions(true)}
               variant="outline"
               size="lg"
-              className="font-bold px-6 py-6 rounded-xl gap-2 flex-1">
-              <Settings className="w-5 h-5" />
+              className="font-bold px-4 md:px-6 py-4 md:py-6 rounded-xl gap-2 flex-1 text-sm md:text-base">
+              <Settings className="w-4 h-4 md:w-5 md:h-5" />
               OPTIONS
             </Button>
           </div>
 
-          <div className="text-sm text-muted-foreground space-y-1 pt-2">
+          <div className="hidden md:block text-sm text-muted-foreground space-y-1 pt-2">
             <p><kbd className="px-2 py-0.5 bg-muted rounded text-xs font-mono">WASD</kbd> or <kbd className="px-2 py-0.5 bg-muted rounded text-xs font-mono">Arrow Keys</kbd> to move</p>
             <p>Auto-fire enabled &bull; <kbd className="px-2 py-0.5 bg-muted rounded text-xs font-mono">Enter</kbd> to pause</p>
           </div>
