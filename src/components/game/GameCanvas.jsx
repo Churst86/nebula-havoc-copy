@@ -112,7 +112,7 @@ function initState() {
   };
 }
 
-export default function GameCanvas({ gameState, setGameState, onScoreChange, onBlockScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, onBossWarning, continuesLeft, onContinueUsed, isPaused, difficultyConfig, gameSpeed = 30, carryOverPowerups = null, shopUpgrades = null, startWave = 1, onLoadProgress = null, bossMode = false, mobileSpeed = 1.0, joystickVisible = true, joystickSize = 1.0 }) {
+export default function GameCanvas({ gameState, setGameState, onScoreChange, onBlockScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, onBossWarning, continuesLeft, onContinueUsed, isPaused, difficultyConfig, gameSpeed = 30, carryOverPowerups = null, shopUpgrades = null, startWave = 1, onLoadProgress = null, bossMode = false, mobileSpeed = 1.0, joystickVisible = true, joystickSize = 1.0, motionControlEnabled = false }) {
   const canvasRef = useRef(null);
   const keysRef = useRef({});
   const stateRef = useRef(initState());
@@ -121,6 +121,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   const playerShipImageRef = useRef(null);
   const spritesReadyRef = useRef(false);
   const shopUpgradesRef = useRef(shopUpgrades);
+  const motionControlsRef = useRef(null);
   useEffect(() => { shopUpgradesRef.current = shopUpgrades; }, [shopUpgrades]);
 
   useEffect(() => {
