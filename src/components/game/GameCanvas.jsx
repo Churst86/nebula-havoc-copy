@@ -853,7 +853,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     const basicWingmanCount = wingmanTier >= 10 ? 0 : wingmanTier >= 5 ? (wingmanTier - 5) : wingmanTier;
     if (wingmanTier > 0) {
       const allOffsets = [
-        { x: -40, y: 10 }, { x: 40, y: 10 }, { x: 0, y: 25 }, { x: -65, y: 20 },
+        { x: -100, y: 0 }, { x: 100, y: 0 }, { x: -130, y: 20 }, { x: 130, y: 20 },
       ];
       const basicOffsets = allOffsets.slice(0, basicWingmanCount);
       const basicTargets = basicOffsets.map(o => ({ x: p.x + o.x, y: p.y + o.y }));
@@ -863,7 +863,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         w.x += (basicTargets[i].x - w.x) * 0.1;
         w.y += (basicTargets[i].y - w.y) * 0.1;
       });
-      const superOffsets = [{ x: -80, y: 0 }, { x: 80, y: 0 }];
+      const superOffsets = [{ x: -160, y: 0 }, { x: 160, y: 0 }];
       if (!s.superWingmen) s.superWingmen = [];
       while (s.superWingmen.length < superWingmanCount) {
         const off = superOffsets[s.superWingmen.length];
