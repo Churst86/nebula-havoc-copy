@@ -35,7 +35,7 @@ export const UPGRADE_DEFS = [
     color: '#ff8800',
     description: (lvl) => `1 harvester, ${lvl <= 3 ? 'slow' : lvl <= 6 ? 'medium' : lvl <= 8 ? 'fast' : 'ultra'} harvest speed (Lv${lvl})`,
     maxLevel: 10,
-    cost: (lvl) => (lvl + 1) * 70,
+    cost: (lvl) => (lvl + 1) * 220,
   },
 ];
 
