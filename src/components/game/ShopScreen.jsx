@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UPGRADE_DEFS } from '../../lib/shopUpgrades';
 
-const OZMA_GREETING = "Hi, I'm Ozma. I can exchange your artifacts for upgrades!";
+const OZMA_GREETING = "Hi, I'm Ozma. I can exchange your blocks for upgrades!";
 const SHOPKEEPER_URL = 'https://raw.githubusercontent.com/Churst86/Sprites/main/Shopkeeper.png';
 
 function UpgradeCard({ def, currentLevel, blockScore, onBuy }) {
