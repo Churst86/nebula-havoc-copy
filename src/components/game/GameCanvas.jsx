@@ -592,7 +592,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       }
     } else if (e.type === 'elite') {
       const eImg = getSprite('EliteEnemy');
-      const eSz = 169;
+      const eSz = 169 * ms;
       if (eImg) {
         ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 10;
         ctx.drawImage(eImg, -eSz / 2, -eSz / 2, eSz, eSz);
