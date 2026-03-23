@@ -52,7 +52,7 @@ export default function MobileControls({ keysRef }) {
   if (!isMobile) return null;
 
   return (
-    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
+    <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
       <div
         ref={joystickRef}
         className="w-28 h-28 rounded-full border-2 border-primary/30 bg-primary/10 backdrop-blur-sm flex items-center justify-center"
