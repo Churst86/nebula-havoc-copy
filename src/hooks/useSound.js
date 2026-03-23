@@ -212,8 +212,8 @@ function getMusicEra(wave) {
 // Wave music: plays external SkyFire track
 function startWaveMusic(wave) {
   currentWave = wave;
-  // If stage music is already playing (not a boss), just let it continue
-  if (bgPlaying && !currentIsBoss && currentAudio) return;
+  // If stage music is already playing (not a boss or title), just let it continue
+  if (bgPlaying && !currentIsBoss && currentAudio && currentAudio.src && currentAudio.src.includes('SkyFire')) return;
   stopAllBg();
   bgPlaying = true;
   currentIsBoss = false;
