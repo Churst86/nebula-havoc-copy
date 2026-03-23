@@ -17,7 +17,7 @@ export const UPGRADE_DEFS = [
     color: '#44ffaa',
     description: (lvl) => `Repairs ${lvl} armor per wave`,
     maxLevel: 10,
-    cost: (lvl) => (lvl + 1) * 180,
+    cost: (lvl) => (lvl + 1) * 100,
   },
   {
     id: 'drone',
@@ -26,7 +26,7 @@ export const UPGRADE_DEFS = [
     color: '#ffdd00',
     description: (lvl) => `1 drone, ${lvl <= 3 ? 'slow' : lvl <= 6 ? 'medium' : lvl <= 8 ? 'fast' : 'ultra'} fetch speed (Lv${lvl})`,
     maxLevel: 10,
-    cost: (lvl) => (lvl + 1) * 250,
+    cost: (lvl) => (lvl + 1) * 500,
   },
   {
     id: 'harvester',
@@ -35,7 +35,7 @@ export const UPGRADE_DEFS = [
     color: '#ff8800',
     description: (lvl) => `1 harvester, ${lvl <= 3 ? 'slow' : lvl <= 6 ? 'medium' : lvl <= 8 ? 'fast' : 'ultra'} harvest speed (Lv${lvl})`,
     maxLevel: 10,
-    cost: (lvl) => (lvl + 1) * 220,
+    cost: (lvl) => (lvl + 1) * 1000,
   },
 ];
 
