@@ -23,21 +23,23 @@ export function initVariableSpeedMotionControls(keysRef, sensitivityMultiplier =
     if (!e.accelerationIncludingGravity) return;
 
     let { x, y } = e.accelerationIncludingGravity;
-    const threshold = 1.0; // Minimum tilt to start moving
-    const maxTilt = 12.0; // Tilt magnitude for full speed
+    const threshold = 0.5; // Minimum tilt to start moving
+    const maxTilt = 6.0; // Tilt magnitude for full speed
 
     // Apply inversion if enabled
     if (invertX) x = -x;
     if (invertY) y = -y;
 
-    // Calculate normalized speed values (-1 to 1 range)
-    // Below threshold: 0, at maxTilt or beyond: ±1
-    const normalizedX = Math.abs(x) <= threshold ? 0 : Math.sign(x) * Math.min(Math.max((Math.abs(x) - threshold) / (maxTilt - threshold), 0), 1);
-    const normalizedY = Math.abs(y) <= threshold ? 0 : Math.sign(y) * Math.min(Math.max((Math.abs(y) - threshold) / (maxTilt - threshold), 0), 1);
+    // Calculate normalized speed values (0 to 2 range for boost)
+    // Below threshold: 0, at maxTilt or beyond: 2
+    const absX = Math.abs(x);
+    const absY = Math.abs(y);
+    const speedX = absX <= threshold ? 0 : Math.sign(x) * Math.min((absX - threshold) / (maxTilt - threshold) * 2, 2);
+    const speedY = absY <= threshold ? 0 : Math.sign(y) * Math.min((absY - threshold) / (maxTilt - threshold) * 2, 2);
 
     // Apply sensitivity multiplier and store as motion values
-    keysRef.current['motionX'] = normalizedX * sensitivityMultiplier;
-    keysRef.current['motionY'] = normalizedY * sensitivityMultiplier;
+    keysRef.current['motionX'] = speedX * sensitivityMultiplier;
+    keysRef.current['motionY'] = speedY * sensitivityMultiplier;
   }
 
   async function start() {
