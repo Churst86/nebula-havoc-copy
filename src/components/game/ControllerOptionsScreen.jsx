@@ -135,7 +135,7 @@ export default function ControllerOptionsScreen({ settings, onSettingsChange, on
                     <span>1×</span>
                     <span>10×</span>
                   </div>
-                  <Slider color="#44ff88" min={1} max={10} step={0.5}
+                  <Slider color="#44ff88" min={1} max={25} step={0.5}
                     value={settings.accelerometerSpeed ?? 1.0}
                     onChange={v => update('accelerometerSpeed', v)}
                     label={`${(settings.accelerometerSpeed ?? 1.0).toFixed(1)}×`} />
