@@ -1847,53 +1847,37 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
 
       if (s.laserBeamActive) {
         const beamEndY = (s.laserBeamBlockY || 0);
-        const beamAlpha = 0.7 + Math.sin(Date.now() * 0.03) * 0.3;
-        const burstFrames = 18; // frames for burst-to-beam transition
-        const burstAge = LASER_BEAM_FRAMES - s.laserBeamTimer; // 0 = just fired
-        const burstPct = Math.min(burstAge / burstFrames, 1); // 0→1 over first burstFrames frames
+        const beamAlpha = 0.85 + Math.sin(Date.now() * 0.05) * 0.15;
+        const burstFrames = 22;
+        const burstAge = LASER_BEAM_FRAMES - s.laserBeamTimer;
+        const burstPct = Math.min(burstAge / burstFrames, 1);
 
         ctx.save();
 
-        // Burst origin flare (expands and fades as beam straightens)
-        if (burstPct < 1) {
-          const flareR = 8 + (1 - burstPct) * 40;
-          const flareAlpha = (1 - burstPct) * 0.9;
-          ctx.shadowColor = beamColor; ctx.shadowBlur = 40;
-          // Radial burst rays
-          for (let ri = 0; ri < 8; ri++) {
-            const rayAngle = (ri / 8) * Math.PI * 2;
-            const rayLen = flareR * (0.6 + Math.random() * 0.4);
-            ctx.strokeStyle = `rgba(${beamColorRgb},${flareAlpha})`;
-            ctx.lineWidth = 3 - burstPct * 2;
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y - 18);
-            ctx.lineTo(p.x + Math.cos(rayAngle) * rayLen, p.y - 18 + Math.sin(rayAngle) * rayLen);
-            ctx.stroke();
-          }
-          // Central burst glow
-          const grad = ctx.createRadialGradient(p.x, p.y - 18, 0, p.x, p.y - 18, flareR);
-          grad.addColorStop(0, `rgba(255,255,255,${flareAlpha})`);
-          grad.addColorStop(0.4, `rgba(${beamColorRgb},${flareAlpha * 0.7})`);
-          grad.addColorStop(1, `rgba(${beamColorRgb},0)`);
-          ctx.fillStyle = grad;
-          ctx.beginPath(); ctx.arc(p.x, p.y - 18, flareR, 0, Math.PI * 2); ctx.fill();
-        }
+        // Cone origin — wide at ship, narrows to beam width over first ~80px
+        const coneBaseHalfW = beamW * (3 + (1 - burstPct) * 5);
+        const coneLength = 80 + (1 - burstPct) * 60;
+        const coneAlpha = 0.55 + burstPct * 0.1;
+        const coneGrad = ctx.createLinearGradient(p.x, p.y - 18, p.x, p.y - 18 - coneLength);
+        coneGrad.addColorStop(0, `rgba(255,255,255,${coneAlpha})`);
+        coneGrad.addColorStop(0.5, `rgba(${beamColorRgb},${coneAlpha * 0.7})`);
+        coneGrad.addColorStop(1, `rgba(${beamColorRgb},0)`);
+        ctx.beginPath();
+        ctx.moveTo(p.x - coneBaseHalfW, p.y - 18);
+        ctx.lineTo(p.x, p.y - 18 - coneLength);
+        ctx.lineTo(p.x + coneBaseHalfW, p.y - 18);
+        ctx.closePath();
+        ctx.fillStyle = coneGrad;
+        ctx.fill();
 
-        // Beam width tapers from wide burst to thin line as burstPct goes 0→1
-        const curBeamW = beamW * (1 + (1 - burstPct) * 4);
-
-        // Outer glow
-        ctx.shadowColor = beamColor; ctx.shadowBlur = 28;
-        ctx.strokeStyle = `rgba(${beamColorRgb},${beamAlpha * 0.35})`; ctx.lineWidth = curBeamW * 3;
-        ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, beamEndY); ctx.stroke();
-
-        // Main beam
-        ctx.shadowBlur = 0;
-        ctx.strokeStyle = `rgba(${beamColorRgb},${beamAlpha})`; ctx.lineWidth = curBeamW;
+        // Main beam (no outer glow layer)
+        ctx.shadowColor = beamColor; ctx.shadowBlur = 12;
+        ctx.strokeStyle = `rgba(${beamColorRgb},${beamAlpha})`; ctx.lineWidth = beamW;
         ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, beamEndY); ctx.stroke();
 
         // Bright core
-        ctx.strokeStyle = `rgba(${beamCenterRgb},0.95)`; ctx.lineWidth = curBeamW * 0.3;
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = `rgba(${beamCenterRgb},0.95)`; ctx.lineWidth = beamW * 0.3;
         ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, beamEndY); ctx.stroke();
 
         ctx.restore();
