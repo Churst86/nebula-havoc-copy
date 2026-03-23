@@ -53,15 +53,16 @@ export default function MobileControls({ keysRef, mobileSpeed = 1.0 }) {
   if (!isMobile) return null;
 
   return (
-    <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
+    <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
       <div
         ref={joystickRef}
-        className="w-28 h-28 rounded-full border-2 border-primary/30 bg-primary/10 backdrop-blur-sm flex items-center justify-center"
+        className="w-52 h-52 rounded-full flex items-center justify-center"
+        style={{ background: 'rgba(0, 240, 255, 0.18)', border: '3px solid rgba(0, 240, 255, 0.75)' }}
         onTouchStart={handleStart}
         onTouchMove={handleMove}
         onTouchEnd={handleEnd}
       >
-        <div className="w-12 h-12 rounded-full bg-primary/40 border border-primary/60" />
+        <div className="w-24 h-24 rounded-full" style={{ background: 'rgba(0, 240, 255, 0.45)', border: '2px solid rgba(0, 240, 255, 0.9)' }} />
       </div>
     </div>
   );
