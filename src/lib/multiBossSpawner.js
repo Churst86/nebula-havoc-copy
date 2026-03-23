@@ -1,23 +1,19 @@
-// Multi-boss spawning logic for waves 30+ (hell difficulty / extended runs)
+// Multi-boss spawning logic for waves 30+ (extended difficulty runs)
 import { spawnBoss } from './bossLogic.js';
-import { HITBOX_SIZES } from './hitboxConfig.js';
 
-// Color profiles for cloned/variant bosses
+// Color profiles for variant bosses (index 0 = second boss, 1 = third boss)
 const VARIANT_COLOR_PROFILES = [
-  { tint: '#ff6600', hudColor: '#ff6600', label: 'ALPHA' },
-  { tint: '#00ffaa', hudColor: '#00ffaa', label: 'BETA' },
-  { tint: '#ff00ff', hudColor: '#ff00ff', label: 'GAMMA' },
-  { tint: '#ffff00', hudColor: '#ffff00', label: 'DELTA' },
-  { tint: '#00ccff', hudColor: '#00ccff', label: 'OMEGA' },
+  { hudColor: '#ff6600', label: 'ALPHA' },
+  { hudColor: '#00ffaa', label: 'BETA' },
 ];
 
-// The 5 boss tiers mapped to wave multiples
+// The 5 boss tiers
 const BOSS_TIERS = [1, 2, 3, 4, 5];
 
 /**
- * Returns how many bosses should spawn for a given wave.
- * wave 30–50: 2 bosses
- * wave 55–100: 3 bosses
+ * How many bosses spawn at this wave.
+ * waves 30-50 (every 5th): 2 bosses
+ * waves 55-100 (every 5th): 3 bosses
  */
 export function getBossCountForWave(wave) {
   if (wave >= 55) return 3;
@@ -26,69 +22,46 @@ export function getBossCountForWave(wave) {
 }
 
 /**
- * Spawn multiple bosses for a wave.
- * Each boss after the first gets a variant color profile and slightly different name.
+ * Spawn 1, 2, or 3 bosses for the given wave.
+ * Extra bosses get a variant color profile and suffix name.
  */
 export function spawnMultiBosses(W, wave, hpMult) {
   const count = getBossCountForWave(wave);
-  const bosses = [];
 
-  if (count === 1) {
-    bosses.push(spawnBoss(W, wave, hpMult));
-    return bosses;
-  }
-
-  // For 3-boss waves (55+), pick 3 random tiers (any combination)
+  // Build the tier list for each boss slot
   let tierPool;
-  if (count === 3) {
-    // Shuffle tiers and pick 3 unique ones
+  if (count === 1) {
+    tierPool = [Math.min(Math.floor(wave / 5), 5)];
+  } else if (count === 2) {
+    const primaryTier = Math.min(Math.floor(wave / 5), 5);
+    // Secondary: any different tier, random
+    const others = BOSS_TIERS.filter(t => t !== primaryTier);
+    const secondaryTier = others[Math.floor(Math.random() * others.length)];
+    tierPool = [primaryTier, secondaryTier];
+  } else {
+    // 3 bosses: pick 3 unique random tiers
     const shuffled = [...BOSS_TIERS].sort(() => Math.random() - 0.5);
     tierPool = shuffled.slice(0, 3);
-  } else {
-    // 2-boss waves: primary tier based on wave, secondary is random different tier
-    const primaryTier = Math.min(Math.floor(wave / 5), 5);
-    let secondaryTier;
-    do { secondaryTier = BOSS_TIERS[Math.floor(Math.random() * BOSS_TIERS.length)]; }
-    while (secondaryTier === primaryTier);
-    tierPool = [primaryTier, secondaryTier];
   }
 
-  // Spread bosses horizontally
-  const positions = count === 2
-    ? [W * 0.33, W * 0.67]
-    : [W * 0.2, W * 0.5, W * 0.8];
+  // Horizontal positions
+  const positions = count === 1
+    ? [W / 2]
+    : count === 2
+      ? [W * 0.3, W * 0.7]
+      : [W * 0.2, W * 0.5, W * 0.8];
 
-  tierPool.forEach((tier, i) => {
-    const bossWave = tier * 5; // wave corresponding to this tier
+  return tierPool.map((tier, i) => {
+    const bossWave = tier * 5;
     const boss = spawnBoss(W, bossWave, hpMult);
     boss.x = positions[i];
-    boss._wave = bossWave;
     boss._multiBossIndex = i;
     boss._multiBossTotal = count;
-
+    // Variant styling for 2nd and 3rd boss
     if (i > 0) {
-      // Apply variant color profile
       const profile = VARIANT_COLOR_PROFILES[i - 1];
       boss._variantProfile = profile;
-      boss._variantLabel = profile.label;
     }
-  });
-
-  return bosses.length ? bosses : tierPool.map((tier, i) => {
-    const bossWave = tier * 5;
-    const b = spawnBoss(W, bossWave, hpMult);
-    b.x = positions[i];
-    b._wave = bossWave;
-    b._multiBossIndex = i;
-    b._multiBossTotal = count;
-    if (i > 0) {
-      const profile = VARIANT_COLOR_PROFILES[i - 1];
-      b._variantProfile = profile;
-      b._variantLabel = profile.label;
-    }
-    return b;
+    return boss;
   });
 }
-
-// Re-export so callers can use this one file
-export { spawnBoss };
