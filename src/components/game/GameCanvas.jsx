@@ -123,7 +123,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   const shopUpgradesRef = useRef(shopUpgrades);
   useEffect(() => { shopUpgradesRef.current = shopUpgrades; }, [shopUpgrades]);
 
-  useMotionControls(keysRef, motionControlEnabled, mobileSpeed, false, false);
+  useMotionControls(keysRef, motionControlEnabled, mobileSpeed, motionInvertX, motionInvertY);
 
   useEffect(() => {
     loadSprites((sprites) => {
