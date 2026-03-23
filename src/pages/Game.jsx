@@ -322,7 +322,7 @@ export default function Game() {
 
   return (
     <div
-      className="relative w-full h-screen overflow-hidden bg-black select-none"
+      className="relative w-full h-screen overflow-hidden bg-black select-none touch-none"
       tabIndex={-1}
       style={{ filter: `brightness(${settings.brightness})` }}
     >
