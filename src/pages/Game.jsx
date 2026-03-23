@@ -355,6 +355,8 @@ export default function Game() {
         onLoadProgress={setLoadProgress}
         bossMode={bossMode}
         mobileSpeed={settings.mobileSpeed ?? 1.0}
+        joystickVisible={settings.joystickVisible !== false}
+        joystickSize={settings.joystickSize ?? 1.0}
       />
 
       <BossWarning warning={bossWarning} />
