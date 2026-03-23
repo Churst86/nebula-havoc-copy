@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Music, Volume2, VolumeX, Sun, Skull, Gauge, Save, LogOut, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Music, Volume2, VolumeX, Sun, Skull, Gauge, Save, LogOut, CheckCircle, Smartphone } from 'lucide-react';
 import { DIFFICULTY_CONFIG, saveSettings, writeSaveFile } from '../../lib/gameSettings';
 import { sounds } from '../../hooks/useSound.js';
+import ControllerOptionsScreen from './ControllerOptionsScreen';
 
 function Slider({ color, min, max, step, value, onChange, label }) {
   const pct = ((value - min) / (max - min)) * 100;
