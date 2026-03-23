@@ -198,7 +198,7 @@ export function updateBossTier3Fire(e, p, s, W, H, spawnExplosion, sounds, onSco
 
 // ─── Tier 4 Block+Enemy Armor: blocks/enemies that collide with boss stick as armor ──────
 export function updateBossTier4Armor(e, s, BLOCK_SIZE, getBlockCells, spawnExplosion) {
-  if (!e._armorBlocks) e._armorBlocks = []; // [{dx, dy, color, hp, isShip}]
+  if (!e._armorBlocks) e._armorBlocks = []; // [{dx, dy, color, hp, isShip, invulnerable}]
 
   // Absorb falling blocks within range
   s.blocks = s.blocks.filter(block => {
@@ -214,7 +214,8 @@ export function updateBossTier4Armor(e, s, BLOCK_SIZE, getBlockCells, spawnExplo
         const targetDist = 240;
         const ndx = (dx / dist) * targetDist;
         const ndy = (dy / dist) * targetDist;
-        e._armorBlocks.push({ dx: ndx, dy: ndy, color: block.color, hp: 3 });
+        // Preserve invulnerability from the source block
+        e._armorBlocks.push({ dx: ndx, dy: ndy, color: block.invulnerable ? '#aaaacc' : block.color, hp: block.invulnerable ? Infinity : 3, invulnerable: !!block.invulnerable });
       });
       block._bossAbsorbed = true;
       return false;
