@@ -111,7 +111,7 @@ function initState() {
   };
 }
 
-export default function GameCanvas({ gameState, setGameState, onScoreChange, onBlockScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, onBossWarning, continuesLeft, onContinueUsed, isPaused, difficultyConfig, gameSpeed = 30, carryOverPowerups = null, shopUpgrades = null, startWave = 1, onLoadProgress = null, bossMode = false }) {
+export default function GameCanvas({ gameState, setGameState, onScoreChange, onBlockScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, onBossWarning, continuesLeft, onContinueUsed, isPaused, difficultyConfig, gameSpeed = 30, carryOverPowerups = null, shopUpgrades = null, startWave = 1, onLoadProgress = null, bossMode = false, mobileSpeed = 1.0 }) {
   const canvasRef = useRef(null);
   const keysRef = useRef({});
   const stateRef = useRef(initState());
