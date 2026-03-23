@@ -83,6 +83,12 @@ export default function Game() {
   const [bossMode, setBossMode] = useState(false);
 
   const handleStart = useCallback((keepPowerups = false, isBossMode = false) => {
+    // New game always starts on easy
+    if (!keepPowerups && !isBossMode) {
+      const newSettings = { ...settings, difficulty: 'easy' };
+      setSettings(newSettings);
+      saveSettings(newSettings);
+    }
     setBossMode(isBossMode);
     setShowLaunch(true);
     setLoadProgress(isSpritesLoaded() ? 1 : 0);
