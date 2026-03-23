@@ -1185,14 +1185,15 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       }
     });
 
-    // ─── In-stage Harvesters (shop upgrade) ──────────────────────────────────
+    // ─── In-stage Harvesters (shop upgrade) — 1 harvester, gets faster with level ──
     const harvesterLevel = shopUpgradesRef.current?.harvester || 0;
-    const harvesterCount = Math.min(harvesterLevel, 3);
+    const harvesterCount = harvesterLevel > 0 ? 1 : 0;
     while (s.harvesters.length < harvesterCount) {
-      s.harvesters.push({ x: p.x + (s.harvesters.length % 2 === 0 ? -60 : 60), y: p.y + 30, angle: Math.random() * Math.PI * 2, state: 'orbit', orbitAngle: (s.harvesters.length / harvesterCount) * Math.PI * 2, targetBlock: null, targetCell: null, carryScore: 0 });
+      s.harvesters.push({ x: p.x - 60, y: p.y + 30, angle: Math.random() * Math.PI * 2, state: 'orbit', orbitAngle: 0, targetBlock: null, targetCell: null, carryScore: 0 });
     }
     while (s.harvesters.length > harvesterCount) s.harvesters.pop();
-    const harvSpeed = harvesterLevel <= 3 ? 1.5 : harvesterLevel <= 6 ? 2.5 : 3.5;
+    // Speed scales from 1.2 at Lv1 up to 5.0 at Lv10
+    const harvSpeed = 1.2 + (harvesterLevel - 1) * 0.42;
     s.harvesters.forEach(h => {
       if (h.state === 'orbit') {
         // Slowly orbit the player looking for blocks
