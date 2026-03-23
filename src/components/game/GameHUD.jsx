@@ -180,16 +180,16 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
         </div>
       )}
 
-      {/* Pause button — top-center on mobile, bottom-center on desktop */}
-      <div className="absolute top-2 left-1/2 -translate-x-1/2 md:top-auto md:bottom-6 pointer-events-auto">
+      {/* Pause button — desktop only, bottom-center */}
+      <div className="absolute hidden md:block bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto">
         <Button
           size="icon"
           variant="ghost"
           onClick={onPauseToggle}
-          className="text-primary hover:bg-primary/10 w-9 h-9 md:w-12 md:h-12"
+          className="text-primary hover:bg-primary/10 w-12 h-12"
           title="Pause / Options [Enter]"
         >
-          {isPaused ? <Play className="w-4 h-4 md:w-6 md:h-6" /> : <Pause className="w-4 h-4 md:w-6 md:h-6" />}
+          {isPaused ? <Play className="w-6 h-6" /> : <Pause className="w-6 h-6" />}
         </Button>
       </div>
     </div>
