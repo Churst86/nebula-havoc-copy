@@ -126,6 +126,38 @@ export default function ControllerOptionsScreen({ settings, onSettingsChange, on
               </button>
             </div>
             <p className="text-xs text-muted-foreground">Tilt your device to control the ship</p>
+            
+            {motionEnabled && (
+              <>
+                <div className="flex items-center justify-between pl-2">
+                  <label className="text-xs text-green-400/80">Invert X Axis</label>
+                  <button
+                    onClick={() => update('motionInvertX', !(settings.motionInvertX ?? false))}
+                    className="flex items-center gap-1.5 text-xs font-bold px-2 py-0.5 rounded-full border transition-all"
+                    style={{
+                      borderColor: (settings.motionInvertX ?? false) ? '#44ff88' : '#444',
+                      color: (settings.motionInvertX ?? false) ? '#44ff88' : '#666',
+                      background: (settings.motionInvertX ?? false) ? '#44ff8822' : 'transparent',
+                    }}>
+                    {(settings.motionInvertX ?? false) ? 'ON' : 'OFF'}
+                  </button>
+                </div>
+                <div className="flex items-center justify-between pl-2">
+                  <label className="text-xs text-green-400/80">Invert Y Axis</label>
+                  <button
+                    onClick={() => update('motionInvertY', !(settings.motionInvertY ?? false))}
+                    className="flex items-center gap-1.5 text-xs font-bold px-2 py-0.5 rounded-full border transition-all"
+                    style={{
+                      borderColor: (settings.motionInvertY ?? false) ? '#44ff88' : '#444',
+                      color: (settings.motionInvertY ?? false) ? '#44ff88' : '#666',
+                      background: (settings.motionInvertY ?? false) ? '#44ff8822' : 'transparent',
+                    }}>
+                    {(settings.motionInvertY ?? false) ? 'ON' : 'OFF'}
+                  </button>
+                </div>
+              </>
+            )}
+            
             {motionPermissionError && (
               <p className="text-xs text-red-400">Motion permission denied. Check device settings.</p>
             )}
