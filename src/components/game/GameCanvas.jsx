@@ -272,7 +272,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     const shape = TETRIS_SHAPES[shapeIdx];
     const isInvulnerable = Math.random() < 0.08;
     const color = isInvulnerable ? '#aaaacc' : BLOCK_COLORS[Math.floor(Math.random() * BLOCK_COLORS.length)];
-
     const cols = shape.map(c => c[0]);
     const maxCol = Math.max(...cols);
     const startX = randomBetween(BLOCK_SIZE, W - (maxCol + 1) * BLOCK_SIZE);
