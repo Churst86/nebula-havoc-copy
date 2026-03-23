@@ -2,7 +2,6 @@ import { createBossWarning } from './bossLogic.js';
 import { spawnEater } from './enemySpawners.js';
 import { sounds } from '../hooks/useSound.js';
 import { HITBOX_SIZES } from './hitboxConfig.js';
-import { spawnMultiBosses, getBossCountForWave } from './multiBossSpawner.js';
 
 function randomBetween(a, b) { return a + Math.random() * (b - a); }
 
