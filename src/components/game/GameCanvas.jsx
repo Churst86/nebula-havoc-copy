@@ -529,7 +529,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const baseImg = getSprite('Eater');
       const chompImg = getSprite('EaterChomp');
       const eImg = (isEating && chompImg) ? chompImg : baseImg;
-      const eSz = isMini ? 135 : 270;
+      const eSz = (isMini ? 135 : 270) * ms;
       ctx.shadowBlur = 0;
       ctx.shadowColor = 'transparent';
       if (eImg) {
