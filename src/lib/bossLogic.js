@@ -252,12 +252,15 @@ export function updateBossTier4Armor(e, s, BLOCK_SIZE, getBlockCells, spawnExplo
     if (enemy._bossAbsorbed) return false; // already absorbed, remove
     const dist = Math.hypot(enemy.x - e.x, enemy.y - e.y);
     if (dist < 90 && e._armorBlocks.length < 24) {
-      const dx = enemy.x - e.x;
-      const dy = enemy.y - e.y;
-      const nd = Math.max(dist, 1);
-      const targetDist = 240;
-      const ndx = (dx / nd) * targetDist;
-      const ndy = (dy / nd) * targetDist;
+      // Bias ship placement toward player (front arc)
+      const toDx2 = (e._playerRef ? e._playerRef.x : e.x) - e.x;
+      const toDy2 = (e._playerRef ? e._playerRef.y : e.y) - e.y;
+      const toLen2 = Math.hypot(toDx2, toDy2) || 1;
+      const arcOff = (Math.random() - 0.5) * Math.PI * 0.8;
+      const frontAngle = Math.atan2(toDy2 / toLen2, toDx2 / toLen2) + arcOff;
+      const targetDist = 230;
+      const ndx = Math.cos(frontAngle) * targetDist;
+      const ndy = Math.sin(frontAngle) * targetDist;
       e._armorBlocks.push({ dx: ndx, dy: ndy, color: '#ff4444', hp: 4, isShip: true });
       enemy._bossAbsorbed = true;
       spawnExplosion(s, enemy.x, enemy.y, '#ff4444', 6);
