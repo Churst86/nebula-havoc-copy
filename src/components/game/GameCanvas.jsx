@@ -1974,7 +1974,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   return (
     <>
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
-      <MobileControls keysRef={keysRef} mobileSpeed={mobileSpeed} />
+      <MobileControls keysRef={keysRef} mobileSpeed={mobileSpeed} joystickVisible={joystickVisible} joystickSize={joystickSize} />
     </>
   );
 }
