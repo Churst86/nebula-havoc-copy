@@ -6,9 +6,11 @@ export function useMotionControls(keysRef, motionEnabled, mobileSpeed, invertX =
 
   useEffect(() => {
     if (motionEnabled) {
-      if (!motionControlsRef.current) {
-        motionControlsRef.current = initVariableSpeedMotionControls(keysRef, mobileSpeed, invertX, invertY);
+      // Stop and reinitialize on any setting change
+      if (motionControlsRef.current) {
+        motionControlsRef.current.stop();
       }
+      motionControlsRef.current = initVariableSpeedMotionControls(keysRef, mobileSpeed, invertX, invertY);
       motionControlsRef.current.start();
     } else {
       if (motionControlsRef.current) {
@@ -17,7 +19,7 @@ export function useMotionControls(keysRef, motionEnabled, mobileSpeed, invertX =
     }
     
     return () => {
-      if (motionControlsRef.current && motionEnabled) {
+      if (motionControlsRef.current) {
         motionControlsRef.current.stop();
       }
     };
