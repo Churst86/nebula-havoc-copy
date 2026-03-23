@@ -17,7 +17,7 @@ import {
   updateBossTier4Armor, drawBossTier4Armor,
 } from '../../lib/bossLogic.js';
 import { initBeholderMovement, updateBeholderMovement, updateBeholderShield, updateBeholderFire, getBeholderShieldRadius } from '../../lib/beholderLogic.js';
-import { drawBeholderShield } from '../../lib/beholderDrawing.js';
+import { drawBeholderShield, drawBeholderLasers } from '../../lib/beholderDrawing.js';
 import { drawBossHUD } from '../../lib/bossHudUtils.js';
 import { tickBossWarning } from '../../lib/bossSpawnController.js';
 
