@@ -358,6 +358,8 @@ export default function Game() {
         joystickVisible={settings.joystickVisible !== false && !settings.motionControlEnabled}
         joystickSize={settings.joystickSize ?? 1.0}
         motionControlEnabled={settings.motionControlEnabled ?? false}
+        motionInvertX={settings.motionInvertX ?? false}
+        motionInvertY={settings.motionInvertY ?? false}
       />
 
       <BossWarning warning={bossWarning} />
