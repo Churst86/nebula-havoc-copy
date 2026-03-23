@@ -3,7 +3,7 @@
  * Translates device motion/acceleration into directional input
  */
 
-export function initMotionControls(keysRef, sensitivityMultiplier = 1.0) {
+export function initMotionControls(keysRef, sensitivityMultiplier = 1.0, invertX = false, invertY = false) {
   let hasPermission = false;
   let isListening = false;
 
