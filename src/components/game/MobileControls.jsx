@@ -6,7 +6,7 @@ export default function MobileControls({ keysRef }) {
   const centerRef = useRef({ x: 0, y: 0 });
 
   const updateKeys = useCallback((dx, dy) => {
-    const threshold = 20;
+    const threshold = 8;
     keysRef.current['ArrowLeft'] = dx < -threshold;
     keysRef.current['ArrowRight'] = dx > threshold;
     keysRef.current['ArrowUp'] = dy < -threshold;
