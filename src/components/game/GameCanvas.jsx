@@ -856,11 +856,25 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
 
     const p = s.player;
     const speedTier = s.powerups.speed || 0;
-    const spd = 4.5 + speedTier * 1.5;
-    if (keys['ArrowLeft'] || keys['a'] || keys['A']) p.x = Math.max(16, p.x - spd);
-    if (keys['ArrowRight'] || keys['d'] || keys['D']) p.x = Math.min(W - 16, p.x + spd);
-    if (keys['ArrowUp'] || keys['w'] || keys['W']) p.y = Math.max(16, p.y - spd);
-    if (keys['ArrowDown'] || keys['s'] || keys['S']) p.y = Math.min(H - 16, p.y + spd);
+    const baseSpd = 4.5 + speedTier * 1.5;
+    
+    // Handle motion control (variable speed based on tilt)
+    const motionX = keys['motionX'] || 0;
+    const motionY = keys['motionY'] || 0;
+    if (Math.abs(motionX) > 0.05) {
+      p.x += motionX * baseSpd;
+      p.x = Math.max(16, Math.min(W - 16, p.x));
+    }
+    if (Math.abs(motionY) > 0.05) {
+      p.y += motionY * baseSpd;
+      p.y = Math.max(16, Math.min(H - 16, p.y));
+    }
+    
+    // Handle keyboard controls
+    if (keys['ArrowLeft'] || keys['a'] || keys['A']) p.x = Math.max(16, p.x - baseSpd);
+    if (keys['ArrowRight'] || keys['d'] || keys['D']) p.x = Math.min(W - 16, p.x + baseSpd);
+    if (keys['ArrowUp'] || keys['w'] || keys['W']) p.y = Math.max(16, p.y - baseSpd);
+    if (keys['ArrowDown'] || keys['s'] || keys['S']) p.y = Math.min(H - 16, p.y + baseSpd);
 
     const wingmanTier = s.powerups.wingman || 0;
     const superWingmanCount = wingmanTier >= 10 ? 2 : wingmanTier >= 5 ? 1 : 0;
