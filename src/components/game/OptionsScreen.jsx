@@ -117,6 +117,22 @@ export default function OptionsScreen({ settings, onSettingsChange, onBack, game
             label="" />
         </div>
 
+        {/* Mobile Movement Speed */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm font-bold text-orange-400 uppercase tracking-widest">
+            <span className="text-base">📱</span>
+            Mobile Move Speed
+          </div>
+          <div className="flex items-center justify-between gap-3 mb-2 text-xs text-muted-foreground">
+            <span>Slow</span>
+            <span>Fast</span>
+          </div>
+          <Slider color="#f97316" min={0.5} max={2.0} step={0.1}
+            value={settings.mobileSpeed ?? 1.0}
+            onChange={v => update('mobileSpeed', v)}
+            label={`${(settings.mobileSpeed ?? 1.0).toFixed(1)}×`} />
+        </div>
+
         {/* Brightness */}
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm font-bold text-yellow-400 uppercase tracking-widest">
