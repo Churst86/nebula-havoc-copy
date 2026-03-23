@@ -1291,7 +1291,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         }
         if (!valid) { d.target = null; d.state = 'orbit'; return; }
         const dx = tx - d.x, dy = ty - d.y, len = Math.hypot(dx, dy) || 1;
-        d.x += (dx / len) * 4.5; d.y += (dy / len) * 4.5;
+        d.x += (dx / len) * droneSpeed; d.y += (dy / len) * droneSpeed;
         if (len < 16) {
           if (d.target.isDropper) {
             const dropper = d.target.ref;
