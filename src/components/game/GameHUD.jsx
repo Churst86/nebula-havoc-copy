@@ -180,8 +180,8 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
         </div>
       )}
 
-      {/* Pause button — bottom-center */}
-      <div className="absolute bottom-3 md:bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto">
+      {/* Pause button — top-center on mobile, bottom-center on desktop */}
+      <div className="absolute top-2 left-1/2 -translate-x-1/2 md:top-auto md:bottom-6 pointer-events-auto">
         <Button
           size="icon"
           variant="ghost"
