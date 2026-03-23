@@ -477,9 +477,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const dropSprite = dropSpriteKey ? getSprite(dropSpriteKey) : null;
       const dropperBodySprite = getSprite('Dropper');
       ctx.shadowColor = c; ctx.shadowBlur = 18;
-      // Draw dropper ship body — same size as basic enemy (169x169)
+      const dsz = Math.round(60 * ms);
       if (dropperBodySprite) {
-        drawSprite(ctx, dropperBodySprite, -60, -60, 120, 120);
+        drawSprite(ctx, dropperBodySprite, -dsz, -dsz, dsz * 2, dsz * 2);
       } else {
         ctx.strokeStyle = c; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(0, -16); ctx.lineTo(12, 10); ctx.lineTo(0, 5); ctx.lineTo(-12, 10); ctx.closePath();
