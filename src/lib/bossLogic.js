@@ -213,21 +213,31 @@ export function updateBossTier3Fire(e, p, s, W, H, spawnExplosion, sounds, onSco
 export function updateBossTier4Armor(e, s, BLOCK_SIZE, getBlockCells, spawnExplosion) {
   if (!e._armorBlocks) e._armorBlocks = []; // [{dx, dy, color, hp, isShip, invulnerable}]
 
-  // Absorb falling blocks within range
+  // Absorb falling blocks within range — bias placement toward the player (front shield)
   s.blocks = s.blocks.filter(block => {
     if (block.dead || block.settled || block._bossAbsorbed) return true;
     const cells = getBlockCells(block);
     const anyClose = cells.some(cell => Math.hypot(cell.x + BLOCK_SIZE / 2 - e.x, cell.y + BLOCK_SIZE / 2 - e.y) < 80);
     if (anyClose) {
-      cells.forEach(cell => {
-        const dx = (cell.x + BLOCK_SIZE / 2) - e.x;
-        const dy = (cell.y + BLOCK_SIZE / 2) - e.y;
-        // Position just outside sprite boundary (~220px radius for 440px sprite)
-        const dist = Math.hypot(dx, dy) || 1;
-        const targetDist = 240;
-        const ndx = (dx / dist) * targetDist;
-        const ndy = (dy / dist) * targetDist;
-        // Preserve invulnerability from the source block
+      // Direction toward player (the "front" of the Dreadnought)
+      const toDx = (e._playerRef ? e._playerRef.x : e.x) - e.x;
+      const toDy = (e._playerRef ? e._playerRef.y : e.y) - e.y;
+      const toLen = Math.hypot(toDx, toDy) || 1;
+      const frontX = toDx / toLen;
+      const frontY = toDy / toLen;
+      cells.forEach((cell, cellIdx) => {
+        const rawDx = (cell.x + BLOCK_SIZE / 2) - e.x;
+        const rawDy = (cell.y + BLOCK_SIZE / 2) - e.y;
+        const dist = Math.hypot(rawDx, rawDy) || 1;
+        // Arc positions: spread across a ~140-degree arc facing the player
+        // Use total armor count to spread pieces across front arc
+        const totalFront = cells.length;
+        const arcSpread = Math.PI * 0.78; // ~140 degrees
+        const arcOffset = (cellIdx / Math.max(totalFront - 1, 1) - 0.5) * arcSpread;
+        const baseAngle = Math.atan2(frontY, frontX) + arcOffset;
+        const targetDist = 220 + (cellIdx % 2) * 30; // stagger depth
+        const ndx = Math.cos(baseAngle) * targetDist;
+        const ndy = Math.sin(baseAngle) * targetDist;
         e._armorBlocks.push({ dx: ndx, dy: ndy, color: block.invulnerable ? '#aaaacc' : block.color, hp: block.invulnerable ? Infinity : 3, invulnerable: !!block.invulnerable });
       });
       block._bossAbsorbed = true;
