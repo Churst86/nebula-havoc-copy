@@ -44,21 +44,30 @@ export default function CongratulationsScreen({ wave, score, currentDifficulty, 
         </div>
 
         {/* Next difficulty info */}
-        <div className="space-y-3">
-          <p className="text-lg font-bold text-white">Ready for the next challenge?</p>
-          <p className="text-sm text-muted-foreground">
-            Your powerups will carry over to {difficultyNames[nextDifficulty]} mode
-          </p>
-        </div>
+        {nextDifficulty ? (
+          <div className="space-y-3">
+            <p className="text-lg font-bold text-white">Ready for the next challenge?</p>
+            <p className="text-sm text-muted-foreground">
+              Your powerups will carry over to {difficultyNames[nextDifficulty]} mode
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-lg font-bold text-yellow-400">You've conquered all difficulties!</p>
+            <p className="text-sm text-muted-foreground">The galaxy is safe. For now.</p>
+          </div>
+        )}
 
         {/* Action buttons */}
         <div className="flex flex-col gap-3">
-          <Button
-            onClick={onProgressToDifficulty}
-            className="bg-primary hover:bg-primary/90 text-lg py-6"
-          >
-            {difficultyEmojis[nextDifficulty]} Progress to {difficultyNames[nextDifficulty]}
-          </Button>
+          {nextDifficulty && (
+            <Button
+              onClick={onProgressToDifficulty}
+              className="bg-primary hover:bg-primary/90 text-lg py-6"
+            >
+              {difficultyEmojis[nextDifficulty]} Progress to {difficultyNames[nextDifficulty]}
+            </Button>
+          )}
           <Button
             onClick={onReturnToTitle}
             variant="outline"
