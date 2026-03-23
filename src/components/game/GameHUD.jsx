@@ -127,7 +127,7 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
             return (
               <div key={key}
                 className="font-bold px-2 md:px-3 py-0.5 md:py-1 rounded-full"
-                style={{ color, border: `1px solid ${color}`, background: `${color}22`, fontSize: '10px' }}>
+                style={{ color, border: `1px solid ${color}`, background: `${color}44`, fontSize: '10px' }}>
                 {icon} {label} Lv{tier}
               </div>
             );
