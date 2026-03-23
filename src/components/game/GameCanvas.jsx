@@ -1414,11 +1414,17 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           const piece = e._armorBlocks[i];
           const ax = e.x + piece.dx, ay = e.y + piece.dy;
           if (b.x >= ax - armSz && b.x <= ax + armSz && b.y >= ay - armSz && b.y <= ay + armSz) {
-            piece.hp--;
-            sounds.hit();
-            spawnExplosion(s, ax, ay, piece.color, 4);
-            if (piece.hp <= 0) e._armorBlocks.splice(i, 1);
-            if (b.type !== 'photon') b.hit = true;
+            if (piece.invulnerable) {
+              // Invulnerable armor: absorb the shot but don't break
+              spawnExplosion(s, ax, ay, '#aaaacc', 3);
+              b.hit = true;
+            } else {
+              piece.hp--;
+              sounds.hit();
+              spawnExplosion(s, ax, ay, piece.color, 4);
+              if (piece.hp <= 0) e._armorBlocks.splice(i, 1);
+              if (b.type !== 'photon') b.hit = true;
+            }
             break;
           }
         }
