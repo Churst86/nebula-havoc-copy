@@ -271,14 +271,22 @@ export function drawBossTier4Armor(ctx, e, BLOCK_SIZE) {
     } else {
       ctx.fillStyle = piece.color + 'cc';
       ctx.fillRect(ax - sz / 2, ay - sz / 2, sz, sz);
-      ctx.strokeStyle = '#ffffff44'; ctx.lineWidth = 1;
-      ctx.strokeRect(ax - sz / 2, ay - sz / 2, sz, sz);
-      if (piece.hp <= 1) {
-        ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(ax - sz / 2, ay); ctx.lineTo(ax + sz / 2, ay);
-        ctx.moveTo(ax, ay - sz / 2); ctx.lineTo(ax, ay + sz / 2);
-        ctx.stroke();
+      if (piece.invulnerable) {
+        // Invulnerable blocks show a bright pulsing silver border
+        const pulse = 0.6 + Math.sin(Date.now() * 0.01) * 0.4;
+        ctx.strokeStyle = `rgba(180,200,255,${pulse})`; ctx.lineWidth = 2;
+        ctx.strokeRect(ax - sz / 2, ay - sz / 2, sz, sz);
+        ctx.shadowColor = '#aaddff'; ctx.shadowBlur = 14 * pulse;
+      } else {
+        ctx.strokeStyle = '#ffffff44'; ctx.lineWidth = 1;
+        ctx.strokeRect(ax - sz / 2, ay - sz / 2, sz, sz);
+        if (piece.hp <= 1) {
+          ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(ax - sz / 2, ay); ctx.lineTo(ax + sz / 2, ay);
+          ctx.moveTo(ax, ay - sz / 2); ctx.lineTo(ax, ay + sz / 2);
+          ctx.stroke();
+        }
       }
     }
     ctx.restore();
