@@ -64,7 +64,7 @@ const NEEDS_BG_REMOVAL = new Set([
 
 // Map of wave number → boss sprite name
 export const BOSS_SPRITE_MAP = {
-  5:  'FirstBoss',
+  5:  'FangBoss',
   10: 'DreadnoughtBoss',
   15: 'BeholderBoss',
   20: 'PirateBoss',
