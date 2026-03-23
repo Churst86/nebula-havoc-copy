@@ -45,6 +45,16 @@ export default function OptionsScreen({ settings, onSettingsChange, onBack, game
   const gameSpeed = settings.gameSpeed ?? 30;
   const musicEnabled = settings.musicEnabled !== false;
 
+  if (showControllerOptions) {
+    return (
+      <ControllerOptionsScreen
+        settings={settings}
+        onSettingsChange={onSettingsChange}
+        onBack={() => setShowControllerOptions(false)}
+      />
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
