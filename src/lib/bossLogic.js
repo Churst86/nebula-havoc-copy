@@ -89,6 +89,19 @@ export function updateBossMovement(e, W, H, p) {
     e._stage2Triggered = true;
     e._stage2Timer = 0;
   }
+
+  // Tier 4 (Dreadnought) handles its own corner-to-corner movement in updateBossTier4Fire.
+  // Skip the generic roam lerp to prevent stutter conflicts.
+  if (bt === 4) {
+    if (e._shakeTimer > 0) {
+      e._shakeTimer--;
+      e._shakeX = (Math.random() - 0.5) * e._shakeMagnitude;
+      e._shakeY = (Math.random() - 0.5) * e._shakeMagnitude;
+    } else { e._shakeX = 0; e._shakeY = 0; }
+    if (!e._readyToFire) e._readyToFire = true;
+    return;
+  }
+
   const speedMult = (e._stage2Triggered ? 1.4 : 1);
   const lerpSpeed = (0.045 + bt * 0.005) * speedMult;
   e.x += ((e._roamTargetX || W / 2) - e.x) * lerpSpeed;
