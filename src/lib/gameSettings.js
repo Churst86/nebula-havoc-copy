@@ -10,6 +10,9 @@ const DEFAULTS = {
   difficulty: 'normal', // 'easy' | 'normal' | 'hell'
   gameSpeed: 30, // fps: 15–120
   mobileSpeed: 1.0, // joystick sensitivity multiplier: 0.5–2.0
+  joystickVisible: true,
+  joystickSize: 1.0,
+  motionControlEnabled: false,
 };
 
 export function loadSaveFile() {
