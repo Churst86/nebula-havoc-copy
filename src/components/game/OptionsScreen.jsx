@@ -24,6 +24,7 @@ function Slider({ color, min, max, step, value, onChange, label }) {
 
 export default function OptionsScreen({ settings, onSettingsChange, onBack, gameState, onExitToTitle, onSaveGame }) {
   const [savedFlash, setSavedFlash] = useState(false);
+  const [showControllerOptions, setShowControllerOptions] = useState(false);
 
   function update(key, value) {
     const next = { ...settings, [key]: value };
