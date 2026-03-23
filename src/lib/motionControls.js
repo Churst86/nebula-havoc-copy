@@ -24,10 +24,14 @@ export function initMotionControls(keysRef, sensitivityMultiplier = 1.0, invertX
   function handleDeviceMotion(e) {
     if (!e.accelerationIncludingGravity) return;
     
-    const { x, y } = e.accelerationIncludingGravity;
+    let { x, y } = e.accelerationIncludingGravity;
     // Threshold to prevent noise (adjust as needed)
     const threshold = 2;
     const multiplier = 5 * sensitivityMultiplier;
+
+    // Apply inversion if enabled
+    if (invertX) x = -x;
+    if (invertY) y = -y;
 
     // Map acceleration to directional keys
     // x-axis: tilt left/right
