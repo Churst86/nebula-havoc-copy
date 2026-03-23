@@ -67,6 +67,8 @@ export default function Game() {
     setScore(s);
   }, []);
 
+  const [lastDockingWave, setLastDockingWave] = useState(-1);
+
   const handleWaveChange = useCallback((w) => {
     waveRef.current = w;
     setWave(w);
@@ -74,11 +76,12 @@ export default function Game() {
     // But not at milestone waves (25, 50, 100) which trigger congratulations instead
     const milestones = [25, 50, 100];
     const prevWave = w - 1;
-    if (prevWave > 0 && prevWave % 5 === 0 && !milestones.includes(prevWave) && !showDocking && !showShop) {
+    if (prevWave > 0 && prevWave % 5 === 0 && !milestones.includes(prevWave) && prevWave !== lastDockingWave) {
+      setLastDockingWave(prevWave);
       setDockingMode('arriving');
       setShowDocking(true);
     }
-  }, [showDocking, showShop]);
+  }, [lastDockingWave]);
 
   const [bossMode, setBossMode] = useState(false);
 
