@@ -67,38 +67,103 @@ export function updateBeholderShield(e) {
   }
 }
 
-// Tracking laser — a beam angle that slowly rotates toward the player
+// Tracking laser — lags behind player with a delayed angle, plus 2 random-burst side lasers
 export function updateBeholderFire(e, p, s, sounds) {
   const isStage2 = e._stage2Triggered && e.hp <= e.maxHp / 3;
+  const BEAM_LENGTH = 1200;
 
-  // Initialize laser angle pointing straight down
+  // ── Init ──
   if (e._laserAngle === undefined) {
     e._laserAngle = Math.PI / 2;
+    e._laserTargetAngle = Math.PI / 2;
+    // Fire cycle: laser active for a burst, then pauses
+    e._laserFireTimer = 0;      // counts up; laser fires when active
+    e._laserActiveFrames = 0;   // frames laser has been firing this burst
+    e._laserCooldownTimer = 60; // wait before first burst
+    e._laserFiring = false;
+    // Random lasers
+    e._randLaser1 = null; // { angle, timer }
+    e._randLaser2 = null;
+    e._randLaserCooldown = 90;
   }
 
-  // How fast the laser rotates toward the player (radians per frame)
-  const trackSpeed = isStage2 ? 0.022 : 0.012;
+  // ── Laser 1: tracking (lags behind player) ──
+  // Only update target angle periodically — creates "lag" effect
+  e._laserTargetUpdateTimer = (e._laserTargetUpdateTimer || 0) - 1;
+  if (e._laserTargetUpdateTimer <= 0) {
+    e._laserTargetAngle = Math.atan2(p.y - e.y, p.x - e.x);
+    // Update target slowly — every 20 frames sample the player position
+    e._laserTargetUpdateTimer = 20;
+  }
 
-  // Target angle = direction from boss to player
-  const targetAngle = Math.atan2(p.y - e.y, p.x - e.x);
-
-  // Shortest-path angle interpolation
-  let diff = targetAngle - e._laserAngle;
+  // Rotate toward the lagged target angle slowly
+  const trackSpeed = isStage2 ? 0.016 : 0.009;
+  let diff = e._laserTargetAngle - e._laserAngle;
   while (diff > Math.PI) diff -= Math.PI * 2;
   while (diff < -Math.PI) diff += Math.PI * 2;
   e._laserAngle += Math.sign(diff) * Math.min(Math.abs(diff), trackSpeed);
 
-  // Store laser endpoint for drawing (long beam)
-  const BEAM_LENGTH = 1200;
-  e._laserEndX = e.x + Math.cos(e._laserAngle) * BEAM_LENGTH;
-  e._laserEndY = e.y + Math.sin(e._laserAngle) * BEAM_LENGTH;
+  // Fire in bursts: active 150 frames, cooldown 200 frames (stage2: active 180, cooldown 140)
+  const activeDuration = isStage2 ? 180 : 150;
+  const cooldownDuration = isStage2 ? 140 : 200;
 
-  // Check if beam hits player (point-near-line)
-  const hit = pointNearLine(p.x, p.y, e.x, e.y, e._laserEndX, e._laserEndY, 14);
-  e._laserHitsPlayer = hit;
+  if (e._laserFiring) {
+    e._laserActiveFrames++;
+    if (e._laserActiveFrames >= activeDuration) {
+      e._laserFiring = false;
+      e._laserCooldownTimer = cooldownDuration;
+      e._laserEndX = undefined; // hide beam during cooldown
+      e._laserEndY = undefined;
+    }
+  } else {
+    e._laserCooldownTimer--;
+    if (e._laserCooldownTimer <= 0) {
+      e._laserFiring = true;
+      e._laserActiveFrames = 0;
+    }
+  }
 
-  // Mark as having fired so damage can be taken
+  // Only expose endpoint (and deal damage) while firing
+  if (e._laserFiring) {
+    e._laserEndX = e.x + Math.cos(e._laserAngle) * BEAM_LENGTH;
+    e._laserEndY = e.y + Math.sin(e._laserAngle) * BEAM_LENGTH;
+    const hit = pointNearLine(p.x, p.y, e.x, e.y, e._laserEndX, e._laserEndY, 18); // wider hit box
+    e._laserHitsPlayer = hit;
+  } else {
+    e._laserHitsPlayer = false;
+  }
+
   e._hasFired = true;
+
+  // ── Lasers 2 & 3: random-direction bursts ──
+  e._randLaserCooldown--;
+  if (e._randLaserCooldown <= 0) {
+    // Spawn both random lasers at random angles, active for 90 frames
+    const burstDuration = isStage2 ? 120 : 90;
+    e._randLaser1 = { angle: Math.random() * Math.PI * 2, timer: burstDuration };
+    e._randLaser2 = { angle: Math.random() * Math.PI * 2, timer: burstDuration };
+    e._randLaserCooldown = isStage2 ? 180 : 260;
+  }
+
+  // Tick random lasers and check player hit
+  [e._randLaser1, e._randLaser2].forEach((rl, idx) => {
+    if (!rl) return;
+    rl.timer--;
+    // Slowly drift the random angle for visual interest
+    rl.angle += 0.008;
+    const endX = e.x + Math.cos(rl.angle) * BEAM_LENGTH;
+    const endY = e.y + Math.sin(rl.angle) * BEAM_LENGTH;
+    if (idx === 0) { e._randLaserEndX = endX; e._randLaserEndY = endY; }
+    else { e._randLaserEndX2 = endX; e._randLaserEndY2 = endY; }
+    // Deal damage if hitting player
+    if (pointNearLine(p.x, p.y, e.x, e.y, endX, endY, 10)) {
+      e._laserHitsPlayer = true;
+    }
+    if (rl.timer <= 0) {
+      if (idx === 0) { e._randLaser1 = null; e._randLaserEndX = undefined; }
+      else { e._randLaser2 = null; e._randLaserEndX2 = undefined; }
+    }
+  });
 }
 
 function pointNearLine(px, py, x1, y1, x2, y2, threshold) {
