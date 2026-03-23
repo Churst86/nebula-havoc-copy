@@ -6,12 +6,13 @@ export default function MobileControls({ keysRef, mobileSpeed = 1.0 }) {
   const centerRef = useRef({ x: 0, y: 0 });
 
   const updateKeys = useCallback((dx, dy) => {
-    const threshold = 8;
+    // Higher mobileSpeed = lower threshold = more sensitive
+    const threshold = Math.max(2, 8 / mobileSpeed);
     keysRef.current['ArrowLeft'] = dx < -threshold;
     keysRef.current['ArrowRight'] = dx > threshold;
     keysRef.current['ArrowUp'] = dy < -threshold;
     keysRef.current['ArrowDown'] = dy > threshold;
-  }, [keysRef]);
+  }, [keysRef, mobileSpeed]);
 
   const clearKeys = useCallback(() => {
     keysRef.current['ArrowLeft'] = false;
