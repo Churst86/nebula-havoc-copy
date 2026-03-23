@@ -38,7 +38,7 @@ const SPRITE_NAMES = [
   'MineExplosion',
   'Wingman',
   'SuperWingman',
-  'FirstBoss',
+  'FangBoss',
   'DreadnoughtBoss',
   'BeholderBoss',
   'PirateBoss',
