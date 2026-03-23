@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 
-export default function MobileControls({ keysRef }) {
+export default function MobileControls({ keysRef, mobileSpeed = 1.0 }) {
   const joystickRef = useRef(null);
   const activeRef = useRef(false);
   const centerRef = useRef({ x: 0, y: 0 });
