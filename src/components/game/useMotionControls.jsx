@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { initMotionControls } from '../../lib/motionControls.js';
+import { initVariableSpeedMotionControls } from '../../lib/variableSpeedMotionControls.js';
 
 export function useMotionControls(keysRef, motionEnabled, mobileSpeed, invertX = false, invertY = false) {
   const motionControlsRef = useRef(null);
@@ -7,7 +7,7 @@ export function useMotionControls(keysRef, motionEnabled, mobileSpeed, invertX =
   useEffect(() => {
     if (motionEnabled) {
       if (!motionControlsRef.current) {
-        motionControlsRef.current = initMotionControls(keysRef, mobileSpeed, invertX, invertY);
+        motionControlsRef.current = initVariableSpeedMotionControls(keysRef, mobileSpeed, invertX, invertY);
       }
       motionControlsRef.current.start();
     } else {
