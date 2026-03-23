@@ -13,6 +13,8 @@ const DEFAULTS = {
   joystickVisible: true,
   joystickSize: 1.0,
   motionControlEnabled: false,
+  motionInvertX: false,
+  motionInvertY: false,
 };
 
 export function loadSaveFile() {
