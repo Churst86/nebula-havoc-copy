@@ -347,7 +347,7 @@ export default function Game() {
         continuesLeft={continuesLeft}
         onContinueUsed={handleContinueUsed}
         isPaused={isPaused || showDocking || showShop}
-          difficultyConfig={difficultyConfig}
+        difficultyConfig={difficultyConfig}
         gameSpeed={settings.gameSpeed ?? 30}
         carryOverPowerups={carryOverPowerups}
         shopUpgrades={shopUpgrades}
@@ -355,8 +355,9 @@ export default function Game() {
         onLoadProgress={setLoadProgress}
         bossMode={bossMode}
         mobileSpeed={settings.mobileSpeed ?? 1.0}
-        joystickVisible={settings.joystickVisible !== false}
+        joystickVisible={settings.joystickVisible !== false && !settings.motionControlEnabled}
         joystickSize={settings.joystickSize ?? 1.0}
+        motionControlEnabled={settings.motionControlEnabled ?? false}
       />
 
       <BossWarning warning={bossWarning} />
