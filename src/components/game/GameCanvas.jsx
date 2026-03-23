@@ -8,7 +8,7 @@ import { fireMissiles, updateMissiles, drawMissile, getMissileHitDamage, shouldS
 import { DROPPER_COLORS, DROPPER_LABELS, DROPPER_ROTATION } from '../../lib/powerupConfig.js';
 import { drawBlock, drawPiledCells, drawParticle } from '../../lib/drawingUtils.js';
 import { loadSprites, getSprite, getBossSpriteKey, BOSS_SPRITE_MAP, drawSprite } from '../../lib/spriteLoader.js';
-import { initMotionControls } from '../../lib/motionControls.js';
+import { useMotionControls } from './useMotionControls.js';
 import {
   createBossWarning, spawnBoss,
   updateBossMovement, updateBossTier1Fire, updateBossTier2Fire,
