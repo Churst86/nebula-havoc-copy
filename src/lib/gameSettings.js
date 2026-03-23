@@ -13,7 +13,7 @@ const DEFAULTS = {
   joystickVisible: true,
   joystickSize: 1.0,
   motionControlEnabled: false,
-  motionInvertX: false,
+  motionInvertX: true,
   motionInvertY: false,
   accelerometerSpeed: 1.0, // accelerometer speed multiplier: 1–10
 };
