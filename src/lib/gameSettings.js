@@ -15,6 +15,7 @@ const DEFAULTS = {
   motionControlEnabled: false,
   motionInvertX: false,
   motionInvertY: false,
+  accelerometerSpeed: 1.0, // accelerometer speed multiplier: 1–10
 };
 
 export function loadSaveFile() {
