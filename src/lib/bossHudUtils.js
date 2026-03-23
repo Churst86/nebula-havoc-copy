@@ -1,25 +1,54 @@
-// Boss HUD rendering — HP bar at top of screen with boss name
-export function drawBossHUD(ctx, W, bossEnemy) {
-  if (!bossEnemy) return;
+// Boss HUD rendering — HP bars at top of screen for one or multiple bosses
+const BOSS_NAMES = ['Fang', 'Dreadnought', 'Beholder', 'Pirate', 'Xelgnark'];
+const BOSS_BAR_COLORS = ['#ff0066', '#ff6600', '#aa00ff', '#00ccff', '#ff4400'];
 
-  const bossNames = ['Fang', 'Dreadnought', 'Beholder', 'Pirate', 'Xelgnark'];
-  const bossName = bossNames[Math.min((bossEnemy.tier || 1) - 1, 4)];
-  const bw = 400, bh = 14, bx = W / 2 - bw / 2, by = 20;
-  const bossBarColor = ['#ff0066', '#ff6600', '#aa00ff', '#00ccff'][Math.min((bossEnemy.tier || 1) - 1, 3)];
+function getBossName(boss) {
+  const baseName = BOSS_NAMES[Math.min((boss.tier || 1) - 1, 4)];
+  if (boss._variantProfile) {
+    return `${baseName} ${boss._variantProfile.label}`;
+  }
+  return baseName;
+}
 
-  // Boss name above bar
-  ctx.fillStyle = bossBarColor;
-  ctx.font = 'bold 12px monospace';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'bottom';
-  ctx.fillText(bossName.toUpperCase(), W / 2, by - 4);
+function getBossColor(boss) {
+  if (boss._variantProfile) return boss._variantProfile.hudColor;
+  return BOSS_BAR_COLORS[Math.min((boss.tier || 1) - 1, 4)];
+}
 
-  // HP bar
-  ctx.fillStyle = '#1a1a2e';
-  ctx.fillRect(bx, by, bw, bh);
-  ctx.fillStyle = bossBarColor;
-  ctx.fillRect(bx, by, bw * (bossEnemy.hp / bossEnemy.maxHp), bh);
-  ctx.strokeStyle = bossBarColor;
-  ctx.lineWidth = 2;
-  ctx.strokeRect(bx, by, bw, bh);
+export function drawBossHUD(ctx, W, bossEnemyOrList) {
+  // Accept either a single boss or an array
+  const bosses = Array.isArray(bossEnemyOrList) ? bossEnemyOrList : [bossEnemyOrList];
+  if (!bosses.length) return;
+
+  const barW = Math.min(380, (W - 20) / bosses.length - 10);
+  const totalWidth = bosses.length * (barW + 8) - 8;
+  let startX = W / 2 - totalWidth / 2;
+  const by = 20;
+  const bh = 14;
+
+  bosses.forEach((boss, i) => {
+    const bx = startX + i * (barW + 8);
+    const color = getBossColor(boss);
+    const name = getBossName(boss);
+
+    // Boss name above bar
+    ctx.fillStyle = color;
+    ctx.font = 'bold 11px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(name.toUpperCase(), bx + barW / 2, by - 4);
+
+    // Background
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(bx, by, barW, bh);
+
+    // HP fill
+    ctx.fillStyle = color;
+    ctx.fillRect(bx, by, barW * (boss.hp / boss.maxHp), bh);
+
+    // Border
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(bx, by, barW, bh);
+  });
 }
