@@ -57,12 +57,12 @@ export default function MobileControls({ keysRef, mobileSpeed = 1.0 }) {
       <div
         ref={joystickRef}
         className="w-52 h-52 rounded-full flex items-center justify-center"
-        style={{ background: 'rgba(0, 240, 255, 0.18)', border: '3px solid rgba(0, 240, 255, 0.75)' }}
+        style={{ background: 'transparent', border: 'none' }}
         onTouchStart={handleStart}
         onTouchMove={handleMove}
         onTouchEnd={handleEnd}
       >
-        <div className="w-24 h-24 rounded-full" style={{ background: 'rgba(0, 240, 255, 0.45)', border: '2px solid rgba(0, 240, 255, 0.9)' }} />
+        <div className="w-24 h-24 rounded-full" style={{ background: 'transparent', border: 'none' }} />
       </div>
     </div>
   );
