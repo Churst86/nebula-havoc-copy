@@ -134,9 +134,9 @@ export default function ShopScreen({ blockScore, shopUpgrades, onBuy, onReturn, 
         </div>
 
         {/* Main area: left cards | center (shopkeeper view) | right cards */}
-        <div className="flex-1 flex flex-row items-center gap-2 px-2 overflow-hidden">
+        <div className="flex-1 flex flex-row items-center gap-1 md:gap-2 px-1 md:px-2 overflow-hidden">
           {/* Left column */}
-          <div className="flex flex-col gap-2 w-36 shrink-0 overflow-y-auto h-full py-2">
+          <div className="flex flex-col gap-1 md:gap-2 w-28 md:w-36 shrink-0 overflow-y-auto h-full py-1 md:py-2">
             {UPGRADE_DEFS.slice(0, Math.ceil(UPGRADE_DEFS.length / 2)).map((def) =>
               <UpgradeCard
                 key={def.id}
@@ -151,7 +151,7 @@ export default function ShopScreen({ blockScore, shopUpgrades, onBuy, onReturn, 
           <div className="flex-1" />
 
           {/* Right column */}
-          <div className="flex flex-col gap-2 w-36 shrink-0 overflow-y-auto h-full py-2">
+          <div className="flex flex-col gap-1 md:gap-2 w-28 md:w-36 shrink-0 overflow-y-auto h-full py-1 md:py-2">
             {UPGRADE_DEFS.slice(Math.ceil(UPGRADE_DEFS.length / 2)).map((def) =>
               <UpgradeCard
                 key={def.id}
@@ -164,12 +164,12 @@ export default function ShopScreen({ blockScore, shopUpgrades, onBuy, onReturn, 
         </div>
 
         {/* Return button */}
-        <div className="px-6 pb-5 pt-2 flex justify-center">
+        <div className="px-4 md:px-6 pb-4 md:pb-5 pt-2 flex justify-center">
           <motion.button
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.97 }}
             onClick={onReturn}
-            className="px-10 py-2.5 rounded-xl font-black text-base tracking-wider"
+            className="px-6 md:px-10 py-2 md:py-2.5 rounded-xl font-black text-sm md:text-base tracking-wider"
             style={{
               background: 'rgba(0,40,80,0.8)',
               border: '2px solid #00ccff',
