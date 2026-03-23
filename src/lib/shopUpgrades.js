@@ -8,7 +8,7 @@ export const UPGRADE_DEFS = [
     color: '#4488ff',
     description: (lvl) => `${lvl * 3} armor hits before HP damage`,
     maxLevel: 10,
-    cost: (lvl) => (lvl + 1) * 60,
+    cost: (lvl) => (lvl + 1) * 200,
   },
   {
     id: 'repair',
