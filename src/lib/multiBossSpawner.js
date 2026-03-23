@@ -28,20 +28,22 @@ export function getBossCountForWave(wave) {
 export function spawnMultiBosses(W, wave, hpMult) {
   const count = getBossCountForWave(wave);
 
-  // Build the tier list for each boss slot
+  // Build the tier list for each boss slot (duplicates allowed for 30+)
   let tierPool;
   if (count === 1) {
     tierPool = [Math.min(Math.floor(wave / 5), 5)];
   } else if (count === 2) {
     const primaryTier = Math.min(Math.floor(wave / 5), 5);
-    // Secondary: any different tier, random
-    const others = BOSS_TIERS.filter(t => t !== primaryTier);
-    const secondaryTier = others[Math.floor(Math.random() * others.length)];
+    // Secondary: any random tier, duplicates allowed
+    const secondaryTier = BOSS_TIERS[Math.floor(Math.random() * BOSS_TIERS.length)];
     tierPool = [primaryTier, secondaryTier];
   } else {
-    // 3 bosses: pick 3 unique random tiers
-    const shuffled = [...BOSS_TIERS].sort(() => Math.random() - 0.5);
-    tierPool = shuffled.slice(0, 3);
+    // 3 bosses: all random tiers, duplicates allowed
+    tierPool = [
+      BOSS_TIERS[Math.floor(Math.random() * BOSS_TIERS.length)],
+      BOSS_TIERS[Math.floor(Math.random() * BOSS_TIERS.length)],
+      BOSS_TIERS[Math.floor(Math.random() * BOSS_TIERS.length)],
+    ];
   }
 
   // Horizontal positions
