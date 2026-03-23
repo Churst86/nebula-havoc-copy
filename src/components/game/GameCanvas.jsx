@@ -554,7 +554,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       }
     } else if (e.type === 'berserk') {
       const bImg = getSprite('Berskerker');
-      const bSz = (e._mini ? 203 : 338);
+      const bSz = (e._mini ? 203 : 338) * ms;
       const t = Date.now();
       if (bImg) {
         ctx.shadowColor = '#ff4400'; ctx.shadowBlur = 12;
