@@ -290,7 +290,12 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     }));
   }
 
+  function getMobileScale() {
+    return window.innerWidth < 768 ? 0.55 : 1;
+  }
+
   function drawPlayer(ctx, p, wingmen, shieldHp, enemies, invincibleTimer, keys, starInvincibleTimer, superWingman, superWingmen, armorHp) {
+    const ms = getMobileScale();
     const wingmanImg = getSprite('Wingman');
     const superWingmanImg = getSprite('SuperWingman');
 
