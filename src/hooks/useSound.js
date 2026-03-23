@@ -476,75 +476,102 @@ export const sounds = {
   weaponPickup() {
     try {
       const ctx = getCtx();
-      const sfxGain = getSfxGain(ctx);
+      const sg = getSfxGain(ctx);
       const now = ctx.currentTime;
 
-      // 1) Detection bip — short sine ping
-      const osc = ctx.createOscillator();
-      const g = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, now);
-      osc.frequency.exponentialRampToValueAtTime(1100, now + 0.05);
-      g.gain.setValueAtTime(0.25, now);
-      g.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
-      osc.connect(g); g.connect(sfxGain);
-      osc.start(now); osc.stop(now + 0.07);
+      // 1) Heavy metal CLANK — sharp noise burst + low body thud, simultaneous
+      // Noise transient (the hard "clank" attack)
+      (() => {
+        const bufSize = ctx.sampleRate * 0.06;
+        const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufSize, 2);
+        const src = ctx.createBufferSource(); src.buffer = buf;
+        const filt = ctx.createBiquadFilter(); filt.type = 'highpass'; filt.frequency.value = 1800;
+        const g = ctx.createGain(); g.gain.setValueAtTime(0.9, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        src.connect(filt); filt.connect(g); g.connect(sg);
+        src.start(now);
+      })();
+      // Body resonance thud
+      (() => {
+        const o = ctx.createOscillator(); o.type = 'sawtooth';
+        o.frequency.setValueAtTime(120, now); o.frequency.exponentialRampToValueAtTime(30, now + 0.18);
+        const g = ctx.createGain(); g.gain.setValueAtTime(0.7, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        o.connect(g); g.connect(sg); o.start(now); o.stop(now + 0.18);
+      })();
 
-      // 2) Metallic clamp/chunk — low thud + sharp click
+      // 2) Bolt/ratchet click at 80ms — dry mechanical snap
       setTimeout(() => {
         try {
-          const c = getCtx(); const sg = getSfxGain(c);
-          const thud = c.createOscillator();
-          const tg = c.createGain();
-          thud.type = 'sawtooth';
-          thud.frequency.setValueAtTime(90, c.currentTime);
-          thud.frequency.exponentialRampToValueAtTime(40, c.currentTime + 0.12);
-          tg.gain.setValueAtTime(0.55, c.currentTime);
-          tg.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.12);
-          thud.connect(tg); tg.connect(sg);
-          thud.start(); thud.stop(c.currentTime + 0.12);
-          playNoiseSfx({ duration: 0.04, gain: 0.5, filterFreq: 3500 });
-          playNoiseSfx({ duration: 0.18, gain: 0.12, filterFreq: 180 });
+          const c = getCtx(); const s = getSfxGain(c); const t = c.currentTime;
+          const bufSize = c.sampleRate * 0.025;
+          const buf = c.createBuffer(1, bufSize, c.sampleRate);
+          const d = buf.getChannelData(0);
+          for (let i = 0; i < bufSize; i++) d[i] = (Math.random() * 2 - 1) * (i < bufSize * 0.15 ? 1 : Math.pow(1 - i / bufSize, 3));
+          const src = c.createBufferSource(); src.buffer = buf;
+          const filt = c.createBiquadFilter(); filt.type = 'peaking'; filt.frequency.value = 2800; filt.gain.value = 12;
+          const g = c.createGain(); g.gain.setValueAtTime(0.8, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.025);
+          src.connect(filt); filt.connect(g); g.connect(s); src.start(t);
         } catch {}
-      }, 120);
+      }, 80);
 
-      // 3) Servo whirr — rising filtered saw
+      // 3) Gritty motor grind — detuned saws through bandpass, 160ms
       setTimeout(() => {
         try {
-          const c = getCtx(); const sg = getSfxGain(c);
-          const srv = c.createOscillator();
-          const srvg = c.createGain();
-          const filt = c.createBiquadFilter();
-          srv.type = 'sawtooth';
-          srv.frequency.setValueAtTime(180, c.currentTime);
-          srv.frequency.exponentialRampToValueAtTime(520, c.currentTime + 0.18);
-          filt.type = 'bandpass';
-          filt.frequency.setValueAtTime(600, c.currentTime);
-          filt.Q.value = 3;
-          srvg.gain.setValueAtTime(0.0, c.currentTime);
-          srvg.gain.linearRampToValueAtTime(0.3, c.currentTime + 0.05);
-          srvg.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.2);
-          srv.connect(filt); filt.connect(srvg); srvg.connect(sg);
-          srv.start(); srv.stop(c.currentTime + 0.22);
+          const c = getCtx(); const s = getSfxGain(c); const t = c.currentTime;
+          [0, 7, -5].forEach(detune => {
+            const o = c.createOscillator(); o.type = 'sawtooth';
+            o.frequency.setValueAtTime(95, t); o.frequency.linearRampToValueAtTime(340, t + 0.22);
+            o.detune.value = detune;
+            const filt = c.createBiquadFilter(); filt.type = 'bandpass'; filt.frequency.value = 700; filt.Q.value = 4;
+            const g = c.createGain(); g.gain.setValueAtTime(0.0, t); g.gain.linearRampToValueAtTime(0.22, t + 0.04);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.24);
+            o.connect(filt); filt.connect(g); g.connect(s); o.start(t); o.stop(t + 0.25);
+          });
+          // Grinding noise layer
+          playNoiseSfx({ duration: 0.22, gain: 0.18, filterFreq: 600 });
         } catch {}
-      }, 260);
+      }, 160);
 
-      // 4) Power-up confirmation — G4 → C5 two-note ding
+      // 4) Second hard clank / lock-in at 400ms
       setTimeout(() => {
         try {
-          const c = getCtx(); const sg = getSfxGain(c);
-          [{ f: 392, t: 0 }, { f: 523, t: 0.11 }].forEach(({ f, t }) => {
-            const o = c.createOscillator();
-            const og = c.createGain();
-            o.type = 'square';
-            o.frequency.setValueAtTime(f, c.currentTime + t);
-            og.gain.setValueAtTime(0.22, c.currentTime + t);
-            og.gain.exponentialRampToValueAtTime(0.001, c.currentTime + t + 0.18);
-            o.connect(og); og.connect(sg);
-            o.start(c.currentTime + t); o.stop(c.currentTime + t + 0.2);
+          const c = getCtx(); const s = getSfxGain(c); const t = c.currentTime;
+          const bufSize = c.sampleRate * 0.05;
+          const buf = c.createBuffer(1, bufSize, c.sampleRate);
+          const d = buf.getChannelData(0);
+          for (let i = 0; i < bufSize; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufSize, 1.5);
+          const src = c.createBufferSource(); src.buffer = buf;
+          const filt = c.createBiquadFilter(); filt.type = 'bandpass'; filt.frequency.value = 2200; filt.Q.value = 1.5;
+          const g = c.createGain(); g.gain.setValueAtTime(0.65, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+          src.connect(filt); filt.connect(g); g.connect(s); src.start(t);
+          // Low thud underneath
+          const o = c.createOscillator(); o.type = 'square';
+          o.frequency.setValueAtTime(80, t); o.frequency.exponentialRampToValueAtTime(25, t + 0.1);
+          const og = c.createGain(); og.gain.setValueAtTime(0.5, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+          o.connect(og); og.connect(s); o.start(t); o.stop(t + 0.1);
+        } catch {}
+      }, 400);
+
+      // 5) Power-on hum rising to a short electronic confirm, 520ms
+      setTimeout(() => {
+        try {
+          const c = getCtx(); const s = getSfxGain(c); const t = c.currentTime;
+          // Rising hum
+          const hum = c.createOscillator(); hum.type = 'sawtooth';
+          hum.frequency.setValueAtTime(60, t); hum.frequency.exponentialRampToValueAtTime(220, t + 0.15);
+          const hg = c.createGain(); hg.gain.setValueAtTime(0.0, t); hg.gain.linearRampToValueAtTime(0.18, t + 0.08);
+          hg.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+          hum.connect(hg); hg.connect(s); hum.start(t); hum.stop(t + 0.2);
+          // Short square blip confirm
+          [{ f: 440, d: 0.12 }, { f: 660, d: 0.10 }].forEach(({ f, d }, i) => {
+            const o = c.createOscillator(); o.type = 'square';
+            o.frequency.value = f;
+            const og = c.createGain(); og.gain.setValueAtTime(0.15, t + i * 0.1); og.gain.exponentialRampToValueAtTime(0.001, t + i * 0.1 + d);
+            o.connect(og); og.connect(s); o.start(t + i * 0.1); o.stop(t + i * 0.1 + d);
           });
         } catch {}
-      }, 460);
+      }, 520);
     } catch {}
   },
   shield()       { playToneSfx({ freq: 200, type: 'sine', duration: 0.3, gain: 0.3, freqEnd: 600 }); },
