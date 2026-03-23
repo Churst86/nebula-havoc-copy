@@ -131,6 +131,42 @@ export default function OptionsScreen({ settings, onSettingsChange, onBack, game
             label={`${Math.round((settings.brightness ?? 1) * 100)}%`} />
         </div>
 
+        {/* Joystick Visibility */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-bold text-blue-400 uppercase tracking-widest">
+              <span className="text-base">📱</span>
+              Joystick Visible
+            </div>
+            <button
+              onClick={() => update('joystickVisible', !(settings.joystickVisible !== false))}
+              className="flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full border transition-all"
+              style={{
+                borderColor: (settings.joystickVisible !== false) ? '#00f0ff' : '#444',
+                color: (settings.joystickVisible !== false) ? '#00f0ff' : '#666',
+                background: (settings.joystickVisible !== false) ? '#00f0ff22' : 'transparent',
+              }}>
+              {(settings.joystickVisible !== false) ? 'ON' : 'OFF'}
+            </button>
+          </div>
+        </div>
+
+        {/* Joystick Size */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm font-bold text-indigo-400 uppercase tracking-widest">
+            <span className="text-base">📏</span>
+            Joystick Size
+          </div>
+          <div className="flex items-center justify-between gap-3 mb-2 text-xs text-muted-foreground">
+            <span>Small</span>
+            <span>Large</span>
+          </div>
+          <Slider color="#6366f1" min={0.6} max={1.8} step={0.1}
+            value={settings.joystickSize ?? 1.0}
+            onChange={v => update('joystickSize', v)}
+            label={`${(settings.joystickSize ?? 1.0).toFixed(1)}×`} />
+        </div>
+
         {/* Difficulty */}
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm font-bold text-red-400 uppercase tracking-widest">
