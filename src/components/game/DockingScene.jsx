@@ -13,6 +13,11 @@ export default function DockingScene({ mode = 'arriving', onDockComplete, onDepa
   const doneRef = useRef(false);
 
   useEffect(() => {
+    // Reset state for each new mode run
+    doneRef.current = false;
+    setFading(false);
+    frameRef.current = 0;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
