@@ -318,6 +318,9 @@ export function drawBossTier4Armor(ctx, e, BLOCK_SIZE) {
 
 // ─── Tier 4 (Wave 20): Dreadnought - corner-to-corner movement + ring shots ───────────
 export function updateBossTier4Fire(e, p, s, sounds, W, H, spawnExplosion) {
+  // Cache player reference so armor placement knows which direction is "front"
+  e._playerRef = p;
+
   // Initialize dreadnought movement state
   if (!e._dreadnoughtInit) {
     e._dreadnoughtInit = true;
