@@ -60,8 +60,8 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
   return (
     <div className="absolute inset-0 z-20 pointer-events-none">
       {/* Wave + Shield + Star — center top */}
-      <div className="flex flex-col items-center gap-1.5 pt-4">
-        <div className="text-sm font-bold uppercase tracking-[0.3em] text-muted-foreground">
+      <div className="flex flex-col items-center gap-1 pt-2 md:pt-4">
+        <div className="text-xs md:text-sm font-bold uppercase tracking-[0.3em] text-muted-foreground">
           Wave {wave}
         </div>
         <div className="flex flex-wrap justify-center gap-1">
@@ -82,32 +82,32 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
       </div>
 
       {/* Score — bottom-left */}
-      <div className="absolute bottom-6 left-6 flex flex-col gap-1">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)', border: '1px solid rgba(0,240,255,0.25)' }}>
-          <Zap className="w-5 h-5 text-primary fill-primary" />
-          <span className="text-2xl font-black text-white tracking-wider tabular-nums">
+      <div className="absolute bottom-3 md:bottom-6 left-3 md:left-6 flex flex-col gap-1">
+        <div className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 rounded-lg" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)', border: '1px solid rgba(0,240,255,0.25)' }}>
+          <Zap className="w-3 h-3 md:w-5 md:h-5 text-primary fill-primary" />
+          <span className="text-base md:text-2xl font-black text-white tracking-wider tabular-nums">
             {score.toLocaleString()}
           </span>
         </div>
         {blockScore > 0 && (
-          <div className="flex items-center gap-2 px-3 py-1 rounded-lg" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', border: '1px solid rgba(100,200,255,0.2)' }}>
+          <div className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-0.5 md:py-1 rounded-lg" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', border: '1px solid rgba(100,200,255,0.2)' }}>
             <span className="text-xs font-bold text-cyan-400">BLOCKS</span>
-            <span className="text-sm font-black text-cyan-300 tabular-nums">{blockScore.toLocaleString()}</span>
+            <span className="text-xs md:text-sm font-black text-cyan-300 tabular-nums">{blockScore.toLocaleString()}</span>
           </div>
         )}
       </div>
 
       {/* Gun Upgrades — top-left */}
       {gunKeys.length > 0 && (
-        <div className="absolute top-6 left-6 flex flex-col gap-1" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.8))' }}>
+        <div className="absolute top-2 md:top-6 left-2 md:left-6 flex flex-col gap-0.5 md:gap-1" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.8))' }}>
           {gunKeys.map(key => {
             const tier = powerups[key] || 1;
             const color = POWERUP_COLORS[key];
             const icon = POWERUP_ICONS[key] || '◉';
             return (
               <div key={key}
-                className="text-xs font-bold px-3 py-1 rounded-full"
-                style={{ color, border: `1px solid ${color}`, background: `${color}22` }}>
+                className="font-bold px-2 md:px-3 py-0.5 md:py-1 rounded-full"
+                style={{ color, border: `1px solid ${color}`, background: `${color}22`, fontSize: '10px' }}>
                 {icon} {POWERUP_LABELS[key]} Lv{tier}
               </div>
             );
@@ -117,17 +117,17 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
 
       {/* Utility Upgrades — top-right */}
       {utilityKeys.length > 0 && (
-        <div className="absolute top-6 right-6 flex flex-col gap-1 items-end" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.8))' }}>
+        <div className="absolute top-2 md:top-6 right-2 md:right-6 flex flex-col gap-0.5 md:gap-1 items-end" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.8))' }}>
           {utilityKeys.map(key => {
             const tier = powerups[key] || 1;
             const color = POWERUP_COLORS[key];
             const isSuper = key === 'wingman' && tier >= 5;
-            const label = isSuper ? 'SUPER WINGMAN' : POWERUP_LABELS[key];
+            const label = isSuper ? 'S.WINGMAN' : POWERUP_LABELS[key];
             const icon = POWERUP_ICONS[key] || '◉';
             return (
               <div key={key}
-                className="text-xs font-bold px-3 py-1 rounded-full"
-                style={{ color, border: `1px solid ${color}`, background: `${color}22` }}>
+                className="font-bold px-2 md:px-3 py-0.5 md:py-1 rounded-full"
+                style={{ color, border: `1px solid ${color}`, background: `${color}22`, fontSize: '10px' }}>
                 {icon} {label} Lv{tier}
               </div>
             );
@@ -136,44 +136,44 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
       )}
 
       {/* Lives + Continues — bottom-right */}
-      <div className="absolute bottom-6 right-6 flex flex-col items-end gap-2">
+      <div className="absolute bottom-3 md:bottom-6 right-3 md:right-6 flex flex-col items-end gap-1 md:gap-2">
         {/* Armor bar above hearts */}
         {maxArmorHp > 0 && (
-          <div className="w-full px-1" style={{ minWidth: 120 }}>
+          <div className="w-full px-1" style={{ minWidth: 90 }}>
             <div className="flex items-center justify-between mb-0.5">
-              <span className="text-xs font-bold" style={{ color: '#4488ff' }}>🛡 ARMOR</span>
-              <span className="text-xs font-bold" style={{ color: '#4488ff' }}>{armorHp}/{maxArmorHp}</span>
+              <span className="font-bold" style={{ color: '#4488ff', fontSize: '9px' }}>🛡 ARMOR</span>
+              <span className="font-bold" style={{ color: '#4488ff', fontSize: '9px' }}>{armorHp}/{maxArmorHp}</span>
             </div>
-            <div className="rounded-full overflow-hidden" style={{ height: 6, background: 'rgba(0,0,0,0.5)', border: '1px solid #4488ff44' }}>
+            <div className="rounded-full overflow-hidden" style={{ height: 4, background: 'rgba(0,0,0,0.5)', border: '1px solid #4488ff44' }}>
               <div className="h-full rounded-full transition-all duration-200"
                 style={{ width: `${maxArmorHp > 0 ? (armorHp / maxArmorHp) * 100 : 0}%`, background: armorHp > maxArmorHp * 0.5 ? '#4488ff' : armorHp > maxArmorHp * 0.25 ? '#ffaa44' : '#ff4444', boxShadow: '0 0 6px #4488ff' }} />
             </div>
           </div>
         )}
-        <div className="flex items-center gap-1.5 flex-wrap justify-end max-w-40 px-3 py-1.5 rounded-lg" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,80,80,0.25)' }}>
+        <div className="flex items-center gap-1 flex-wrap justify-end max-w-32 md:max-w-40 px-2 md:px-3 py-1 md:py-1.5 rounded-lg" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,80,80,0.25)' }}>
           {Array.from({ length: maxLives || 3 }).map((_, i) => (
             <Heart key={i}
-              className={`w-5 h-5 transition-all duration-300 ${
+              className={`w-3 h-3 md:w-5 md:h-5 transition-all duration-300 ${
                 i < lives ? 'text-red-500 fill-red-500 scale-100' : 'text-gray-700 fill-gray-700 scale-75 opacity-40'
               }`}
             />
           ))}
         </div>
         {continuesLeft > 0 && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
+          <div className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg"
             style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', border: '1px solid rgba(0,240,255,0.4)', color: '#00f0ff' }}>
-            <RefreshCw className="w-4 h-4" />
-            <span className="text-base font-black tracking-wider">{continuesLeft}× CONTINUE</span>
+            <RefreshCw className="w-3 h-3 md:w-4 md:h-4" />
+            <span className="text-xs md:text-base font-black tracking-wider">{continuesLeft}× CONT</span>
           </div>
         )}
       </div>
 
       {/* Shop upgrades — bottom-right above armor/lives (only show during gameplay) */}
       {shopKeys.length > 0 && (
-        <div className="absolute bottom-32 right-6 flex flex-col gap-1 items-end" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.8))' }}>
+        <div className="absolute bottom-24 md:bottom-32 right-3 md:right-6 flex flex-col gap-0.5 md:gap-1 items-end" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.8))' }}>
           {shopKeys.map(([key, lvl]) => (
-            <div key={key} className="text-xs font-bold px-2 py-0.5 rounded-full"
-              style={{ color: SHOP_COLORS[key], border: `1px solid ${SHOP_COLORS[key]}`, background: `${SHOP_COLORS[key]}22` }}>
+            <div key={key} className="font-bold px-1.5 md:px-2 py-0.5 rounded-full"
+              style={{ color: SHOP_COLORS[key], border: `1px solid ${SHOP_COLORS[key]}`, background: `${SHOP_COLORS[key]}22`, fontSize: '9px' }}>
               {SHOP_ICONS[key]} {key.toUpperCase()} Lv{lvl}
             </div>
           ))}
@@ -181,15 +181,15 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
       )}
 
       {/* Pause button — bottom-center */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto">
+      <div className="absolute bottom-3 md:bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto">
         <Button
           size="icon"
           variant="ghost"
           onClick={onPauseToggle}
-          className="text-primary hover:bg-primary/10 w-12 h-12"
+          className="text-primary hover:bg-primary/10 w-9 h-9 md:w-12 md:h-12"
           title="Pause / Options [Enter]"
         >
-          {isPaused ? <Play className="w-6 h-6" /> : <Pause className="w-6 h-6" />}
+          {isPaused ? <Play className="w-4 h-4 md:w-6 md:h-6" /> : <Pause className="w-4 h-4 md:w-6 md:h-6" />}
         </Button>
       </div>
     </div>
