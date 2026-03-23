@@ -354,6 +354,7 @@ export default function Game() {
         startWave={startWave}
         onLoadProgress={setLoadProgress}
         bossMode={bossMode}
+        mobileSpeed={settings.mobileSpeed ?? 1.0}
       />
 
       <BossWarning warning={bossWarning} />
