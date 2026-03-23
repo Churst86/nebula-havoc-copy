@@ -1253,13 +1253,15 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       }
     });
 
-    // ─── In-stage Drones (shop upgrade) ──────────────────────────────────────
+    // ─── In-stage Drones (shop upgrade) — 1 drone, gets faster with level ───────
     const droneLevel = shopUpgradesRef.current?.drone || 0;
-    const droneCount = Math.min(droneLevel, 3);
+    const droneCount = droneLevel > 0 ? 1 : 0;
     while (s.drones.length < droneCount) {
-      s.drones.push({ x: p.x + (s.drones.length % 2 === 0 ? 50 : -50), y: p.y, orbitAngle: (s.drones.length / droneCount) * Math.PI * 2 + Math.PI * 0.5, state: 'orbit', target: null });
+      s.drones.push({ x: p.x + 50, y: p.y, orbitAngle: Math.PI * 0.5, state: 'orbit', target: null });
     }
     while (s.drones.length > droneCount) s.drones.pop();
+    // Drone fetch speed scales from 3.0 at Lv1 up to 8.0 at Lv10
+    const droneSpeed = 3.0 + (droneLevel - 1) * 0.55;
     s.drones.forEach(d => {
       if (d.state === 'orbit') {
         d.orbitAngle += 0.025;
