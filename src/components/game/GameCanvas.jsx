@@ -309,14 +309,15 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.save();
       ctx.translate(w.x, w.y);
       ctx.rotate(angle);
+      const wsz = 30 * ms;
       if (wingmanImg) {
         ctx.shadowColor = '#44aaff'; ctx.shadowBlur = 10;
-        ctx.drawImage(wingmanImg, -30, -30, 60, 60);
+        ctx.drawImage(wingmanImg, -wsz, -wsz, wsz * 2, wsz * 2);
       } else {
         ctx.shadowColor = '#44aaff'; ctx.shadowBlur = 10;
         ctx.strokeStyle = '#44aaff'; ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.moveTo(0, -10); ctx.lineTo(8, 8); ctx.lineTo(0, 4); ctx.lineTo(-8, 8); ctx.closePath();
+        ctx.moveTo(0, -10 * ms); ctx.lineTo(8 * ms, 8 * ms); ctx.lineTo(0, 4 * ms); ctx.lineTo(-8 * ms, 8 * ms); ctx.closePath();
         ctx.stroke();
       }
       ctx.restore();
