@@ -52,17 +52,24 @@ export default function MobileControls({ keysRef, mobileSpeed = 1.0, joystickVis
 
   if (!isMobile) return null;
 
+  const outerSize = 208 * joystickSize;
+  const innerSize = 96 * joystickSize;
+  const outerColor = joystickVisible ? 'rgba(0, 240, 255, 0.18)' : 'transparent';
+  const outerBorder = joystickVisible ? '3px solid rgba(0, 240, 255, 0.75)' : 'none';
+  const innerColor = joystickVisible ? 'rgba(0, 240, 255, 0.45)' : 'transparent';
+  const innerBorder = joystickVisible ? '2px solid rgba(0, 240, 255, 0.9)' : 'none';
+
   return (
     <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 pointer-events-auto">
       <div
         ref={joystickRef}
-        className="w-52 h-52 rounded-full flex items-center justify-center"
-        style={{ background: 'transparent', border: 'none' }}
+        className="rounded-full flex items-center justify-center"
+        style={{ width: outerSize, height: outerSize, background: outerColor, border: outerBorder }}
         onTouchStart={handleStart}
         onTouchMove={handleMove}
         onTouchEnd={handleEnd}
       >
-        <div className="w-24 h-24 rounded-full" style={{ background: 'transparent', border: 'none' }} />
+        <div className="rounded-full" style={{ width: innerSize, height: innerSize, background: innerColor, border: innerBorder }} />
       </div>
     </div>
   );
