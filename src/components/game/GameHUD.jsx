@@ -175,6 +175,7 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
             <div key={key} className="font-bold px-1.5 md:px-2 py-0.5 rounded-full"
               style={{ color: SHOP_COLORS[key], border: `1px solid ${SHOP_COLORS[key]}`, background: `${SHOP_COLORS[key]}22`, fontSize: '9px' }}>
               {SHOP_ICONS[key]} {key.toUpperCase()} Lv{lvl}
+
             </div>
           ))}
         </div>
