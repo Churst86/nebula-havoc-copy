@@ -497,7 +497,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const mineImg = getSprite('Mine');
       const isCharging = e._charging;
       const damaged = e.hp < e.maxHp;
-      const sz = 108;
+      const sz = 108 * ms;
       // Flash when damaged (charging after first hit)
       const flashOn = damaged && Math.floor(Date.now() / 120) % 2 === 0;
       if (mineImg) {
