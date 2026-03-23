@@ -263,7 +263,7 @@ export default function Game() {
     setBlockScore(prev => {
       // Cost calculation mirrors shopUpgrades.js
       const currentLevel = shopUpgrades[upgradeId] || 0;
-      const COSTS = { armor: (l) => (l + 1) * 60, repair: (l) => (l + 1) * 50, drone: (l) => (l + 1) * 80, harvester: (l) => (l + 1) * 70 };
+      const COSTS = { armor: (l) => (l + 1) * 200, repair: (l) => (l + 1) * 180, drone: (l) => (l + 1) * 250, harvester: (l) => (l + 1) * 220 };
       const cost = COSTS[upgradeId] ? COSTS[upgradeId](currentLevel) : 0;
       return Math.max(0, prev - cost);
     });
