@@ -1442,7 +1442,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         if (Math.abs(dx) < e.w && Math.abs(dy) < e.h) {
           if (b.type === 'spread') { explodeSpread(b, newSpreadPellets); b.hit = true; return; }
           if (b.type === 'photon') {
-            if (s.starInvincibleTimer > 0) return;
             const canPierce = !b.piercedEnemies?.includes(e) && (b.pierceCount > 0);
             if (b.piercedEnemies?.includes(e) && b.pierceCount <= 0) return;
             if (canPierce) { (b.piercedEnemies ||= []).push(e); b.pierceCount--; }
