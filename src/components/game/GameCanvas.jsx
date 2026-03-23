@@ -19,6 +19,7 @@ import {
 import { initBeholderMovement, updateBeholderMovement, updateBeholderShield, updateBeholderFire, getBeholderShieldRadius } from '../../lib/beholderLogic.js';
 import { drawBeholderShield } from '../../lib/beholderDrawing.js';
 import { drawBossHUD } from '../../lib/bossHudUtils.js';
+import { tickBossWarning } from '../../lib/bossSpawnController.js';
 
 // Import laser logic
 import { updateLaserBeam, LASER_CHARGE_FRAMES, LASER_BEAM_FRAMES, LASER_COOLDOWN_FRAMES } from '../../lib/laserLogic.js';
@@ -444,7 +445,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const isStage2 = e.hp <= e.maxHp / 3 && e._stage2Triggered;
       
       if (img) {
-        ctx.shadowColor = '#ff0066'; ctx.shadowBlur = 48;
+        ctx.shadowColor = e._variantProfile ? e._variantProfile.hudColor : '#ff0066';
+        ctx.shadowBlur = 48;
         ctx.drawImage(img, -sz / 2, -sz / 2, sz, sz);
         // Stage 2 red flash tint on sprite
         if (isStage2 && Math.floor(Date.now() / 80) % 2 === 0) {
@@ -1014,18 +1016,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       s.starDropperTimer = STAR_SPAWN_INTERVAL + Math.floor(randomBetween(0, 600));
     }
 
-    if (s.bossWarning && s.bossWarning.active) {
-      s.bossWarning.timer--;
-      if (onBossWarning) onBossWarning({ ...s.bossWarning });
-      if (s.bossWarning.timer <= 0) {
-        s.bossWarning.active = false;
-        if (onBossWarning) onBossWarning(null);
-        const wave = s.wave;
-        const cfg = difficultyConfig || { hpMult: 1 };
-        const hpMult = cfg.hpMult || 1;
-        s.enemies.push(spawnBoss(W, wave, hpMult));
-      }
-    }
+    // Boss warning countdown + multi-boss spawning (handled in bossSpawnController)
+    tickBossWarning(s, W, difficultyConfig, onBossWarning);
 
     s.enemies.forEach(e => {
       if (e.type === 'boss') {
@@ -1791,9 +1783,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     s.bullets.forEach(b => drawBullet(ctx, b, false));
     s.enemyBullets.forEach(b => drawBullet(ctx, b, true));
 
-    // Draw boss HUD at top
-    const bossEnemy = s.enemies.find(e => e.type === 'boss');
-    if (bossEnemy) drawBossHUD(ctx, W, bossEnemy);
+    // Draw boss HUD at top — pass all bosses for multi-boss support
+    const bossEnemies = s.enemies.filter(e => e.type === 'boss');
+    if (bossEnemies.length > 0) drawBossHUD(ctx, W, bossEnemies);
     // Draw harvesters
     s.harvesters.forEach(h => {
       const harvImg = getSprite('Harvester');
