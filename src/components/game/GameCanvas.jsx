@@ -375,14 +375,16 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     ctx.save();
     ctx.translate(p.x, p.y);
     const playerImage = playerShipImageRef.current;
+    const psz = Math.round(169 * ms);
+    const phalf = Math.round(84 * ms);
     if (playerImage) {
       ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 18;
-      ctx.drawImage(playerImage, -84, -84, 169, 169);
+      ctx.drawImage(playerImage, -phalf, -phalf, psz, psz);
     } else {
       ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 18;
       ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(0, -18); ctx.lineTo(13, 12); ctx.lineTo(0, 6); ctx.lineTo(-13, 12); ctx.closePath();
+      ctx.moveTo(0, -18 * ms); ctx.lineTo(13 * ms, 12 * ms); ctx.lineTo(0, 6 * ms); ctx.lineTo(-13 * ms, 12 * ms); ctx.closePath();
       ctx.stroke();
       ctx.fillStyle = 'rgba(0,240,255,0.15)';
       ctx.fill();
