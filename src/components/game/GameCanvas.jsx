@@ -1600,10 +1600,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         } else if (item.type === 'wingman') {
           s.powerups.wingman = Math.min((s.powerups.wingman || 0) + 1, 10); sounds.powerup();
         } else if (item.type === 'reverse') {
-          s.powerups.reverse = Math.min((s.powerups.reverse || 0) + 1, 10); sounds.powerup();
+          s.powerups.reverse = Math.min((s.powerups.reverse || 0) + 1, 10); sounds.weaponPickup();
         } else {
           s.powerups[item.type] = Math.min((s.powerups[item.type] || 0) + 1, 10);
-          sounds.powerup();
+          const isGun = ['shotgun', 'laser', 'photon', 'bounce', 'missile'].includes(item.type);
+          if (isGun) sounds.weaponPickup(); else sounds.powerup();
         }
         onPowerupChange({ ...s.powerups, shieldHp: s.shieldHp, armorHp: s.armorHp, starInvincible: s.starInvincibleTimer > 0 });
         return false;
