@@ -439,6 +439,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   }
 
   function drawEnemy(ctx, e) {
+    const ms = getMobileScale();
     ctx.save();
     // Apply damage shake offset
     const shakeX = e._shakeX || 0;
@@ -449,7 +450,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const wave = e._wave || 5;
       const spriteKey = getBossSpriteKey(wave);
       const img = getSprite(spriteKey) || (window.__spriteCache && window.__spriteCache[spriteKey]);
-      const sz = 440;
+      const sz = 440 * ms;
       const isStage2 = e.hp <= e.maxHp / 3 && e._stage2Triggered;
       
       if (img) {
