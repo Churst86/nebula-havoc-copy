@@ -388,7 +388,10 @@ export default function Game() {
             setGameState('start');
             setShowPauseOptions(false);
           }}
-          onBack={() => setShowPauseOptions(false)}
+          onBack={() => {
+            setShowPauseOptions(false);
+            setIsPaused(false);
+          }}
         />
       )}
 
