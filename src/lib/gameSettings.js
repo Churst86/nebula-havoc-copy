@@ -9,6 +9,7 @@ const DEFAULTS = {
   brightness: 1.0,
   difficulty: 'normal', // 'easy' | 'normal' | 'hell'
   gameSpeed: 30, // fps: 15–120
+  mobileSpeed: 1.0, // joystick sensitivity multiplier: 0.5–2.0
 };
 
 export function loadSaveFile() {
