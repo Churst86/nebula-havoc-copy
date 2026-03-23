@@ -83,7 +83,7 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
 
       {/* Score — bottom-left */}
       <div className="absolute bottom-3 md:bottom-6 left-3 md:left-6 flex flex-col gap-1">
-        <div className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 rounded-lg" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)', border: '1px solid rgba(0,240,255,0.25)' }}>
+        <div className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 rounded-lg" style={{ background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(4px)', border: '1px solid rgba(0,240,255,0.4)' }}>
           <Zap className="w-3 h-3 md:w-5 md:h-5 text-primary fill-primary" />
           <span className="text-base md:text-2xl font-black text-white tracking-wider tabular-nums">
             {score.toLocaleString()}
