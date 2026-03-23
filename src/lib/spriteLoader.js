@@ -53,12 +53,13 @@ const SPRITE_NAMES = [
   'BounceshotPowerup',
   'Laser Powerup',
   'Missile Powerup',
+  'Reverseshot Powerup',
 ];
 
 // Sprites that need white background removal (PNGs that may have white bg)
 const NEEDS_BG_REMOVAL = new Set([
   'Drone', 'Harvester', 'Dropper',
-  'Shotgun Powerup', 'BounceshotPowerup', 'Missile Powerup',
+  'Shotgun Powerup', 'BounceshotPowerup', 'Missile Powerup', 'Reverseshot Powerup',
   'Eater', 'EaterChomp',
 ]);
 

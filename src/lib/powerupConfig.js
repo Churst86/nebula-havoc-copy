@@ -31,6 +31,7 @@ export const DROPPER_COLORS = {
   bounce: '#aaff00',
   speed: '#ff8800',
   rapidfire: '#ff4488',
+  reverse: '#cc44ff',
   star: '#ffffff',
 };
 
@@ -43,7 +44,8 @@ export const DROPPER_LABELS = {
   bounce: 'B',
   speed: '▶',
   rapidfire: '⚡',
+  reverse: '↩',
   star: '★',
 };
 
-export const DROPPER_ROTATION = ['shotgun', 'laser', 'photon', 'bounce', 'missile', 'wingman', 'shield', 'speed', 'rapidfire'];
+export const DROPPER_ROTATION = ['shotgun', 'laser', 'photon', 'bounce', 'missile', 'wingman', 'shield', 'speed', 'rapidfire', 'reverse'];
