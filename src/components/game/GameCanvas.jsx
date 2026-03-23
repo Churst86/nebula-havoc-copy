@@ -121,8 +121,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   const playerShipImageRef = useRef(null);
   const spritesReadyRef = useRef(false);
   const shopUpgradesRef = useRef(shopUpgrades);
-  const motionControlsRef = useRef(null);
   useEffect(() => { shopUpgradesRef.current = shopUpgrades; }, [shopUpgrades]);
+
+  useMotionControls(keysRef, motionControlEnabled, mobileSpeed);
 
   useEffect(() => {
     loadSprites((sprites) => {
