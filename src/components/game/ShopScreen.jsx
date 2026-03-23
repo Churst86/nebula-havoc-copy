@@ -164,7 +164,7 @@ export default function ShopScreen({ blockScore, shopUpgrades, onBuy, onReturn, 
         </div>
 
         {/* Return button */}
-        <div className="px-4 md:px-6 pb-4 md:pb-5 pt-2 flex justify-center">
+        <div className="px-4 md:px-6 pb-8 md:pb-12 pt-2 flex justify-center" style={{ marginBottom: '10vh' }}>
           <motion.button
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.97 }}
