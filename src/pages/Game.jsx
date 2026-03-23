@@ -360,6 +360,7 @@ export default function Game() {
         motionControlEnabled={settings.motionControlEnabled ?? false}
         motionInvertX={settings.motionInvertX ?? false}
         motionInvertY={settings.motionInvertY ?? false}
+        motionAccelSpeed={settings.accelerometerSpeed ?? 1.0}
       />
 
       <BossWarning warning={bossWarning} />
