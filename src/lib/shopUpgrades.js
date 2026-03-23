@@ -17,7 +17,7 @@ export const UPGRADE_DEFS = [
     color: '#44ffaa',
     description: (lvl) => `Repairs ${lvl} armor per wave`,
     maxLevel: 10,
-    cost: (lvl) => (lvl + 1) * 50,
+    cost: (lvl) => (lvl + 1) * 180,
   },
   {
     id: 'drone',
