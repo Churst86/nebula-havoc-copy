@@ -287,6 +287,19 @@ export default function Game() {
     return () => window.removeEventListener('keydown', onKey);
   }, [gameState]);
 
+  // Mobile: tap anywhere on screen to open settings
+  React.useEffect(() => {
+    const onTap = (e) => {
+      if (typeof window === 'undefined' || window.innerWidth >= 768) return; // Desktop only
+      if ((gameState === 'playing' || gameState === 'resuming') && !isPaused) {
+        setIsPaused(true);
+        setShowPauseOptions(true);
+      }
+    };
+    window.addEventListener('click', onTap);
+    return () => window.removeEventListener('click', onTap);
+  }, [gameState, isPaused]);
+
   // Title music is triggered by user click in StartScreen (browser requires user gesture)
 
   // Auto-save when game ends so Load Game is available on title screen
