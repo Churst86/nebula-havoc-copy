@@ -150,7 +150,7 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
             </div>
           </div>
         )}
-        <div className="flex items-center gap-1 flex-wrap justify-end max-w-32 md:max-w-40 px-2 md:px-3 py-1 md:py-1.5 rounded-lg" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,80,80,0.25)' }}>
+        <div className="flex items-center gap-1 flex-wrap justify-end max-w-32 md:max-w-40 px-2 md:px-3 py-1 md:py-1.5 rounded-lg" style={{ background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,80,80,0.4)' }}>
           {Array.from({ length: maxLives || 3 }).map((_, i) => (
             <Heart key={i}
               className={`w-3 h-3 md:w-5 md:h-5 transition-all duration-300 ${
