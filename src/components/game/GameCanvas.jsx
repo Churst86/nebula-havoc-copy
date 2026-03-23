@@ -1763,7 +1763,24 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         ctx.fillRect(e.x - 60, e.y - 60, 120, 120);
         ctx.restore();
       }
-      if (bt === 3) drawBeholderShield(ctx, e);
+      if (bt === 3) {
+        drawBeholderShield(ctx, e);
+        // Draw tracking laser
+        if (e._laserEndX !== undefined) {
+          const isStage2 = e._stage2Triggered && e.hp <= e.maxHp / 3;
+          const laserColor = isStage2 ? '#ff00ff' : '#aa00ff';
+          const laserRgb = isStage2 ? '255,0,255' : '170,0,255';
+          ctx.save();
+          ctx.shadowColor = laserColor; ctx.shadowBlur = 30;
+          ctx.strokeStyle = `rgba(${laserRgb},0.3)`; ctx.lineWidth = 18;
+          ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e._laserEndX, e._laserEndY); ctx.stroke();
+          ctx.strokeStyle = `rgba(${laserRgb},0.85)`; ctx.lineWidth = 5;
+          ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e._laserEndX, e._laserEndY); ctx.stroke();
+          ctx.strokeStyle = `rgba(255,255,255,0.9)`; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e._laserEndX, e._laserEndY); ctx.stroke();
+          ctx.restore();
+        }
+      }
       if (bt === 4) { drawBossTier4Armor(ctx, e, BLOCK_SIZE); }
     });
     s.bullets.forEach(b => drawBullet(ctx, b, false));
