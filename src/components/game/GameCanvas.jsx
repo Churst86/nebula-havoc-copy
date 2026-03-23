@@ -1472,13 +1472,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           }
           // Don't allow damage to boss until it has actually fired
           if (e.type === 'boss' && !e._hasFired) { return; }
-          // Check if boss shield blocks this bullet
+          // Beholder shield blocks ALL weapons — nothing gets through
           if (e.type === 'boss' && (e.tier || 1) === 3) {
             const shieldRadius = getBeholderShieldRadius(e);
             if (shieldRadius > 0) {
-             const dist = Math.hypot(b.x - e.x, b.y - e.y);
-             if (dist < shieldRadius) { b.hit = true; spawnExplosion(s, b.x, b.y, '#00ccff', 3); return; }
-           }
+              const dist = Math.hypot(b.x - e.x, b.y - e.y);
+              if (dist < shieldRadius) { b.hit = true; spawnExplosion(s, b.x, b.y, '#ff4400', 3); return; }
+            }
           }
           e.hp--; sounds.hit(); b.hit = true;
           if (e.type === 'boss' && e._readyToFire) {
