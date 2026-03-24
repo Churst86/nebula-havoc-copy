@@ -105,6 +105,98 @@ const STAR_SPAWN_INTERVAL = 1800;
 const STAR_INVINCIBLE_FRAMES = 150;
 const POWERUP_SPRITE_KEYS = { /* ... your map ... */ };
 
+// ====================== INIT STATE ======================
+function initState() {
+  return {
+    player: null,
+    bullets: [],
+    enemyBullets: [],
+    enemies: [],
+    particles: [],
+    powerupItems: [],
+    wingmen: [],
+    stars: [],
+    blocks: [],
+    piledCells: [],
+    harvesters: [],
+    drones: [],
+    blockSpawnTimer: 120,
+    score: 0,
+    blockScore: 0,
+    armorHp: 0,
+    lives: 3,
+    maxLives: 3,
+    wave: 1,
+    waveTimer: 0,
+    fireTimer: 0,
+    invincibleTimer: 0,
+    spiralAngle: 0,
+    laserCharge: 0,
+    laserCooldown: 0,
+    laserBeamActive: false,
+    laserBeamTimer: 0,
+    spreadShotsLeft: SPREAD_SHOTS_PER_RELOAD,
+    spreadReloadTimer: 0,
+    spreadFireTimer: 10,
+    wingmanFireTimer: 0,
+    superWingmanFireTimer: 0,
+    powerups: {},
+    lockedPowerups: [],
+    shieldHp: 0,
+    running: false,
+    starInvincibleTimer: 0,
+    dropperSpawnTimer: DROPPER_SPAWN_INTERVAL,
+    dropperRotationIdx: 0,
+    dropperRotateTimer: DROPPER_ROTATE_FRAMES,
+    starDropperTimer: STAR_SPAWN_INTERVAL,
+    reverseFireTimer: 0,
+    bossWarning: null,
+    superWingmen: [],
+  };
+}
+
+// ====================== OBJECT POOLS ======================
+const BULLET_POOL_SIZE = 1500;
+const ENEMY_POOL_SIZE = 300;
+const PARTICLE_POOL_SIZE = 1000;
+
+let bulletPool = [];
+let enemyPool = [];
+let particlePool = [];
+
+function initPools() {
+  bulletPool = Array.from({ length: BULLET_POOL_SIZE }, () => ({ active: false }));
+  enemyPool = Array.from({ length: ENEMY_POOL_SIZE }, () => ({ active: false }));
+  particlePool = Array.from({ length: PARTICLE_POOL_SIZE }, () => ({ active: false }));
+}
+
+function getBullet() {
+  for (let b of bulletPool) if (!b.active) { b.active = true; return b; }
+  return { active: true };
+}
+
+function releaseBullet(b) {
+  if (b) b.active = false;
+}
+
+function getEnemy() {
+  for (let e of enemyPool) if (!e.active) { e.active = true; return e; }
+  return { active: true };
+}
+
+function releaseEnemy(e) {
+  if (e) e.active = false;
+}
+
+function getParticle() {
+  for (let p of particlePool) if (!p.active) { p.active = true; return p; }
+  return { active: true };
+}
+
+function releaseParticle(p) {
+  if (p) p.active = false;
+}
+
 function randomBetween(a, b) { return a + Math.random() * (b - a); }
 
 export default function GameCanvas({ 
