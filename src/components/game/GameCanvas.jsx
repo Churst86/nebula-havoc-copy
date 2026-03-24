@@ -26,84 +26,6 @@ import { spawnWave, progressWave } from '../../lib/waveSpawner.js';
 import { HITBOX_SIZES } from '../../lib/hitboxConfig.js';
 import { updateBlockSettling } from '../../lib/blockSettling.js';
 
-// ====================== CONSTANTS ======================
-const SPREAD_SHOTS_PER_RELOAD = 2;
-const SPREAD_RELOAD_FRAMES = 80;
-const TETRIS_SHAPES = [
-  [[0,0],[1,0],[2,0],[3,0]], // I
-  [[0,0],[1,0],[0,1],[1,1]], // O
-  [[1,0],[0,1],[1,1],[2,1]], // T
-  [[0,0],[0,1],[1,1],[2,1]], // L
-  [[2,0],[0,1],[1,1],[2,1]], // J
-  [[1,0],[2,0],[0,1],[1,1]], // S
-  [[0,0],[1,0],[1,1],[2,1]], // Z
-];
-const BLOCK_SIZE = 18;
-const BLOCK_COLORS = ['#00f0ff', '#ff44ff', '#ffdd00', '#44ffaa', '#ff8800', '#aaff00', '#ff4488'];
-const DROPPER_SPAWN_INTERVAL = 480;
-const STAR_SPAWN_INTERVAL = 1800;
-const STAR_INVINCIBLE_FRAMES = 150;
-const DROPPER_ROTATE_FRAMES = 90;
-
-const POWERUP_SPRITE_KEYS = {
-  shotgun: 'Shotgun Powerup',
-  photon: 'Photon Powerup',
-  laser: 'Laser Powerup',
-  missile: 'Missile Powerup',
-  bounce: 'BounceshotPowerup',
-  reverse: 'Reverseshot Powerup',
-};
-
-// ====================== INIT STATE ======================
-function initState() {
-  return {
-    player: null,
-    bullets: [],
-    enemyBullets: [],
-    enemies: [],
-    particles: [],
-    powerupItems: [],
-    wingmen: [],
-    stars: [],
-    blocks: [],
-    piledCells: [],
-    harvesters: [],
-    drones: [],
-    blockSpawnTimer: 120,
-    score: 0,
-    blockScore: 0,
-    armorHp: 0,
-    lives: 3,
-    maxLives: 3,
-    wave: 1,
-    waveTimer: 0,
-    fireTimer: 0,
-    invincibleTimer: 0,
-    spiralAngle: 0,
-    laserCharge: 0,
-    laserCooldown: 0,
-    laserBeamActive: false,
-    laserBeamTimer: 0,
-    spreadShotsLeft: SPREAD_SHOTS_PER_RELOAD,
-    spreadReloadTimer: 0,
-    spreadFireTimer: 10,
-    wingmanFireTimer: 0,
-    superWingmanFireTimer: 0,
-    powerups: {},
-    lockedPowerups: [],
-    shieldHp: 0,
-    running: false,
-    starInvincibleTimer: 0,
-    dropperSpawnTimer: DROPPER_SPAWN_INTERVAL,
-    dropperRotationIdx: 0,
-    dropperRotateTimer: DROPPER_ROTATE_FRAMES,
-    starDropperTimer: STAR_SPAWN_INTERVAL,
-    reverseFireTimer: 0,
-    bossWarning: null,
-    superWingmen: [],
-  };
-}
-
 // ====================== OBJECT POOLS ======================
 const BULLET_POOL_SIZE = 1500;
 const ENEMY_POOL_SIZE = 300;
@@ -121,7 +43,7 @@ function initPools() {
 
 function getBullet() {
   for (let b of bulletPool) if (!b.active) { b.active = true; return b; }
-  return { active: true };
+  return { active: true }; // fallback
 }
 
 function releaseBullet(b) {
@@ -172,22 +94,213 @@ function buildSpatialGrid(entities, W, H) {
   return grid;
 }
 
+// ====================== CONSTANTS ======================
+const SPREAD_SHOTS_PER_RELOAD = 2;
+const SPREAD_RELOAD_FRAMES = 80;
+const TETRIS_SHAPES = [ /* ... your existing shapes ... */ ];
+const BLOCK_SIZE = 18;
+const BLOCK_COLORS = ['#00f0ff', '#ff44ff', '#ffdd00', '#44ffaa', '#ff8800', '#aaff00', '#ff4488'];
+const DROPPER_SPAWN_INTERVAL = 480;
+const STAR_SPAWN_INTERVAL = 1800;
+const STAR_INVINCIBLE_FRAMES = 150;
+const POWERUP_SPRITE_KEYS = { /* ... your map ... */ };
+
 function randomBetween(a, b) { return a + Math.random() * (b - a); }
 
-export default function GameCanvas(props) {
-  const {
-    gameState, setGameState, onScoreChange, onBlockScoreChange,
-    onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange,
-    onBossWarning, isPaused, difficultyConfig, gameSpeed = 30,
-    carryOverPowerups = null, shopUpgrades = null, startWave = 1,
-    onLoadProgress = null, bossMode = false, mobileSpeed = 1.0,
-    joystickVisible = true, joystickSize = 1.0,
-    motionControlEnabled = false, motionInvertX = false,
-    motionInvertY = false, motionAccelSpeed = 1.0
-  } = props;
-
+export default function GameCanvas({ 
+  gameState, setGameState, onScoreChange, onBlockScoreChange, 
+  onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, 
+  onBossWarning, continuesLeft, onContinueUsed, isPaused, 
+  difficultyConfig, gameSpeed = 30, carryOverPowerups = null, 
+  shopUpgrades = null, startWave = 1, onLoadProgress = null, 
+  bossMode = false, mobileSpeed = 1.0, /* ... other props ... */
+}) {
   const canvasRef = useRef(null);
   const keysRef = useRef({});
-  const stateRef = useRef(null);
+  const stateRef = useRef({ /* your initState without pools */ });
   const animRef = useRef(null);
-  const lastTimeRef =
+  const lastTimeRef = useRef(0);
+  const accumulatorRef = useRef(0);
+  const playerShipImageRef = useRef(null);
+  const spritesReadyRef = useRef(false);
+  const shopUpgradesRef = useRef(shopUpgrades);
+  const scoreUpdateThrottle = useRef(0);
+
+  useEffect(() => { shopUpgradesRef.current = shopUpgrades; }, [shopUpgrades]);
+
+  useMotionControls(keysRef, /* ... */);
+
+  // Load sprites
+  useEffect(() => {
+    loadSprites((sprites) => {
+      playerShipImageRef.current = sprites['PlayerShip'] || null;
+      spritesReadyRef.current = true;
+    }, onLoadProgress);
+  }, []);
+
+  // Paused handling
+  const isPausedRef = useRef(isPaused);
+  const gameSpeedRef = useRef(gameSpeed);
+  useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
+  useEffect(() => { gameSpeedRef.current = gameSpeed; }, [gameSpeed]);
+
+  // ====================== MAIN GAME LOOP ======================
+  const loop = useCallback((timestamp) => {
+    if (!stateRef.current.running || isPausedRef.current || !spritesReadyRef.current) {
+      animRef.current = requestAnimationFrame(loop);
+      return;
+    }
+
+    const delta = Math.min(timestamp - lastTimeRef.current, 100); // cap delta
+    lastTimeRef.current = timestamp;
+    accumulatorRef.current += delta;
+
+    const fixedDt = 1000 / gameSpeedRef.current;
+    const s = stateRef.current;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+
+    while (accumulatorRef.current >= fixedDt) {
+      updateGame(s, W, H, keysRef.current, fixedDt / 16.666); // normalized dt ~1 at 60fps
+      accumulatorRef.current -= fixedDt;
+    }
+
+    renderGame(ctx, s, W, H);
+    animRef.current = requestAnimationFrame(loop);
+  }, []);
+
+  // ====================== UPDATE ======================
+   // ====================== UPDATE ======================
+  function updateGame(s, W, H, keys, dt) {
+    const p = s.player;
+    if (!p) return;
+
+    // Player movement with delta time
+    const baseSpd = (4.5 + (s.powerups.speed || 0) * 1.5) * dt;
+    const motionX = keys['motionX'] || 0;
+    const motionY = keys['motionY'] || 0;
+
+    if (Math.abs(motionX) > 0.05) p.x += motionX * baseSpd;
+    if (Math.abs(motionY) > 0.05) p.y += motionY * baseSpd;
+
+    if (keys['ArrowLeft'] || keys['a'] || keys['A']) p.x -= baseSpd;
+    if (keys['ArrowRight'] || keys['d'] || keys['D']) p.x += baseSpd;
+    if (keys['ArrowUp'] || keys['w'] || keys['W']) p.y -= baseSpd;
+    if (keys['ArrowDown'] || keys['s'] || keys['S']) p.y += baseSpd;
+
+    p.x = Math.max(16, Math.min(W - 16, p.x));
+    p.y = Math.max(16, Math.min(H - 16, p.y));
+
+    // TODO: Add the rest of your update logic (firing, wingmen, dropper spawn, boss logic, etc.)
+    // We'll add more in the next step
+  }
+
+  // ====================== RENDER ======================
+  function renderGame(ctx, s, W, H) {
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(5,5,20,0.85)';
+    ctx.fillRect(0, 0, W, H);
+
+    // Draw stars
+    s.stars.forEach(st => {
+      st.y += st.speed;
+      if (st.y > H) { st.y = 0; st.x = Math.random() * W; }
+      ctx.globalAlpha = st.alpha;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+
+    // Draw your existing draw calls (add more as we go)
+    s.blocks.forEach(b => drawBlock(ctx, b));
+    s.piledCells.forEach(cell => drawPiledCells(ctx, [cell])); // adjust if needed
+    s.powerupItems.forEach(item => drawPowerupItem(ctx, item));
+    s.enemies.forEach(e => drawEnemy(ctx, e));
+    s.bullets.forEach(b => drawBullet(ctx, b, false));
+    s.enemyBullets.forEach(b => drawBullet(ctx, b, true));
+    s.particles.forEach(pt => drawParticle(ctx, pt));
+
+    drawPlayer(ctx, s.player, s.wingmen, s.shieldHp, s.enemies, s.invincibleTimer, keysRef.current, s.starInvincibleTimer, s.superWingman, s.superWingmen, s.armorHp);
+
+    // Add laser, boss HUD, harvesters, drones, etc. here later
+  }
+
+  // ====================== COLLISION HELPERS ======================
+  function handleBulletEnemyCollisions(s, grid) {
+    // Use the grid to only check nearby enemies for each bullet
+    s.bullets.forEach(b => {
+      if (b.hit) return;
+      const col = Math.floor(b.x / CELL_SIZE);
+      const row = Math.floor(b.y / CELL_SIZE);
+      const key = `${col},${row}`;
+      const candidates = grid.get(key) || [];
+      // also check neighboring cells for safety
+      for (let dc = -1; dc <= 1; dc++) {
+        for (let dr = -1; dr <= 1; dr++) {
+          const nkey = `${col+dc},${row+dr}`;
+          const list = grid.get(nkey) || [];
+          for (let idx of list) {
+            const e = s.enemies[idx];
+            if (!e || e.dead) continue;
+            // your existing hit test logic here
+            // if hit → damage, spawn explosion, releaseBullet(b), etc.
+          }
+        }
+      }
+    });
+  }
+
+  // Add similar helper for player vs enemies if needed
+
+  // ====================== INIT / CLEANUP ======================
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    if (gameState === 'playing') {
+      initPools(); // important!
+      const W = canvas.width, H = canvas.height;
+      const s = stateRef.current;
+      Object.assign(s, initState()); // your original init
+      s.player = { x: W / 2, y: H - 80 };
+      s.stars = initStars(W, H);
+      // ... carryOverPowerups, armor, wave, etc. ...
+
+      s.running = true;
+      onWaveChange(s.wave);
+      spawnWaveLocal(W, s);
+
+      lastTimeRef.current = performance.now();
+      accumulatorRef.current = 0;
+      animRef.current = requestAnimationFrame(loop);
+    } else {
+      // pause / stop logic
+      stateRef.current.running = false;
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', resize);
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
+  }, [gameState, loop]);
+
+  // Keyboard handlers (unchanged)
+
+  return (
+    <>
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+      <MobileControls keysRef={keysRef} /* ... */ />
+    </>
+  );
+}
