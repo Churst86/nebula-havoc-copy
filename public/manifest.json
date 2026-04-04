@@ -1,0 +1,9 @@
+{
+  "name": "Nebula Havoc",
+  "short_name": "Nebula",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050514",
+  "theme_color": "#050514",
+  "icons": []
+}
