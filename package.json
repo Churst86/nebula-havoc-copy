@@ -2,14 +2,45 @@
   "name": "base44-app",
   "private": true,
   "version": "0.0.0",
+  "description": "Nebula Havoc desktop build",
+  "author": "Chris Hurst",
+  "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "desktop:start": "npm run build:desktop:web && electron .",
+    "build:desktop:web": "vite build --base ./",
+    "build:desktop": "npm run build:desktop:web && node electron/package.cjs",
+    "build:desktop:builder": "npm run build:desktop:web && electron-builder --win --dir",
+    "build:desktop:portable": "npm run build:desktop:web && electron-builder --win portable",
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
     "preview": "vite preview"
+  },
+  "build": {
+    "appId": "com.churst86.nebulahavoc",
+    "productName": "Nebula Havoc",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "artifactName": "Nebula-Havoc-${version}-${arch}.${ext}",
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    }
   },
   "dependencies": {
     "@base44/sdk": "^0.8.0",
@@ -79,6 +110,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@electron/packager": "^19.1.0",
     "@eslint/js": "^9.19.0",
     "@types/node": "^22.13.5",
     "@types/react": "^18.2.66",
@@ -86,6 +118,8 @@
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "baseline-browser-mapping": "^2.8.32",
+    "electron": "^41.1.1",
+    "electron-builder": "^26.8.1",
     "eslint": "^9.19.0",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^5.0.0",
