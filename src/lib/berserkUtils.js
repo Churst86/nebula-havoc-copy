@@ -84,21 +84,29 @@ export function drawBerserk(ctx, e, t) {
   ctx.translate(e.x, e.y);
   
   const isMini = e._mini;
-  const absorbScale = 1 + Math.min(e._absorbedUnits || 0, 12) * 0.08;
-  const scale = (isMini ? 0.6 : 3.375) * absorbScale;
+  const absorbScale = 1 + Math.min(e._absorbedUnits || 0, 30) * 0.025;
+  const scale = (isMini ? 0.55 : 1.3) * absorbScale;
   const berserkColor = e._isHell ? `hsl(${(t * 0.3) % 360},100%,65%)` : '#ff4400';
   const berserkSprite = getSprite('Berskerker');
+  const eaterChompSprite = getSprite('EaterChomp');
   const hasSprite = !!berserkSprite && isSpritesLoaded();
 
   if (hasSprite) {
-    const spriteSize = (isMini ? 54 : 180) * absorbScale;
+    const spriteSize = (isMini ? 40 : 94) * absorbScale;
     ctx.shadowColor = berserkColor;
-    ctx.shadowBlur = isMini ? 10 : 20;
+    ctx.shadowBlur = isMini ? 8 : 14;
     drawSprite(ctx, berserkSprite, -spriteSize / 2, -spriteSize / 2, spriteSize, spriteSize);
+    if (eaterChompSprite && (e._eatingFrames || 0) > 0) {
+      const alpha = Math.min(1, (e._eatingFrames || 0) / 14);
+      ctx.save();
+      ctx.globalAlpha = 0.35 + alpha * 0.5;
+      drawSprite(ctx, eaterChompSprite, -spriteSize / 2, -spriteSize / 2, spriteSize, spriteSize);
+      ctx.restore();
+    }
   } else {
     ctx.scale(scale, scale);
   
-    const pulse = 0.8 + Math.sin(t * 0.015) * 0.2;
+    const pulse = 0.85 + Math.sin(t * 0.015) * 0.15;
     const innerColor = e._isHell ? `hsla(${(t * 0.3) % 360},100%,65%,0.25)` : 'rgba(255,68,0,0.25)';
   
     ctx.shadowColor = berserkColor;
@@ -107,7 +115,7 @@ export function drawBerserk(ctx, e, t) {
     // Main body — spiky sphere
     ctx.fillStyle = innerColor;
     ctx.beginPath();
-    ctx.arc(0, 0, 16 + pulse * 2, 0, Math.PI * 2);
+    ctx.arc(0, 0, 14 + pulse * 2, 0, Math.PI * 2);
     ctx.fill();
   
     ctx.strokeStyle = berserkColor;
@@ -117,8 +125,8 @@ export function drawBerserk(ctx, e, t) {
     // Spikes around body (8 spikes)
     for (let i = 0; i < 8; i++) {
       const a = (i / 8) * Math.PI * 2 + (t * 0.008);
-      const innerR = 18;
-      const outerR = 26 + pulse * 3;
+      const innerR = 14;
+      const outerR = 20 + pulse * 2.5;
       ctx.beginPath();
       ctx.moveTo(Math.cos(a) * innerR, Math.sin(a) * innerR);
       ctx.lineTo(Math.cos(a) * outerR, Math.sin(a) * outerR);
@@ -130,18 +138,18 @@ export function drawBerserk(ctx, e, t) {
   if (!isMini) {
     const bw = 50, bh = 4;
     ctx.fillStyle = '#222';
-    ctx.fillRect(-bw / 2, -28, bw, bh);
+    ctx.fillRect(-bw / 2, -20, bw, bh);
     ctx.fillStyle = e.hp / e.maxHp > 0.5 ? '#ff6600' : '#ff2200';
-    ctx.fillRect(-bw / 2, -28, bw * (e.hp / e.maxHp), bh);
+    ctx.fillRect(-bw / 2, -20, bw * (e.hp / e.maxHp), bh);
     ctx.strokeStyle = berserkColor;
     ctx.lineWidth = 1;
-    ctx.strokeRect(-bw / 2, -28, bw, bh);
+    ctx.strokeRect(-bw / 2, -20, bw, bh);
     
     ctx.fillStyle = berserkColor;
     ctx.font = 'bold 7px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('BERSERK', 0, -38);
+    ctx.fillText('BERSERK', 0, -30);
   }
   
   ctx.restore();

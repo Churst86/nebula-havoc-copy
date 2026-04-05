@@ -31,6 +31,12 @@ const NEXT_DIFFICULTY = {
   hell: null,
 };
 
+const DIFFICULTY_ORDER = {
+  easy: 1,
+  normal: 2,
+  hell: 3,
+};
+
 const EMPTY_SHOP_UPGRADES = { armor: 0, repair: 0, drone: 0, harvester: 0, speed: 0, rapidfire: 0, shield: 0, wingman: 0 };
 const BOSS_TEST_WEAPONS = ['spread', 'laser', 'photon', 'bounce', 'missile', 'reverse'];
 
@@ -42,9 +48,18 @@ function difficultyForWave(wave = 1) {
 
 function normalizeDifficultyForWave(savedDifficulty, wave = 1) {
   const byWave = difficultyForWave(wave);
-  const order = { easy: 1, normal: 2, hell: 3 };
-  const fromSave = order[savedDifficulty] ? savedDifficulty : byWave;
-  return order[fromSave] >= order[byWave] ? fromSave : byWave;
+  const fromSave = DIFFICULTY_ORDER[savedDifficulty] ? savedDifficulty : byWave;
+  return DIFFICULTY_ORDER[fromSave] >= DIFFICULTY_ORDER[byWave] ? fromSave : byWave;
+}
+
+function maxDifficulty(a = 'easy', b = 'easy') {
+  return (DIFFICULTY_ORDER[a] || 1) >= (DIFFICULTY_ORDER[b] || 1) ? a : b;
+}
+
+function clampDifficultyToUnlocked(requestedDifficulty = 'easy', unlockedDifficulty = 'easy') {
+  return (DIFFICULTY_ORDER[requestedDifficulty] || 1) <= (DIFFICULTY_ORDER[unlockedDifficulty] || 1)
+    ? requestedDifficulty
+    : unlockedDifficulty;
 }
 
 const LEGACY_POWERUP_KEY_MAP = {
@@ -90,7 +105,10 @@ export default function Game() {
   const [showLaunch, setShowLaunch] = useState(false);
   const [skipBossSignal, setSkipBossSignal] = useState(0);
   const [loadProgress, setLoadProgress] = useState(0);
+  const [lastSaveAt, setLastSaveAt] = useState(null);
+  const [liveFps, setLiveFps] = useState(0);
   const scoreRef = useRef(0);
+  const lastAutoSaveWaveRef = useRef(null);
 
   // Preload sprites immediately on mount so LaunchScreen has them ready
   React.useEffect(() => {
@@ -167,7 +185,7 @@ export default function Game() {
         saveShopUpgrades(resetUpgrades);
       }
       if (!bossModeFlag) {
-        deleteSaveFile();
+        deleteSaveFile('auto');
       }
     }
     setContinuesLeft(0);
@@ -178,17 +196,53 @@ export default function Game() {
     setShowBossMiniShop(false);
     setSkipBossSignal(0);
     setLastDockingWave(-1);
+
+    if (!bossModeFlag) {
+      writeSaveFile({
+        wave: 1,
+        difficulty: 'easy',
+        powerups: {},
+        shopUpgrades: { ...EMPTY_SHOP_UPGRADES },
+        blockScore: 0,
+      }, 'auto');
+      setLastSaveAt(Date.now());
+      lastAutoSaveWaveRef.current = 1;
+    } else {
+      lastAutoSaveWaveRef.current = null;
+      setLastSaveAt(null);
+    }
     // gameState will be set to 'playing' by LaunchScreen.onDone
   }, []);
 
-  const handleLoadGame = useCallback(() => {
-    const save = loadSaveFile();
+  useEffect(() => {
+    if (bossMode) return;
+    if (wave <= 0) return;
+    if (gameState !== 'playing' && gameState !== 'resuming') return;
+    if (lastAutoSaveWaveRef.current === wave) return;
+
+    writeSaveFile({
+      wave: waveRef.current || wave,
+      difficulty: settings.difficulty,
+      powerups: activePowerup,
+      shopUpgrades: shopUpgrades,
+      blockScore: blockScore,
+    }, 'auto');
+    setLastSaveAt(Date.now());
+    lastAutoSaveWaveRef.current = wave;
+  }, [wave, bossMode, gameState, settings.difficulty, activePowerup, shopUpgrades, blockScore]);
+
+  const handleLoadGame = useCallback((slot = 'auto') => {
+    const save = loadSaveFile(slot);
     if (!save) return;
     setBossMode(false);
     const savedWave = save.wave || 1;
     const savedDifficulty = normalizeDifficultyForWave(save.difficulty, savedWave);
+    const unlockedByWave = difficultyForWave(savedWave);
+    const currentUnlocked = settings.unlockedDifficulty || 'easy';
+    const unlockedDifficulty = maxDifficulty(currentUnlocked, unlockedByWave);
+    const restoredDifficulty = clampDifficultyToUnlocked(savedDifficulty, unlockedDifficulty);
     // Restore difficulty
-    const newSettings = { ...settings, difficulty: savedDifficulty };
+    const newSettings = { ...settings, difficulty: restoredDifficulty, unlockedDifficulty };
     setSettings(newSettings);
     saveSettings(newSettings);
     // Restore shop upgrades
@@ -241,6 +295,17 @@ export default function Game() {
       const milestone = DIFFICULTY_MILESTONES[settings.difficulty];
       const completedWave = waveRef.current - 1;
       if (completedWave === milestone) {
+        const nextDifficulty = NEXT_DIFFICULTY[settings.difficulty];
+        if (nextDifficulty) {
+          setSettings(prev => {
+            const currentUnlocked = prev.unlockedDifficulty || 'easy';
+            const unlockedDifficulty = maxDifficulty(currentUnlocked, nextDifficulty);
+            if (unlockedDifficulty === currentUnlocked) return prev;
+            const updated = { ...prev, unlockedDifficulty };
+            saveSettings(updated);
+            return updated;
+          });
+        }
         setGameState('congratulations');
       } else {
         setGameState('gameover');
@@ -294,10 +359,14 @@ export default function Game() {
 
   const handleSettingsChange = useCallback((next) => {
     const prevDifficulty = settings.difficulty;
-    setSettings(next);
-    saveSettings(next);
+    const unlockedDifficulty = next.unlockedDifficulty || settings.unlockedDifficulty || 'easy';
+    const requestedDifficulty = next.difficulty || 'easy';
+    const safeDifficulty = clampDifficultyToUnlocked(requestedDifficulty, unlockedDifficulty);
+    const safeNext = { ...next, unlockedDifficulty, difficulty: safeDifficulty };
+    setSettings(safeNext);
+    saveSettings(safeNext);
     // If difficulty changed during gameplay, reload current wave with new config
-    if (next.difficulty !== prevDifficulty && (gameState === 'playing' || gameState === 'resuming')) {
+    if (safeNext.difficulty !== prevDifficulty && (gameState === 'playing' || gameState === 'resuming')) {
       setStartWave(waveRef.current);
       setCarryOverPowerups({ ...activePowerup });
       setShowPauseOptions(false);
@@ -305,9 +374,22 @@ export default function Game() {
       setShowLaunch(true);
       setLoadProgress(isSpritesLoaded() ? 1 : 0);
     }
-  }, [settings.difficulty, gameState, activePowerup]);
+  }, [settings.difficulty, settings.unlockedDifficulty, gameState, activePowerup]);
 
-  const handleSaveGame = useCallback(() => {
+  const handleSaveGame = useCallback((slot = 'slot1') => {
+    if (bossMode) return false;
+    const ok = writeSaveFile({
+      wave: waveRef.current,
+      difficulty: settings.difficulty,
+      powerups: activePowerup,
+      shopUpgrades: shopUpgrades,
+      blockScore: blockScore,
+    }, slot);
+    if (ok) setLastSaveAt(Date.now());
+    return ok;
+  }, [settings.difficulty, activePowerup, shopUpgrades, blockScore, bossMode]);
+
+  const writeAutoSave = useCallback(() => {
     if (bossMode) return;
     writeSaveFile({
       wave: waveRef.current,
@@ -315,8 +397,37 @@ export default function Game() {
       powerups: activePowerup,
       shopUpgrades: shopUpgrades,
       blockScore: blockScore,
-    });
-  }, [settings.difficulty, activePowerup, shopUpgrades, blockScore, bossMode]);
+    }, 'auto');
+    setLastSaveAt(Date.now());
+  }, [bossMode, settings.difficulty, activePowerup, shopUpgrades, blockScore]);
+
+  useEffect(() => {
+    if (bossMode) return;
+    if (gameState !== 'playing' && gameState !== 'resuming') return;
+
+    const autoSaveId = window.setInterval(() => {
+      writeAutoSave();
+    }, 12000);
+
+    const flushSave = () => {
+      writeAutoSave();
+    };
+
+    const onVisibilityChange = () => {
+      if (document.hidden) flushSave();
+    };
+
+    window.addEventListener('beforeunload', flushSave);
+    window.addEventListener('pagehide', flushSave);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      window.clearInterval(autoSaveId);
+      window.removeEventListener('beforeunload', flushSave);
+      window.removeEventListener('pagehide', flushSave);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [bossMode, gameState, writeAutoSave]);
 
   const handleShopBuy = useCallback((upgradeId, useBossShop = false) => {
     const def = UPGRADE_DEFS.find((upgradeDef) => upgradeDef.id === upgradeId);
@@ -411,7 +522,8 @@ export default function Game() {
           powerups: activePowerup,
           shopUpgrades: shopUpgrades,
           blockScore: blockScore,
-        });
+        }, 'auto');
+        setLastSaveAt(Date.now());
       }
     }
   }, [gameState, bossMode]);
@@ -465,11 +577,13 @@ export default function Game() {
         onWaveChange={handleWaveChange}
         onPowerupChange={(pw) => { setActivePowerup(pw); if (pw.armorHp !== undefined) setArmorHp(pw.armorHp); }}
         onBossWarning={setBossWarning}
+        onFpsChange={setLiveFps}
         continuesLeft={continuesLeft}
         onContinueUsed={handleContinueUsed}
         isPaused={isPaused || showDocking || showShop || showBossMiniShop}
         difficultyConfig={difficultyConfig}
         gameSpeed={settings.gameSpeed ?? 30}
+        autoFireEnabled={settings.autoFireEnabled !== false}
         carryOverPowerups={carryOverPowerups}
         livePowerups={bossMode ? activePowerup : null}
         shopUpgrades={bossMode ? bossShopUpgrades : shopUpgrades}
@@ -494,8 +608,11 @@ export default function Game() {
           lives={lives}
           maxLives={maxLives}
           wave={wave}
+          liveFps={liveFps}
           activePowerup={activePowerup}
           blockScore={blockScore}
+          autoFireEnabled={settings.autoFireEnabled !== false}
+          lastSaveAt={lastSaveAt}
           continuesLeft={continuesLeft}
           isPaused={isPaused}
           onPauseToggle={handlePauseToggle}

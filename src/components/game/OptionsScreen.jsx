@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Music, Volume2, VolumeX, Sun, Skull, Gauge, Save, LogOut, CheckCircle, Smartphone, Wrench } from 'lucide-react';
-import { DIFFICULTY_CONFIG, saveSettings } from '../../lib/gameSettings';
+import { DIFFICULTY_CONFIG, saveSettings, loadAllSaveFiles } from '../../lib/gameSettings';
 import { sounds } from '../../hooks/useSound.js';
 import ControllerOptionsScreen from './ControllerOptionsScreen';
 
@@ -22,9 +22,43 @@ function Slider({ color, min, max, step, value, onChange, label }) {
   );
 }
 
+const DIFFICULTY_LABELS = {
+  easy: 'Easy',
+  normal: 'Challenging',
+  hell: 'Hell',
+};
+
+const SLOT_META = [
+  { key: 'slot1', label: 'Slot 1', accent: '#4dd0ff' },
+  { key: 'slot2', label: 'Slot 2', accent: '#8f9bff' },
+  { key: 'slot3', label: 'Slot 3', accent: '#7dffb2' },
+];
+
+function formatSave(save) {
+  if (!save) return 'Empty';
+  const difficulty = DIFFICULTY_LABELS[save.difficulty] || 'Easy';
+  const wave = save.wave || 1;
+  const score = (save.blockScore || 0).toLocaleString();
+  const stamp = save.savedAt
+    ? new Date(save.savedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : 'Unknown time';
+  return `${difficulty} · Wave ${wave} · Blocks ${score} · ${stamp}`;
+}
+
 export default function OptionsScreen({ settings, onSettingsChange, onBack, gameState, onExitToTitle, onSaveGame, bossMode = false, onOpenShop }) {
   const [savedFlash, setSavedFlash] = useState(false);
+  const [savedLabel, setSavedLabel] = useState('Saved!');
+  const [showSaveSlots, setShowSaveSlots] = useState(false);
   const [showControllerOptions, setShowControllerOptions] = useState(false);
+  const [saves, setSaves] = useState({});
+  const [confirmOverwrite, setConfirmOverwrite] = useState(null);
+
+  useEffect(() => {
+    if (showSaveSlots) {
+      const allSaves = loadAllSaveFiles();
+      setSaves(allSaves || {});
+    }
+  }, [showSaveSlots]);
 
   function update(key, value) {
     const next = { ...settings, [key]: value };
@@ -32,11 +66,42 @@ export default function OptionsScreen({ settings, onSettingsChange, onBack, game
     saveSettings(next);
   }
 
-  function handleSaveGame() {
+  function handleSaveGame(slotKey) {
+    console.log(`[OptionsScreen] handleSaveGame called with slotKey: ${slotKey}`);
+    console.log(`[OptionsScreen] saves object:`, saves);
+    console.log(`[OptionsScreen] save for ${slotKey}:`, saves?.[slotKey]);
+    
+    const save = saves?.[slotKey];
+    
+    // If slot is occupied, show confirmation first
+    if (save) {
+      console.log(`[OptionsScreen] Slot ${slotKey} occupied, showing confirmation`);
+      setConfirmOverwrite(slotKey);
+      return;
+    }
+    
+    // Slot is empty, save directly
+    console.log(`[OptionsScreen] Slot ${slotKey} empty, proceeding with save`);
+    proceedWithSave(slotKey);
+  }
+
+  function proceedWithSave(slotKey) {
     if (onSaveGame) {
-      onSaveGame();
-      setSavedFlash(true);
-      setTimeout(() => setSavedFlash(false), 2000);
+      console.log(`[Options] Attempting to save to ${slotKey}...`);
+      const ok = onSaveGame(slotKey);
+      if (ok) {
+        console.log(`[Options] Save to ${slotKey} succeeded`);
+        setSavedLabel(`Saved to ${slotKey.toUpperCase()}`);
+        setSavedFlash(true);
+        setShowSaveSlots(false);
+        setConfirmOverwrite(null);
+        setTimeout(() => setSavedFlash(false), 2000);
+      } else {
+        console.error(`[Options] Save to ${slotKey} FAILED`);
+        setSavedLabel(`Save FAILED!`);
+        setSavedFlash(true);
+        setTimeout(() => setSavedFlash(false), 3000);
+      }
     }
   }
 
@@ -44,6 +109,8 @@ export default function OptionsScreen({ settings, onSettingsChange, onBack, game
   const sfxVol   = settings.sfxVolume   ?? settings.soundVolume ?? 0.8;
   const gameSpeed = settings.gameSpeed ?? 30;
   const musicEnabled = settings.musicEnabled !== false;
+  const unlockedDifficulty = settings.unlockedDifficulty || 'easy';
+  const difficultyRank = { easy: 1, normal: 2, hell: 3 };
 
   if (showControllerOptions) {
     return (
@@ -127,7 +194,7 @@ export default function OptionsScreen({ settings, onSettingsChange, onBack, game
           <Slider color="#44ff88" min={15} max={120} step={1}
             value={gameSpeed}
             onChange={v => update('gameSpeed', v)}
-            label="" />
+            label={`${gameSpeed} fps`} />
         </div>
 
 
@@ -157,31 +224,68 @@ export default function OptionsScreen({ settings, onSettingsChange, onBack, game
             Difficulty
           </div>
           <div className="grid grid-cols-3 gap-2">
-            {Object.entries(DIFFICULTY_CONFIG).map(([key, cfg]) => (
-              <button
-                key={key}
-                onClick={() => update('difficulty', key)}
-                className="relative py-3 px-2 rounded-xl border-2 transition-all text-center"
-                style={{
-                  borderColor: settings.difficulty === key ? cfg.color : '#1a2040',
-                  background: settings.difficulty === key ? `${cfg.color}22` : 'transparent',
-                  color: settings.difficulty === key ? cfg.color : '#666',
-                }}
-              >
-                <div className="font-black text-sm">{cfg.label}</div>
-              </button>
-            ))}
+            {Object.entries(DIFFICULTY_CONFIG).map(([key, cfg]) => {
+              const isUnlocked = (difficultyRank[key] || 1) <= (difficultyRank[unlockedDifficulty] || 1);
+              const isSelected = settings.difficulty === key;
+              const unlockHint = key === 'normal' ? 'Beat Easy to unlock' : 'Beat Challenging to unlock';
+              return (
+                <button
+                  key={key}
+                  disabled={!isUnlocked}
+                  onClick={() => isUnlocked && update('difficulty', key)}
+                  className={`relative py-3 px-2 rounded-xl border-2 transition-all text-center ${isUnlocked ? '' : 'opacity-55 cursor-not-allowed'}`}
+                  style={{
+                    borderColor: !isUnlocked ? '#2c3148' : (isSelected ? cfg.color : '#1a2040'),
+                    background: !isUnlocked ? '#0b1022' : (isSelected ? `${cfg.color}22` : 'transparent'),
+                    color: !isUnlocked ? '#55607f' : (isSelected ? cfg.color : '#666'),
+                  }}
+                  title={!isUnlocked ? unlockHint : cfg.desc}
+                >
+                  <div className="font-black text-sm">{cfg.label}</div>
+                  {!isUnlocked && (
+                    <div className="mt-1 text-[10px] font-semibold tracking-wide uppercase">Locked</div>
+                  )}
+                </button>
+              );
+            })}
           </div>
           <p className="text-xs text-muted-foreground text-center mt-1">
             {DIFFICULTY_CONFIG[settings.difficulty ?? 'normal'].desc}
           </p>
         </div>
 
-        {gameState === 'playing' && (
-          <Button onClick={handleSaveGame} variant="outline" className={`w-full gap-2 mt-2 transition-colors ${savedFlash ? 'border-green-500 text-green-400' : ''}`}>
-            {savedFlash ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-            {savedFlash ? 'Saved!' : 'Save Game'}
-          </Button>
+        {gameState === 'playing' && !bossMode && (
+          <div className="space-y-2">
+            <Button onClick={() => setShowSaveSlots(v => !v)} variant="outline" className={`w-full gap-2 mt-2 transition-colors ${savedFlash ? (savedLabel.includes('FAILED') ? 'border-red-500 text-red-400' : 'border-green-500 text-green-400') : ''}`}>
+              {savedFlash ? (savedLabel.includes('FAILED') ? <Skull className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />) : <Save className="w-4 h-4" />}
+              {savedFlash ? savedLabel : 'Save Game'}
+            </Button>
+
+            {showSaveSlots && (
+              <div className="space-y-2 rounded-lg border border-cyan-800/40 bg-cyan-950/10 p-3">
+                {SLOT_META.map((slot) => {
+                  const save = saves?.[slot.key] || null;
+                  const isEmpty = !save;
+                  return (
+                    <button
+                      key={slot.key}
+                      onClick={() => handleSaveGame(slot.key)}
+                      className={`w-full rounded-lg border px-3 py-2 text-left transition-all text-xs md:text-sm ${isEmpty ? 'opacity-60 hover:scale-[1.02]' : 'hover:scale-105'}`}
+                      style={{
+                        borderColor: isEmpty ? '#28314b' : slot.accent,
+                        background: isEmpty ? '#0a1020' : `${slot.accent}18`,
+                      }}
+                    >
+                      <div className="font-bold tracking-wide" style={{ color: isEmpty ? '#6f7a98' : slot.accent }}>
+                        {slot.label}
+                      </div>
+                      <div className="mt-1 text-xs text-slate-300/75">{formatSave(save)}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
 
         {gameState === 'playing' && bossMode && onOpenShop && (
@@ -202,6 +306,56 @@ export default function OptionsScreen({ settings, onSettingsChange, onBack, game
           <ArrowLeft className="w-4 h-4" />
           Back
         </Button>
+
+        {/* Overwrite Confirmation Modal */}
+        <AnimatePresence>
+          {confirmOverwrite && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm"
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="w-full max-w-sm space-y-4 rounded-lg border border-amber-600/60 bg-amber-950/40 p-6"
+              >
+                <h2 className="text-lg md:text-xl font-black text-amber-200 text-center">
+                  OVERWRITE SAVE?
+                </h2>
+                
+                {saves?.[confirmOverwrite] && (
+                  <div className="text-xs md:text-sm text-amber-100/80 text-center border border-amber-700/30 rounded-lg p-3 bg-black/30">
+                    <div className="font-bold mb-1">Current Save:</div>
+                    <div>{formatSave(saves[confirmOverwrite])}</div>
+                  </div>
+                )}
+
+                <p className="text-xs md:text-sm text-amber-100/70 text-center">
+                  This save will be replaced with your current progress.
+                </p>
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setConfirmOverwrite(null)}
+                    variant="outline"
+                    className="flex-1 text-xs md:text-sm border-gray-600 text-gray-300 hover:bg-gray-900/50"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => proceedWithSave(confirmOverwrite)}
+                    className="flex-1 text-xs md:text-sm border-amber-500 text-amber-100 bg-amber-600/40 hover:bg-amber-600/60"
+                  >
+                    Overwrite
+                  </Button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </motion.div>
   );

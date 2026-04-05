@@ -181,6 +181,43 @@ export default function ControllerOptionsScreen({ settings, onSettingsChange, on
           </div>
         )}
 
+        {/* Keyboard Controls */}
+        <div className="space-y-2 pt-2 border-t border-cyan-500/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-bold text-cyan-300 uppercase tracking-widest">
+              <span className="text-base">⌨</span>
+              Keyboard
+            </div>
+            <button
+              onClick={() => update('autoFireEnabled', !(settings.autoFireEnabled !== false))}
+              className="flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full border transition-all"
+              style={{
+                borderColor: (settings.autoFireEnabled !== false) ? '#00f0ff' : '#666',
+                color: (settings.autoFireEnabled !== false) ? '#00f0ff' : '#bbb',
+                background: (settings.autoFireEnabled !== false) ? '#00f0ff22' : 'transparent',
+              }}>
+              Auto Fire: {(settings.autoFireEnabled !== false) ? 'ON' : 'OFF'}
+            </button>
+          </div>
+
+          <div className="rounded-lg border border-cyan-500/30 bg-cyan-950/10 p-3 space-y-2">
+            <div className="grid grid-cols-3 gap-1.5 text-[11px] font-bold text-center">
+              <div className="rounded border border-cyan-500/25 bg-black/40 py-1 text-cyan-200">W / ↑</div>
+              <div className="rounded border border-cyan-500/25 bg-black/40 py-1 text-cyan-200">Move Up</div>
+              <div className="rounded border border-cyan-500/25 bg-black/40 py-1 text-cyan-200">S / ↓</div>
+              <div className="rounded border border-cyan-500/25 bg-black/40 py-1 text-cyan-200">A / ←</div>
+              <div className="rounded border border-cyan-500/25 bg-black/40 py-1 text-cyan-200">Move</div>
+              <div className="rounded border border-cyan-500/25 bg-black/40 py-1 text-cyan-200">D / →</div>
+              <div className="rounded border border-cyan-500/25 bg-black/40 py-1 text-cyan-200">P / Enter</div>
+              <div className="rounded border border-cyan-500/25 bg-black/40 py-1 text-cyan-200">Pause</div>
+              <div className="rounded border border-cyan-500/25 bg-black/40 py-1 text-cyan-200">Space</div>
+            </div>
+            <p className="text-[11px] text-cyan-100/75">
+              Space fires only when Auto Fire is OFF.
+            </p>
+          </div>
+        </div>
+
         <Button onClick={onBack} variant="outline" className="w-full gap-2 mt-4">
           <ArrowLeft className="w-4 h-4" />
           Back

@@ -9,6 +9,15 @@ import Game from './pages/Game.jsx';
 // Add page imports here
 
 const Router = window.location.protocol === 'file:' ? HashRouter : BrowserRouter;
+const isDesktopStandalone = !!window?.desktopApp?.isElectron;
+
+const AppRoutes = () => (
+  <Routes>
+    <Route path="/" element={<Navigate to="/Game" replace />} />
+    <Route path="/Game" element={<Game />} />
+    <Route path="*" element={<PageNotFound />} />
+  </Routes>
+);
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -34,17 +43,22 @@ const AuthenticatedApp = () => {
   }
 
   // Render the main app
-  return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/Game" replace />} />
-      <Route path="/Game" element={<Game />} />
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
-  );
+  return <AppRoutes />;
 };
 
 
 function App() {
+
+  if (isDesktopStandalone) {
+    return (
+      <QueryClientProvider client={queryClientInstance}>
+        <Router>
+          <AppRoutes />
+        </Router>
+        <Toaster />
+      </QueryClientProvider>
+    );
+  }
 
   return (
     <AuthProvider>

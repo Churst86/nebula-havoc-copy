@@ -1,8 +1,360 @@
 const path = require('path');
-const { app, BrowserWindow, shell } = require('electron');
+const fs = require('fs');
+const os = require('os');
+const https = require('https');
+const http = require('http');
+const crypto = require('crypto');
+const { spawn } = require('child_process');
+const { app, BrowserWindow, shell, ipcMain } = require('electron');
+
+let mainWindow = null;
+
+const DEFAULT_PATCH_MANIFEST_URL = process.env.NEBULA_PATCH_MANIFEST_URL || '';
+const DEFAULT_GITHUB_REPO = process.env.NEBULA_GITHUB_REPO || 'Churst86/nebula-havoc-copy';
+const DEFAULT_GITHUB_ASSET_REGEX = process.env.NEBULA_GITHUB_ASSET_REGEX || 'Nebula-Havoc-.*\\.exe$';
+
+function parseVersionNumber(version) {
+  return String(version || '')
+    .trim()
+    .replace(/^v/i, '')
+    .split('.')
+    .map((part) => Number.parseInt(part, 10) || 0);
+}
+
+function isVersionGreater(a, b) {
+  const av = parseVersionNumber(a);
+  const bv = parseVersionNumber(b);
+  const len = Math.max(av.length, bv.length);
+  for (let i = 0; i < len; i += 1) {
+    const ai = av[i] || 0;
+    const bi = bv[i] || 0;
+    if (ai > bi) return true;
+    if (ai < bi) return false;
+  }
+  return false;
+}
+
+function fetchJson(url, headers = {}) {
+  return new Promise((resolve, reject) => {
+    if (!url) {
+      reject(new Error('Patch manifest URL is not configured.'));
+      return;
+    }
+    const client = url.startsWith('https:') ? https : http;
+    const req = client.get(url, { headers }, (res) => {
+      if (res.statusCode !== 200) {
+        reject(new Error(`Patch manifest request failed with status ${res.statusCode}.`));
+        res.resume();
+        return;
+      }
+      let body = '';
+      res.setEncoding('utf8');
+      res.on('data', (chunk) => { body += chunk; });
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(body));
+        } catch {
+          reject(new Error('Patch manifest JSON is invalid.'));
+        }
+      });
+    });
+    req.on('error', (err) => reject(err));
+  });
+}
+
+function buildPatchFromGithubRelease(release, repo, assetRegexText) {
+  const tagVersion = release?.tag_name;
+  if (!tagVersion) return null;
+
+  let assetRegex = null;
+  try {
+    assetRegex = new RegExp(assetRegexText || DEFAULT_GITHUB_ASSET_REGEX, 'i');
+  } catch {
+    assetRegex = /\.exe$/i;
+  }
+
+  const assets = Array.isArray(release?.assets) ? release.assets : [];
+  const matchingAsset = assets.find((asset) => {
+    const name = asset?.name || '';
+    return assetRegex.test(name);
+  }) || assets.find((asset) => /\.exe$/i.test(asset?.name || ''));
+
+  if (!matchingAsset?.browser_download_url) return null;
+
+  return {
+    version: tagVersion,
+    url: matchingAsset.browser_download_url,
+    sha256: null,
+    notes: release?.body || '',
+    source: 'github',
+    repo,
+    assetName: matchingAsset.name || '',
+  };
+}
+
+function downloadFile(url, destinationPath, expectedSha256, onProgress) {
+  return new Promise((resolve, reject) => {
+    const client = url.startsWith('https:') ? https : http;
+    const hash = crypto.createHash('sha256');
+    const out = fs.createWriteStream(destinationPath);
+
+    const req = client.get(url, (res) => {
+      if (res.statusCode !== 200) {
+        reject(new Error(`Patch download failed with status ${res.statusCode}.`));
+        res.resume();
+        return;
+      }
+
+      const total = Number.parseInt(res.headers['content-length'] || '0', 10) || 0;
+      let received = 0;
+
+      res.on('data', (chunk) => {
+        received += chunk.length;
+        hash.update(chunk);
+        if (onProgress) {
+          const percent = total > 0 ? Math.min(100, Math.round((received / total) * 100)) : 0;
+          onProgress({ received, total, percent });
+        }
+      });
+
+      res.pipe(out);
+
+      out.on('finish', () => {
+        out.close(() => {
+          const digest = hash.digest('hex');
+          if (expectedSha256 && String(expectedSha256).toLowerCase() !== digest.toLowerCase()) {
+            reject(new Error('Patch checksum validation failed.'));
+            return;
+          }
+          resolve({ path: destinationPath, sha256: digest });
+        });
+      });
+    });
+
+    req.on('error', (err) => {
+      out.destroy();
+      reject(err);
+    });
+
+    out.on('error', (err) => {
+      req.destroy();
+      reject(err);
+    });
+  });
+}
+
+function buildApplyPatchScript(scriptPath, sourceExePath, destinationExePath) {
+  const script = [
+    '@echo off',
+    'setlocal',
+    `set "SRC=${sourceExePath}"`,
+    `set "DST=${destinationExePath}"`,
+    ':copy_retry',
+    'copy /y "%SRC%" "%DST%" >nul 2>nul',
+    'if errorlevel 1 (',
+    '  timeout /t 1 /nobreak >nul',
+    '  goto copy_retry',
+    ')',
+    'start "" "%DST%"',
+    'del /q "%SRC%" >nul 2>nul',
+    'del /q "%~f0" >nul 2>nul',
+    'endlocal',
+  ].join('\r\n');
+  fs.writeFileSync(scriptPath, script, 'utf8');
+}
+
+function getDesktopSavePath() {
+  return path.join(app.getPath('userData'), 'voidstorm-save.json');
+}
+
+ipcMain.on('desktop:save:read', (event) => {
+  try {
+    const savePath = getDesktopSavePath();
+    if (!fs.existsSync(savePath)) {
+      event.returnValue = null;
+      return;
+    }
+    event.returnValue = fs.readFileSync(savePath, 'utf8');
+  } catch {
+    event.returnValue = null;
+  }
+});
+
+ipcMain.on('desktop:save:write', (event, payload) => {
+  try {
+    const savePath = getDesktopSavePath();
+    fs.mkdirSync(path.dirname(savePath), { recursive: true });
+    fs.writeFileSync(savePath, String(payload ?? ''), 'utf8');
+    event.returnValue = true;
+  } catch {
+    event.returnValue = false;
+  }
+});
+
+ipcMain.on('desktop:save:delete', (event) => {
+  try {
+    const savePath = getDesktopSavePath();
+    if (fs.existsSync(savePath)) fs.unlinkSync(savePath);
+    event.returnValue = true;
+  } catch {
+    event.returnValue = false;
+  }
+});
+
+ipcMain.handle('desktop:update:check', async (_event, payload = {}) => {
+  const currentVersion = payload.currentVersion || app.getVersion();
+  const manifestUrl = payload.manifestUrl || DEFAULT_PATCH_MANIFEST_URL;
+  const githubRepo = payload.githubRepo || DEFAULT_GITHUB_REPO;
+  const githubAssetPattern = payload.githubAssetPattern || DEFAULT_GITHUB_ASSET_REGEX;
+
+  if (!manifestUrl && !githubRepo) {
+    return {
+      ok: true,
+      configured: false,
+      updateAvailable: false,
+      currentVersion,
+      latestVersion: currentVersion,
+      patch: null,
+    };
+  }
+
+  try {
+    let patch = null;
+    let latestVersion = currentVersion;
+    let configured = true;
+
+    if (manifestUrl) {
+      const manifest = await fetchJson(manifestUrl);
+      latestVersion = manifest?.version;
+      const downloadUrl = manifest?.url;
+      if (!latestVersion || !downloadUrl) {
+        return {
+          ok: false,
+          updateAvailable: false,
+          error: 'Patch manifest is missing required fields: version and url.',
+        };
+      }
+      patch = {
+        version: latestVersion,
+        url: downloadUrl,
+        sha256: manifest.sha256 || null,
+        notes: manifest.notes || '',
+        source: 'manifest',
+      };
+    } else if (githubRepo) {
+      const ghUrl = `https://api.github.com/repos/${githubRepo}/releases/latest`;
+      const release = await fetchJson(ghUrl, {
+        'User-Agent': 'Nebula-Havoc-Updater',
+        'Accept': 'application/vnd.github+json',
+      });
+      patch = buildPatchFromGithubRelease(release, githubRepo, githubAssetPattern);
+      if (!patch) {
+        return {
+          ok: false,
+          updateAvailable: false,
+          error: `No matching EXE asset found in latest GitHub release for ${githubRepo}.`,
+        };
+      }
+      latestVersion = patch.version;
+    } else {
+      configured = false;
+    }
+
+    const updateAvailable = patch ? isVersionGreater(latestVersion, currentVersion) : false;
+    return {
+      ok: true,
+      configured,
+      updateAvailable,
+      currentVersion,
+      latestVersion,
+      patch: updateAvailable ? patch : null,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      updateAvailable: false,
+      error: error?.message || 'Failed to check for patch.',
+    };
+  }
+});
+
+ipcMain.handle('desktop:update:download', async (_event, patch = {}) => {
+  const downloadUrl = patch?.url;
+  const version = patch?.version || 'unknown';
+  const sha256 = patch?.sha256 || null;
+  if (!downloadUrl) {
+    return { ok: false, error: 'Patch URL is missing.' };
+  }
+
+  try {
+    const updatesDir = path.join(app.getPath('userData'), 'updates');
+    fs.mkdirSync(updatesDir, { recursive: true });
+    const sanitizedVersion = String(version).replace(/[^a-zA-Z0-9._-]/g, '_');
+    const patchPath = path.join(updatesDir, `Nebula-Havoc-${sanitizedVersion}.exe`);
+
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('desktop:update:progress', { stage: 'downloading', percent: 0, received: 0, total: 0 });
+    }
+
+    const result = await downloadFile(downloadUrl, patchPath, sha256, (progress) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('desktop:update:progress', {
+          stage: 'downloading',
+          percent: progress.percent,
+          received: progress.received,
+          total: progress.total,
+        });
+      }
+    });
+
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('desktop:update:progress', { stage: 'downloaded', percent: 100, received: 0, total: 0 });
+    }
+
+    return {
+      ok: true,
+      patchPath: result.path,
+      sha256: result.sha256,
+      version,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error?.message || 'Patch download failed.',
+    };
+  }
+});
+
+ipcMain.handle('desktop:update:apply-and-restart', async (_event, payload = {}) => {
+  const patchPath = payload?.patchPath;
+  if (!patchPath || !fs.existsSync(patchPath)) {
+    return { ok: false, error: 'Downloaded patch file was not found.' };
+  }
+
+  try {
+    const targetExePath = process.execPath;
+    const scriptPath = path.join(os.tmpdir(), `nebula-patch-${Date.now()}.cmd`);
+    buildApplyPatchScript(scriptPath, patchPath, targetExePath);
+
+    const child = spawn('cmd.exe', ['/c', scriptPath], {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true,
+    });
+    child.unref();
+
+    setTimeout(() => app.quit(), 120);
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error?.message || 'Failed to apply patch.',
+    };
+  }
+});
 
 function createMainWindow() {
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
     minWidth: 1024,
@@ -13,7 +365,7 @@ function createMainWindow() {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
+      sandbox: false,
     },
   });
 

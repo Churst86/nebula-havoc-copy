@@ -11,7 +11,7 @@ import { drawBeholderShield, drawBeholderLasers } from '../../lib/beholderDrawin
 
 // Laser beam constants
 const LASER_CHARGE_FRAMES = 90;      // frames to charge before firing (slower = fires less often)
-const LASER_BEAM_FRAMES = 180;       // frames beam stays active (~3 sec)
+const LASER_BEAM_FRAMES = 120;       // frames beam stays active (~2 sec)
 const LASER_COOLDOWN_FRAMES = 180;   // frames of cooldown after beam ends
 
 // Spread shotgun constants
@@ -153,7 +153,7 @@ function normalizePowerups(powerups = {}) {
   return normalized;
 }
 
-export default function GameCanvas({ gameState, setGameState, onScoreChange, onBlockScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, onBossWarning, continuesLeft, onContinueUsed, isPaused, difficultyConfig, gameSpeed = 30, carryOverPowerups = null, livePowerups = null, startWave = 1, shopUpgrades = {}, bossMode = false, skipBossSignal = 0 }) {
+export default function GameCanvas({ gameState, setGameState, onScoreChange, onBlockScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, onBossWarning, onFpsChange, continuesLeft, onContinueUsed, isPaused, difficultyConfig, gameSpeed = 30, autoFireEnabled = true, carryOverPowerups = null, livePowerups = null, startWave = 1, shopUpgrades = {}, bossMode = false, skipBossSignal = 0 }) {
   const canvasRef = useRef(null);
   const keysRef = useRef({});
   const stateRef = useRef(initState());
@@ -161,14 +161,18 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   const lastTimeRef = useRef(0);
   const isPausedRef = useRef(isPaused);
   const gameSpeedRef = useRef(gameSpeed);
+  const autoFireEnabledRef = useRef(autoFireEnabled);
   const carryOverPowerupsRef = useRef(carryOverPowerups);
   const livePowerupsRef = useRef(livePowerups);
   const startWaveRef = useRef(startWave);
   const onPowerupChangeRef = useRef(onPowerupChange);
   const onBossWarningRef = useRef(onBossWarning);
+  const onFpsChangeRef = useRef(onFpsChange);
   const shopUpgradesRef = useRef(shopUpgrades);
   const bossModeRef = useRef(bossMode);
   const skipBossSignalRef = useRef(skipBossSignal);
+  const difficultyConfigRef = useRef(difficultyConfig);
+  const fpsTrackerRef = useRef({ lastTs: 0, frameCount: 0 });
 
   // Initialize bullet pool on component mount
   useEffect(() => {
@@ -178,14 +182,17 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   }, []);
 
   useEffect(() => { gameSpeedRef.current = gameSpeed; }, [gameSpeed]);
+  useEffect(() => { autoFireEnabledRef.current = autoFireEnabled; }, [autoFireEnabled]);
   useEffect(() => { carryOverPowerupsRef.current = carryOverPowerups; }, [carryOverPowerups]);
   useEffect(() => { livePowerupsRef.current = livePowerups; }, [livePowerups]);
   useEffect(() => { startWaveRef.current = startWave; }, [startWave]);
   useEffect(() => { onPowerupChangeRef.current = onPowerupChange; }, [onPowerupChange]);
   useEffect(() => { onBossWarningRef.current = onBossWarning; }, [onBossWarning]);
+  useEffect(() => { onFpsChangeRef.current = onFpsChange; }, [onFpsChange]);
   useEffect(() => { shopUpgradesRef.current = shopUpgrades; }, [shopUpgrades]);
   useEffect(() => { bossModeRef.current = bossMode; }, [bossMode]);
   useEffect(() => { skipBossSignalRef.current = skipBossSignal; }, [skipBossSignal]);
+  useEffect(() => { difficultyConfigRef.current = difficultyConfig; }, [difficultyConfig]);
   useEffect(() => {
     isPausedRef.current = isPaused;
     sounds.setPauseVolume(isPaused);
@@ -220,7 +227,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   // ── Wave spawner ─────────────────────────────────────────────
   function spawnWave(W, s) {
     const wave = s.wave;
-    const cfg = difficultyConfig || { hpMult: 1, maxWave: 100, blockSpeedMult: 1 };
+    const cfg = difficultyConfigRef.current || { hpMult: 1, maxWave: 100, blockSpeedMult: 1 };
     const hpMult = cfg.hpMult || 1;
 
     // Check max wave cap — trigger difficulty completion state.
@@ -317,7 +324,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   }
 
   function spawnDreadnoughtWave(s, boss, W, elite = false) {
-    const hpMult = (difficultyConfig && difficultyConfig.hpMult) || 1;
+    const hpMult = (difficultyConfigRef.current && difficultyConfigRef.current.hpMult) || 1;
     const enraged = !!boss?._enraged;
     const count = elite
       ? Math.floor(randomBetween(enraged ? 3 : 2, enraged ? 6 : 4))
@@ -538,12 +545,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     // HP scales with number of cells: 2 cells=1hp, 3 cells=2hp, 4 cells=3hp
     const cellCount = shape.length;
     const hp = cellCount <= 2 ? 1 : cellCount === 3 ? 2 : 3;
-    const cfg = difficultyConfig || {};
+    const cfg = difficultyConfigRef.current || {};
     const blockSpeedMult = cfg.blockSpeedMult || 1;
+    const blockSpinEnabled = cfg.blockSpin !== false;
     const tierBoost = cfg.maxWave >= 100 ? 2.1 : cfg.maxWave >= 50 ? 1.55 : 1;
     const baseVy = (0.8 + Math.random() * 0.55) * blockSpeedMult * tierBoost;
     const spinDir = Math.random() < 0.5 ? -1 : 1;
-    const spinSpeed = (0.01 + Math.random() * 0.014) * tierBoost * spinDir;
+    const spinSpeed = blockSpinEnabled ? (0.01 + Math.random() * 0.014) * tierBoost * spinDir : 0;
     return {
       shape,
       color,
@@ -560,10 +568,37 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   }
 
   function getBlockCells(block) {
-    return block.shape.map(([col, row]) => ({
-      x: block.x + col * BLOCK_SIZE,
-      y: block.y + row * BLOCK_SIZE,
-    }));
+    const cols = block.shape.map(([col]) => col);
+    const rows = block.shape.map(([, row]) => row);
+    const minCol = Math.min(...cols);
+    const maxCol = Math.max(...cols);
+    const minRow = Math.min(...rows);
+    const maxRow = Math.max(...rows);
+    const pivotX = block.x + ((minCol + maxCol + 1) * BLOCK_SIZE) / 2;
+    const pivotY = block.y + ((minRow + maxRow + 1) * BLOCK_SIZE) / 2;
+    const rot = block.rot || 0;
+    const cos = Math.cos(rot);
+    const sin = Math.sin(rot);
+
+    return block.shape.map(([col, row]) => {
+      const cx = block.x + col * BLOCK_SIZE + BLOCK_SIZE / 2;
+      const cy = block.y + row * BLOCK_SIZE + BLOCK_SIZE / 2;
+      const relX = cx - pivotX;
+      const relY = cy - pivotY;
+      const worldCx = pivotX + relX * cos - relY * sin;
+      const worldCy = pivotY + relX * sin + relY * cos;
+      return {
+        x: worldCx - BLOCK_SIZE / 2,
+        y: worldCy - BLOCK_SIZE / 2,
+      };
+    });
+  }
+
+  function isCellOnStage(cell, W, H) {
+    return cell.x + BLOCK_SIZE >= 0
+      && cell.x <= W
+      && cell.y + BLOCK_SIZE >= 0
+      && cell.y <= H;
   }
 
   function drawBlock(ctx, block) {
@@ -1024,6 +1059,43 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   }
 
   function drawEnemy(ctx, e) {
+    const drawSpriteTintFlash = (image, dx, dy, dw, dh, tintAlpha, tintColor = '#ff2d2d', srcRect = null) => {
+      if (!image || !Number.isFinite(dw) || !Number.isFinite(dh) || dw <= 0 || dh <= 0 || tintAlpha <= 0) return;
+      if (!drawEnemy._flashCanvas) {
+        drawEnemy._flashCanvas = document.createElement('canvas');
+      }
+      const flashCanvas = drawEnemy._flashCanvas;
+      const fw = Math.max(1, Math.round(dw));
+      const fh = Math.max(1, Math.round(dh));
+      if (flashCanvas.width !== fw || flashCanvas.height !== fh) {
+        flashCanvas.width = fw;
+        flashCanvas.height = fh;
+      }
+
+      const fctx = flashCanvas.getContext('2d');
+      if (!fctx) return;
+      fctx.clearRect(0, 0, fw, fh);
+
+      if (srcRect) {
+        fctx.drawImage(image, srcRect.sx, srcRect.sy, srcRect.sw, srcRect.sh, 0, 0, fw, fh);
+      } else {
+        fctx.drawImage(image, 0, 0, fw, fh);
+      }
+
+      fctx.globalCompositeOperation = 'source-atop';
+      fctx.fillStyle = tintColor;
+      fctx.globalAlpha = Math.max(0, Math.min(1, tintAlpha));
+      fctx.fillRect(0, 0, fw, fh);
+      fctx.globalAlpha = 1;
+      fctx.globalCompositeOperation = 'source-over';
+
+      ctx.save();
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = 'transparent';
+      ctx.drawImage(flashCanvas, dx, dy, dw, dh);
+      ctx.restore();
+    };
+
     ctx.save();
     ctx.translate(e.x, e.y);
 
@@ -1079,8 +1151,40 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             spriteSize,
             spriteSize
           );
+
+          if (e._enraged) {
+            const pulse = 0.28 + Math.sin(Date.now() * 0.02) * 0.2;
+            drawSpriteTintFlash(
+              dreadSheet,
+              -spriteHalf + jitterX,
+              -spriteHalf + jitterY,
+              spriteSize,
+              spriteSize,
+              pulse,
+              '#ff2d2d',
+              {
+                sx: sx + sampleInset,
+                sy: sy + sampleInset,
+                sw: Math.max(1, frameW - sampleInset * 2),
+                sh: Math.max(1, frameH - sampleInset * 2),
+              }
+            );
+          }
         } else {
           drawSprite(ctx, bossSprite, -spriteHalf + jitterX, -spriteHalf + jitterY, spriteSize, spriteSize);
+
+          if (e._enraged) {
+            const pulse = 0.28 + Math.sin(Date.now() * 0.02) * 0.2;
+            drawSpriteTintFlash(
+              bossSprite,
+              -spriteHalf + jitterX,
+              -spriteHalf + jitterY,
+              spriteSize,
+              spriteSize,
+              pulse,
+              '#ff2d2d'
+            );
+          }
         }
       } else {
         // Fallback to shape drawing
@@ -1123,16 +1227,18 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         ctx.fillText(tierEmoji, 0, -6);
       }
       
-      if (e._enraged) {
-        const pulse = 0.35 + Math.sin(Date.now() * 0.02) * 0.15;
+      if (e._enraged && (!bossSprite || !isSpritesLoaded())) {
+        const pulse = 0.3 + Math.sin(Date.now() * 0.02) * 0.14;
         ctx.save();
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'transparent';
         ctx.globalCompositeOperation = 'source-atop';
         ctx.fillStyle = `rgba(255,45,45,${pulse})`;
         ctx.beginPath();
         if (isDreadnought) {
-          ctx.ellipse(0, 0, 130, 88, 0, 0, Math.PI * 2);
+          ctx.ellipse(0, 0, 108, 72, 0, 0, Math.PI * 2);
         } else {
-          ctx.ellipse(0, 0, 92, 78, 0, 0, Math.PI * 2);
+          ctx.ellipse(0, 0, 72, 62, 0, 0, Math.PI * 2);
         }
         ctx.fill();
         ctx.restore();
@@ -1179,12 +1285,20 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const isCharging = e._charging;
       const pulse = 0.7 + Math.sin(Date.now() * (damaged ? 0.022 : 0.008)) * 0.3;
       const mineColor = isCharging ? '#ffffff' : damaged ? `rgba(255,${Math.floor(80 + pulse * 80)},0,1)` : '#ff8800';
-      ctx.shadowColor = mineColor; ctx.shadowBlur = isCharging ? 40 : 16 + pulse * 10;
+      ctx.shadowColor = mineColor;
+      ctx.shadowBlur = isCharging ? 0 : 16 + pulse * 10;
 
       // Try to load mine sprite
       const mineSprite = getSprite('Mine');
       if (mineSprite && isSpritesLoaded()) {
         drawSprite(ctx, mineSprite, -42, -42, 84, 84);
+        if (isCharging) {
+          const chargeFlash = 0.28 + pulse * 0.24;
+          drawSpriteTintFlash(mineSprite, -42, -42, 84, 84, chargeFlash, '#ffffff');
+        } else if (damaged) {
+          const damageFlash = 0.14 + pulse * 0.14;
+          drawSpriteTintFlash(mineSprite, -42, -42, 84, 84, damageFlash, '#ff5a00');
+        }
       } else {
         // Fallback to spiky star polygon
         const SPIKES = 8;
@@ -1262,11 +1376,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
 
         drawSprite(ctx, eaterSprite, -135, -135, 270, 270);
         if (isHuntingPlayer) {
-          ctx.save();
-          ctx.globalCompositeOperation = 'source-atop';
-          ctx.fillStyle = `rgba(255,32,32,${0.28 + huntFlash * 0.22})`;
-          ctx.fillRect(-135, -135, 270, 270);
-          ctx.restore();
+          drawSpriteTintFlash(eaterSprite, -135, -135, 270, 270, 0.22 + huntFlash * 0.2, '#ff2020');
         }
         if (eaterChompSprite && chompAlpha > 0.02) {
           ctx.save();
@@ -1595,12 +1705,27 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
 
   // ── Main loop ────────────────────────────────────────────────
   const loop = useCallback((timestamp) => {
+    const fpsTracker = fpsTrackerRef.current;
+    if (!fpsTracker.lastTs) fpsTracker.lastTs = timestamp;
+    fpsTracker.frameCount += 1;
+    const fpsElapsed = timestamp - fpsTracker.lastTs;
+    if (fpsElapsed >= 500) {
+      const fps = Math.max(1, Math.round((fpsTracker.frameCount * 1000) / fpsElapsed));
+      onFpsChangeRef.current?.(fps);
+      fpsTracker.lastTs = timestamp;
+      fpsTracker.frameCount = 0;
+    }
+
     if (!stateRef.current.running || isPausedRef.current) {
       animRef.current = requestAnimationFrame(loop);
       return;
     }
-    // Frame-rate throttle based on gameSpeed setting
-    const targetInterval = 1000 / gameSpeedRef.current;
+    // Frame-rate throttle based on gameSpeed setting.
+    // Boss mode uses a higher floor to avoid slow-motion feel during heavy fights.
+    const effectiveFps = bossModeRef.current
+      ? Math.max(60, gameSpeedRef.current || 30)
+      : (gameSpeedRef.current || 30);
+    const targetInterval = 1000 / effectiveFps;
     if (timestamp - lastTimeRef.current < targetInterval) {
       animRef.current = requestAnimationFrame(loop);
       return;
@@ -1654,6 +1779,15 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     });
 
     const p = s.player;
+    const isEnemyVisibleForTargeting = (enemy) => {
+      const halfW = Math.max(10, enemy?.w || 18);
+      const halfH = Math.max(10, enemy?.h || 18);
+      return enemy.x + halfW >= 0
+        && enemy.x - halfW <= W
+        && enemy.y + halfH >= 0
+        && enemy.y - halfH <= H;
+    };
+
     const speedTier = s.powerups.speed || 0;
     const spd = 4.5 + speedTier * 1.5;
     if (keys['ArrowLeft'] || keys['a'] || keys['A']) p.x = Math.max(16, p.x - spd);
@@ -1699,10 +1833,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       }
       while (s.superWingmen.length > superWingmanCount) s.superWingmen.pop();
       s._swPatrolTime = (s._swPatrolTime || 0) + 1;
-      const liveCombatEnemies = s.enemies.filter(e => !e.dead && e.type !== 'dropper');
+      const liveCombatEnemies = s.enemies.filter(e => !e.dead && e.type !== 'dropper' && isEnemyVisibleForTargeting(e));
       s.superWingmen.forEach((sw, i) => {
         sw.retargetTimer = (sw.retargetTimer || 0) - 1;
-        const hasLiveTarget = sw.targetRef && !sw.targetRef.dead && liveCombatEnemies.includes(sw.targetRef);
+        const hasLiveTarget = sw.targetRef
+          && !sw.targetRef.dead
+          && isEnemyVisibleForTargeting(sw.targetRef)
+          && liveCombatEnemies.includes(sw.targetRef);
         if (!hasLiveTarget || sw.retargetTimer <= 0) {
           let bestEnemy = null;
           let bestScore = Infinity;
@@ -1768,14 +1905,19 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       if (s.spreadReloadTimer <= 0) s.spreadShotsLeft = SPREAD_SHOTS_PER_RELOAD;
     }
 
-    // Auto fire — only block firing during active beam (not during charge/cooldown)
-    if (!s.laserBeamActive) {
+    const autoFireOn = autoFireEnabledRef.current !== false;
+    const manualFirePressed = !!(keys[' '] || keys.Space || keys.Spacebar);
+    const wantsToFire = autoFireOn || manualFirePressed;
+
+    // Primary fire: auto or manual (Space when auto-fire is off).
+    // Still blocked during active beam (not during charge/cooldown).
+    if (!s.laserBeamActive && wantsToFire) {
       s.fireTimer--;
       if (s.fireTimer <= 0) { playerFire(s); s.fireTimer = getFireRate(s.powerups); }
     }
 
     // Spread timer
-    if ((s.powerups.spread || 0) > 0 || (s.powerups.shotgun || 0) > 0) {
+    if (wantsToFire && ((s.powerups.spread || 0) > 0 || (s.powerups.shotgun || 0) > 0)) {
       s.spreadFireTimer--;
       if (s.spreadFireTimer <= 0) {
         fireSpreadShot(s);
@@ -1786,7 +1928,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     }
 
     // Reverse shotgun timer
-    if ((s.powerups.reverse || 0) > 0) {
+    if (wantsToFire && (s.powerups.reverse || 0) > 0) {
       s.reverseFireTimer--;
       if (s.reverseFireTimer <= 0) {
         fireReverseShot(s);
@@ -1798,7 +1940,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     }
 
     // Wingmen independent fire timer
-    if ((s.powerups.wingman || 0) > 0 && s.wingmen.length > 0) {
+    if (wantsToFire && (s.powerups.wingman || 0) > 0 && s.wingmen.length > 0) {
       s.wingmanFireTimer--;
       if (s.wingmanFireTimer <= 0) {
         // Find non-invulnerable blocks as fallback targets
@@ -1838,14 +1980,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     }
 
     // Super wingmen fire player's weapon loadout
-    if (s.superWingmen && s.superWingmen.length > 0) {
+    if (wantsToFire && s.superWingmen && s.superWingmen.length > 0) {
       s.superWingmanFireTimer = (s.superWingmanFireTimer || 0) - 1;
       if (s.superWingmanFireTimer <= 0) {
         const pw = s.powerups;
         const rapidfireBonus = (pw.rapidfire || 0) === 1 ? 10 : (pw.rapidfire || 0) * 8;
-        const liveTargets = s.enemies.filter(e => !e.dead && e.type !== 'dropper');
+        const liveTargets = s.enemies.filter(e => !e.dead && e.type !== 'dropper' && isEnemyVisibleForTargeting(e));
         s.superWingmen.forEach(sw => {
-          let target = sw.aimTarget && !sw.aimTarget.dead ? sw.aimTarget : null;
+          let target = sw.aimTarget && !sw.aimTarget.dead && isEnemyVisibleForTargeting(sw.aimTarget) ? sw.aimTarget : null;
           if (!target && liveTargets.length > 0) {
             let best = null;
             let bestDist = Infinity;
@@ -2059,11 +2201,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           e.y += (targetY - e.y) * (enraged ? 0.16 : 0.08);
           e.x = W / 2 + Math.sin(e.phase * (enraged ? 1.15 : 0.9)) * (W * (enraged ? 0.48 : 0.34));
 
-          // Mothership behavior: periodic deploy waves.
-          if (e._spawnWaveTimer === undefined) e._spawnWaveTimer = 300; // ~10s at 30fps
-          if (e._eliteSpawnTimer === undefined) e._eliteSpawnTimer = 450; // ~15s at 30fps
-          if (e._hangarAnimCycleTimer === undefined) e._hangarAnimCycleTimer = 300; // first play at 5s (60fps)
-          if (e._hangarAnimDuration === undefined) e._hangarAnimDuration = 360; // ~6s at 60fps
+          // Mothership behavior: faster, more frequent deploy waves.
+          if (e._spawnWaveTimer === undefined) e._spawnWaveTimer = 170;
+          if (e._eliteSpawnTimer === undefined) e._eliteSpawnTimer = 250;
+          if (e._hangarAnimCycleTimer === undefined) e._hangarAnimCycleTimer = 140;
+          if (e._hangarAnimDuration === undefined) e._hangarAnimDuration = 180; // about half previous duration
           if (e._hangarAnimTimer === undefined) e._hangarAnimTimer = 0;
           if (e._hangarSheetPlaying === undefined) e._hangarSheetPlaying = false;
           if (e._queuedBasicSpawn === undefined) e._queuedBasicSpawn = false;
@@ -2075,35 +2217,35 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
 
             if (e._spawnWaveTimer <= 0) {
               e._queuedBasicSpawn = true;
-              e._spawnWaveTimer = 270 + Math.floor(randomBetween(0, 70));
+              e._spawnWaveTimer = 150 + Math.floor(randomBetween(0, 45));
             }
             if (e._eliteSpawnTimer <= 0) {
               e._queuedEliteSpawn = true;
-              e._eliteSpawnTimer = 420 + Math.floor(randomBetween(0, 80));
+              e._eliteSpawnTimer = 220 + Math.floor(randomBetween(0, 55));
             }
 
-            // Play hangar open/close sheet: first at 5s, then every 10s.
+            // Play hangar open/close sheet: sooner and much more often.
             if (!e._hangarSheetPlaying) {
               e._hangarAnimCycleTimer--;
               if (e._hangarAnimCycleTimer <= 0) {
                 e._hangarSheetPlaying = true;
                 e._hangarAnimTimer = e._hangarAnimDuration;
-                e._hangarAnimCycleTimer = 600;
+                e._hangarAnimCycleTimer = 260;
                 e._spawnWindowTriggered = false;
               }
             } else {
-              const duration = Math.max(1, e._hangarAnimDuration || 360);
+              const duration = Math.max(1, e._hangarAnimDuration || 180);
               const progress = 1 - Math.max(0, e._hangarAnimTimer / duration);
               const inSpawnWindow = progress >= 0.4 && progress <= 0.62;
 
               // Trigger hangar launch once during the open-frame window.
               if (inSpawnWindow && !e._spawnWindowTriggered) {
                 const activeCount = s.enemies.filter(en => en.type !== 'boss' && !en.dead).length;
-                if (e._queuedBasicSpawn && activeCount < 28) {
+                if (e._queuedBasicSpawn && activeCount < 36) {
                   spawnDreadnoughtWave(s, e, W, false);
                   e._queuedBasicSpawn = false;
                 }
-                if (e._queuedEliteSpawn && s.enemies.filter(en => en.type !== 'boss' && !en.dead).length < 30) {
+                if (e._queuedEliteSpawn && s.enemies.filter(en => en.type !== 'boss' && !en.dead).length < 38) {
                   spawnDreadnoughtWave(s, e, W, true);
                   e._queuedEliteSpawn = false;
                 }
@@ -2276,7 +2418,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             const dx2 = targetX - e.x;
             const dy2 = targetY - e.y;
             const len2 = Math.hypot(dx2, dy2) || 1;
-            const eSpd = (e._mini ? 0.9 : 1.35) + (s.wave * 0.03);
+            const eSpd = (e._mini ? 1.5 : 2.2) + (s.wave * 0.04);
             e.x += (dx2 / len2) * eSpd;
             e.y += (dy2 / len2) * eSpd;
           } else {
@@ -2325,8 +2467,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           const dyp = p.y - e.y;
           const lenp = Math.hypot(dxp, dyp) || 1;
           e._huntRamp = Math.min(1, (e._huntRamp || 0) + 0.08);
-          const baseHuntSpd = (e._mini ? 1.2 : 1.8) + (s.wave * 0.02);
-          const buffedHuntSpd = baseHuntSpd * (e._mini ? 2.0 : 2.4);
+          const baseHuntSpd = (e._mini ? 1.9 : 2.8) + (s.wave * 0.03);
+          const buffedHuntSpd = baseHuntSpd * (e._mini ? 2.2 : 2.7);
           const huntSpd = baseHuntSpd + (buffedHuntSpd - baseHuntSpd) * e._huntRamp;
           e.x += (dxp / lenp) * huntSpd;
           e.y += (dyp / lenp) * huntSpd;
@@ -2351,138 +2493,240 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         if (e.y < 30) { e.y = 30; e.vy = Math.abs(e.vy); }
         if (e.y > H * 0.7) { e.y = H * 0.7; e.vy = -Math.abs(e.vy); }
       } else if (e.type === 'berserk') {
+        if (e._baseW === undefined) e._baseW = e.w || 44;
+        if (e._baseH === undefined) e._baseH = e.h || 44;
+        if (e._consumeCooldown === undefined) e._consumeCooldown = 0;
+        if (e._targetRetargetTimer === undefined) e._targetRetargetTimer = 0;
+        if (e._chargeCooldown === undefined) e._chargeCooldown = Math.floor(randomBetween(160, 280));
+        if (e._chargeFrames === undefined) e._chargeFrames = 0;
+        if (e._eatingFrames === undefined) e._eatingFrames = 0;
+
+        e._consumeCooldown = Math.max(0, (e._consumeCooldown || 0) - 1);
+        e._targetRetargetTimer = Math.max(0, (e._targetRetargetTimer || 0) - 1);
+        e._eatingFrames = Math.max(0, (e._eatingFrames || 0) - 1);
+
         const consumeCandidates = [];
+        const canEatEnemy = (other) => {
+          if (!other || other === e || other.dead) return false;
+          if (other.type === 'boss' || other.type === 'berserk') return false;
+          return true;
+        };
 
         s.blocks.forEach(block => {
           if (block.dead) return;
           const cells = getBlockCells(block);
-          const cx = cells.reduce((sum, c) => sum + c.x + BLOCK_SIZE / 2, 0) / Math.max(1, cells.length);
-          const cy = cells.reduce((sum, c) => sum + c.y + BLOCK_SIZE / 2, 0) / Math.max(1, cells.length);
-          const mass = Math.max(1, cells.length * 0.9 + (block.hp || 1) * 0.4 + (block.invulnerable ? 1.5 : 0));
+          if (cells.length === 0) return;
+          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+          let cxSum = 0, cySum = 0;
+          cells.forEach(cell => {
+            cxSum += cell.x + BLOCK_SIZE / 2;
+            cySum += cell.y + BLOCK_SIZE / 2;
+            if (cell.x < minX) minX = cell.x;
+            if (cell.y < minY) minY = cell.y;
+            if (cell.x + BLOCK_SIZE > maxX) maxX = cell.x + BLOCK_SIZE;
+            if (cell.y + BLOCK_SIZE > maxY) maxY = cell.y + BLOCK_SIZE;
+          });
+          const sourceW = Math.max(BLOCK_SIZE, maxX - minX);
+          const sourceH = Math.max(BLOCK_SIZE, maxY - minY);
+          const mass = Math.max(1, (sourceW + sourceH) / 24 + (block.hp || 1) * 0.6 + (block.invulnerable ? 1.8 : 0));
           consumeCandidates.push({
             kind: 'block',
             target: block,
-            x: cx,
-            y: cy,
+            x: cxSum / cells.length,
+            y: cySum / cells.length,
+            sourceW,
+            sourceH,
             mass,
-            consumeFrames: Math.floor(20 + mass * 7),
             color: block.invulnerable ? '#c7d7ff' : block.color,
           });
         });
 
-        s.piledCells.forEach((cell, idx) => {
+        s.piledCells.forEach((cell) => {
           consumeCandidates.push({
             kind: 'piledCell',
-            cellIdx: idx,
+            target: cell,
             x: cell.x + BLOCK_SIZE / 2,
             y: cell.y + BLOCK_SIZE / 2,
+            sourceW: BLOCK_SIZE,
+            sourceH: BLOCK_SIZE,
             mass: 1,
-            consumeFrames: 18,
             color: cell.color || '#66ddff',
           });
         });
 
-        s.enemies.forEach(other => {
-          if (other === e || other.dead) return;
-          if (other.type === 'boss' || other.type === 'berserk') return;
-          const unitMass = Math.max(1, ((other.w || 18) + (other.h || 18)) / 20 + (other.hp || 1) * 0.35);
-          consumeCandidates.push({
-            kind: 'enemy',
-            target: other,
-            x: other.x,
-            y: other.y,
-            mass: unitMass,
-            consumeFrames: Math.floor(18 + unitMass * 8),
-            color: other.type === 'eater' ? '#44ff88' : '#ff6666',
+        const hasBlockTargets = consumeCandidates.length > 0;
+
+        if (!hasBlockTargets) {
+          s.enemies.forEach(other => {
+            if (!canEatEnemy(other)) return;
+            const sourceW = Math.max(12, other.w || 18);
+            const sourceH = Math.max(12, other.h || 18);
+            const unitMass = Math.max(1, (sourceW + sourceH) / 20 + (other.hp || 1) * 0.45);
+            consumeCandidates.push({
+              kind: 'enemy',
+              target: other,
+              x: other.x,
+              y: other.y,
+              sourceW,
+              sourceH,
+              mass: unitMass,
+              color: other.type === 'eater' ? '#44ff88' : '#ff6666',
+            });
           });
-        });
+        }
 
-        let nearest = null;
-        let nearestDist = Infinity;
-        consumeCandidates.forEach(c => {
-          const d = Math.hypot(c.x - e.x, c.y - e.y);
-          if (d < nearestDist) {
-            nearestDist = d;
-            nearest = c;
-          }
-        });
-
-        const applyBerserkGrowth = (mass) => {
-          e._absorbedUnits = Math.min((e._absorbedUnits || 0) + mass, 24);
-          const sizeBoost = 0.9 * mass;
-          e.w = Math.min((e.w || 22) + sizeBoost, 68);
-          e.h = Math.min((e.h || 22) + sizeBoost, 68);
-          const hpGain = Math.ceil(mass * 2.5);
-          e.maxHp = Math.min((e.maxHp || e.hp || 1) + hpGain, 9999);
-          e.hp = Math.min((e.hp || 1) + hpGain, e.maxHp);
+        const isTargetStillValid = () => {
+          if (e._consumeKind === 'block') return !!(e._consumeTargetRef && !e._consumeTargetRef.dead);
+          if (e._consumeKind === 'piledCell') return !!(e._consumeTargetRef && s.piledCells.includes(e._consumeTargetRef));
+          if (e._consumeKind === 'enemy') return !!(e._consumeTargetRef && !e._consumeTargetRef.dead);
+          return false;
         };
 
-        if (nearest) {
-          const dx = nearest.x - e.x;
-          const dy = nearest.y - e.y;
-          const len = Math.hypot(dx, dy) || 1;
-          const chaseSpd = Math.max(1.5, (e._isHell ? 3.1 : 2.4) - ((e._absorbedUnits || 0) * 0.02));
-          e.x += (dx / len) * chaseSpd;
-          e.y += (dy / len) * chaseSpd;
+        if (!isTargetStillValid()) {
+          e._consumeTargetRef = null;
+          e._consumeKind = null;
+          e._targetX = undefined;
+          e._targetY = undefined;
+          e._targetMass = 0;
+          e._targetSourceW = 0;
+          e._targetSourceH = 0;
+          e._targetColor = '#ff6666';
+        }
 
-          const consumeRange = Math.max(20, ((e.w || 22) + 18) * 0.45);
-          const sameTarget = e._consumeTargetRef === nearest.target && e._consumeKind === nearest.kind && e._consumeCellIdx === nearest.cellIdx;
-          if (len <= consumeRange) {
-            if (!sameTarget) {
-              e._consumeTargetRef = nearest.target;
-              e._consumeKind = nearest.kind;
-              e._consumeCellIdx = nearest.cellIdx;
-              e._consumeTimer = nearest.consumeFrames;
-            } else {
-              e._consumeTimer = (e._consumeTimer || nearest.consumeFrames) - 1;
+        const applyBerserkGrowth = (mass, sourceW, sourceH) => {
+          const sizeGainW = Math.max(2, sourceW * 0.35);
+          const sizeGainH = Math.max(2, sourceH * 0.35);
+          e.w = Math.min((e.w || e._baseW || 80) + sizeGainW, 260);
+          e.h = Math.min((e.h || e._baseH || 80) + sizeGainH, 260);
+
+          const hpGain = Math.ceil((sourceW + sourceH) * 1.2 + mass * 14 + (e._isHell ? 12 : 0));
+          e.maxHp = Math.min((e.maxHp || e.hp || 1) + hpGain, 50000);
+          e.hp = Math.min((e.hp || 1) + hpGain, e.maxHp);
+
+          e._absorbedUnits = Math.min((e._absorbedUnits || 0) + mass, 36);
+        };
+
+        const needsNewTarget = !e._consumeKind || !isTargetStillValid() || e._targetRetargetTimer <= 0;
+        if (needsNewTarget && consumeCandidates.length > 0) {
+          let nearest = null;
+          let nearestDist = Infinity;
+          consumeCandidates.forEach(c => {
+            const d = Math.hypot(c.x - e.x, c.y - e.y);
+            if (d < nearestDist) {
+              nearestDist = d;
+              nearest = c;
             }
+          });
+          if (nearest) {
+            e._consumeTargetRef = nearest.target;
+            e._consumeKind = nearest.kind;
+            e._targetX = nearest.x;
+            e._targetY = nearest.y;
+            e._targetMass = nearest.mass;
+            e._targetSourceW = nearest.sourceW;
+            e._targetSourceH = nearest.sourceH;
+            e._targetColor = nearest.color;
+            e._targetRetargetTimer = 20;
+          }
+        }
 
-            if ((e._consumeTimer || 0) <= 0) {
-              if (nearest.kind === 'block' && nearest.target && !nearest.target.dead) {
-                nearest.target.dead = true;
-                applyBerserkGrowth(nearest.mass);
-                spawnExplosion(s, nearest.x, nearest.y, nearest.color, 14);
-              } else if (nearest.kind === 'piledCell' && s.piledCells[nearest.cellIdx]) {
-                s.piledCells.splice(nearest.cellIdx, 1);
-                applyBerserkGrowth(nearest.mass);
-                spawnExplosion(s, nearest.x, nearest.y, nearest.color, 8);
-              } else if (nearest.kind === 'enemy' && nearest.target && !nearest.target.dead) {
-                nearest.target.dead = true;
-                applyBerserkGrowth(nearest.mass);
-                spawnExplosion(s, nearest.x, nearest.y, nearest.color, nearest.target._mini ? 10 : 16);
-              }
+        const canChasePlayer = !hasBlockTargets;
 
-              e._consumeTargetRef = null;
-              e._consumeKind = null;
-              e._consumeCellIdx = undefined;
-              e._consumeTimer = 0;
-            }
-          } else {
-            e._consumeTargetRef = null;
-            e._consumeKind = null;
-            e._consumeCellIdx = undefined;
-            e._consumeTimer = 0;
+        if (canChasePlayer) {
+          e._chargeCooldown--;
+          if (e._chargeFrames > 0) {
+            e._chargeFrames--;
+          } else if (e._chargeCooldown <= 0) {
+            e._chargeFrames = Math.floor(randomBetween(26, 42));
+            e._chargeCooldown = Math.floor(randomBetween(170, 310));
           }
         } else {
-          // No consumables left: keep a soft drift toward player.
+          e._chargeFrames = 0;
+          e._chargingPlayer = false;
+        }
+
+        if (canChasePlayer && e._chargeFrames > 0) {
+          const dxp = p.x - e.x;
+          const dyp = p.y - e.y;
+          const lenp = Math.hypot(dxp, dyp) || 1;
+          const chargeSpd = e._isHell ? 7.4 : 6.2;
+          e.x += (dxp / lenp) * chargeSpd;
+          e.y += (dyp / lenp) * chargeSpd;
+          e._chargingPlayer = true;
+        } else if (e._consumeKind && isTargetStillValid()) {
+          if (e._consumeKind === 'enemy' && e._consumeTargetRef) {
+            e._targetX = e._consumeTargetRef.x;
+            e._targetY = e._consumeTargetRef.y;
+          } else if (e._consumeKind === 'block' && e._consumeTargetRef && !e._consumeTargetRef.dead) {
+            const cells = getBlockCells(e._consumeTargetRef);
+            if (cells.length > 0) {
+              e._targetX = cells.reduce((sum, c) => sum + c.x + BLOCK_SIZE / 2, 0) / cells.length;
+              e._targetY = cells.reduce((sum, c) => sum + c.y + BLOCK_SIZE / 2, 0) / cells.length;
+            }
+          } else if (e._consumeKind === 'piledCell' && e._consumeTargetRef) {
+            const cell = e._consumeTargetRef;
+            e._targetX = cell.x + BLOCK_SIZE / 2;
+            e._targetY = cell.y + BLOCK_SIZE / 2;
+          }
+
+          const dx = (e._targetX ?? p.x) - e.x;
+          const dy = (e._targetY ?? p.y) - e.y;
+          const len = Math.hypot(dx, dy) || 1;
+          const feedSpd = (e._isHell ? 4.7 : 3.9) + Math.min((e._absorbedUnits || 0) * 0.03, 1.4);
+          e.x += (dx / len) * feedSpd;
+          e.y += (dy / len) * feedSpd;
+          e._chargingPlayer = false;
+
+          const consumeRange = Math.max(26, ((e.w || 80) + (e.h || 80)) * 0.22);
+          if (len <= consumeRange && e._consumeCooldown <= 0) {
+            let consumed = false;
+            if (e._consumeKind === 'block' && e._consumeTargetRef && !e._consumeTargetRef.dead) {
+              e._consumeTargetRef.dead = true;
+              consumed = true;
+            } else if (e._consumeKind === 'piledCell' && e._consumeTargetRef) {
+              const idx = s.piledCells.indexOf(e._consumeTargetRef);
+              if (idx >= 0) {
+                s.piledCells.splice(idx, 1);
+                consumed = true;
+              }
+            } else if (e._consumeKind === 'enemy' && e._consumeTargetRef && !e._consumeTargetRef.dead) {
+              e._consumeTargetRef.dead = true;
+              consumed = true;
+            }
+
+            if (consumed) {
+              applyBerserkGrowth(e._targetMass || 1, e._targetSourceW || BLOCK_SIZE, e._targetSourceH || BLOCK_SIZE);
+              spawnExplosion(s, e._targetX || e.x, e._targetY || e.y, e._targetColor || '#ff6666', 14);
+              e._consumeCooldown = 8;
+              e._eatingFrames = 14;
+            }
+
+            e._consumeTargetRef = null;
+            e._consumeKind = null;
+            e._targetRetargetTimer = 0;
+          }
+        } else if (canChasePlayer) {
           const dx = p.x - e.x;
           const dy = p.y - e.y;
           const len = Math.hypot(dx, dy) || 1;
-          const driftSpd = 1.4;
+          const driftSpd = 2.6;
           e.x += (dx / len) * driftSpd;
           e.y += (dy / len) * driftSpd;
-          e._consumeTargetRef = null;
-          e._consumeKind = null;
-          e._consumeCellIdx = undefined;
-          e._consumeTimer = 0;
+          e._chargingPlayer = false;
+        } else {
+          e._chargingPlayer = false;
         }
 
-        const visualHalf = (e._mini ? 27 : 90) * (1 + Math.min(e._absorbedUnits || 0, 24) * 0.08);
-        const margin = Math.max(24, visualHalf + 8);
+        const visualHalf = Math.max((e.w || e._baseW || 44) * 0.9, (e.h || e._baseH || 44) * 0.9, 36) + Math.min(e._absorbedUnits || 0, 36) * 1.4;
+        const margin = Math.max(20, visualHalf + 6);
         if (e.x < margin) e.x = margin;
         if (e.x > W - margin) e.x = W - margin;
         if (e.y < margin) e.y = margin;
         if (e.y > H - margin) e.y = H - margin;
+        if (!Number.isFinite(e.x) || !Number.isFinite(e.y)) {
+          e.x = Math.min(W - margin, Math.max(margin, W * 0.5));
+          e.y = Math.min(H - margin, Math.max(margin, H * 0.25));
+        }
       } else if (e.type === 'elite') {
         // Elite: aggressive sine-wave weaving, periodic dash — fixed speed (no wall acceleration)
         e.movePhase = (e.movePhase || 0) + 0.07;
@@ -2600,9 +2844,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         if (b.isSuperOrbit) b.orbitPhase = ((b.orbitPhase || 0) + 0.18);
       }
       if (b.type === 'missile') {
-        const liveEnemies = s.enemies.filter(e => !e.dead && e.type !== 'dropper');
+        const liveEnemies = s.enemies.filter(e => !e.dead && e.type !== 'dropper' && isEnemyVisibleForTargeting(e));
         if (liveEnemies.length > 0) {
-          let target = b.preferredTarget && !b.preferredTarget.dead ? b.preferredTarget : null;
+          let target = b.preferredTarget && !b.preferredTarget.dead && isEnemyVisibleForTargeting(b.preferredTarget) ? b.preferredTarget : null;
           if (!target) {
             let best = Infinity;
             liveEnemies.forEach(e => {
@@ -2843,8 +3087,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     s.blockSpawnTimer--;
     if (s.blockSpawnTimer <= 0) {
       s.blocks.push(spawnBlock(W));
-      const blockSpeedMult = (difficultyConfig && difficultyConfig.blockSpeedMult) || 1;
-      const blockSpawnMult = (difficultyConfig && difficultyConfig.blockSpawnMult) || (blockSpeedMult > 2 ? 2.2 : blockSpeedMult > 1 ? 1.6 : 1);
+      const blockSpeedMult = (difficultyConfigRef.current && difficultyConfigRef.current.blockSpeedMult) || 1;
+      const blockSpawnMult = (difficultyConfigRef.current && difficultyConfigRef.current.blockSpawnMult) || (blockSpeedMult > 2 ? 2.2 : blockSpeedMult > 1 ? 1.6 : 1);
       s.blockSpawnTimer = Math.max(18, Math.round((160 - s.wave * 8) / (blockSpeedMult * blockSpawnMult)));
     }
 
@@ -2852,7 +3096,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     s.blocks.forEach(block => {
       if (block.settled) return;
       block.y += block.vy;
-      block.rot = (block.rot || 0) + ((block.rotSpeed || 0) * (0.8 + block.vy * 0.12));
+      const blockSpinEnabled = (difficultyConfigRef.current?.blockSpin) !== false;
+      block.rot = blockSpinEnabled
+        ? (block.rot || 0) + ((block.rotSpeed || 0) * (0.8 + block.vy * 0.12))
+        : 0;
 
       // Check if any cell would land on bottom or on a piled cell
       const cells = getBlockCells(block);
@@ -2897,10 +3144,20 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     // ── Bullet vs enemy ───────────────────────────────────────
     const piercingTypes = [];
     const newSpreadPellets = [];
+    const isEnemyVisibleForBulletCollision = (enemy) => {
+      const halfW = Math.max(10, enemy?.w || 18);
+      const halfH = Math.max(10, enemy?.h || 18);
+      return enemy.x + halfW >= 0
+        && enemy.x - halfW <= W
+        && enemy.y + halfH >= 0
+        && enemy.y - halfH <= H;
+    };
+
     s.bullets.forEach(b => {
       if (b.hit) return;
       s.enemies.forEach(e => {
         if (e.dead) return;
+        if (!isEnemyVisibleForBulletCollision(e)) return;
         if (e.type === 'boss' && (e.wave || 0) === 15 && e._shieldActive) {
           const shieldRadius = getBeholderShieldRadius(e);
           const distToBoss = Math.hypot(b.x - e.x, b.y - e.y);
@@ -3040,6 +3297,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         const cells = getBlockCells(block);
         cells.forEach(cell => {
           if (b.hit) return;
+          if (!isCellOnStage(cell, W, H)) return;
           if (b.x >= cell.x && b.x <= cell.x + BLOCK_SIZE && b.y >= cell.y && b.y <= cell.y + BLOCK_SIZE) {
             if (b.type === 'spread') { explodeSpread(b, newSpreadPelletsFromBlocks); b.hit = true; return; }
             if (block.invulnerable) {
@@ -3092,6 +3350,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     s.bullets.forEach(b => {
       if (b.hit) return;
       s.piledCells = s.piledCells.filter(cell => {
+        if (!isCellOnStage(cell, W, H)) return true;
         if (b.x >= cell.x && b.x <= cell.x + BLOCK_SIZE && b.y >= cell.y && b.y <= cell.y + BLOCK_SIZE) {
           if (b.type === 'spread') { explodeSpread(b, newSpreadPelletsFromPiled); b.hit = true; }
           else if (!piercingTypes.includes(b.type) && !(b.type === 'photon' && b.infinitePierce)) b.hit = true;
@@ -3534,7 +3793,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     s.enemies.forEach(e => {
       if (e.dead) return;
       const dx = e.x - p.x, dy = e.y - p.y;
-      if (Math.abs(dx) < 18 && Math.abs(dy) < 18) {
+      const hitRangeX = e.type === 'berserk' ? Math.max(20, (e.w || 80) * 0.34) : 18;
+      const hitRangeY = e.type === 'berserk' ? Math.max(20, (e.h || 80) * 0.34) : 18;
+      if (Math.abs(dx) < hitRangeX && Math.abs(dy) < hitRangeY) {
         // Star invincibility: don't kill bosses on contact, just push them away
         if (s.starInvincibleTimer > 0 && e.type === 'boss') {
           e.x += (e.x - p.x) * 0.3;
@@ -3580,6 +3841,18 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           e.x += (edx / elen) * 30;
           e.y += (edy / elen) * 30;
           e._chargingPlayer = false;
+        } else if (e.type === 'berserk') {
+          // Berserker collides for heavy body damage, then keeps hunting/charging.
+          spawnExplosion(s, p.x, p.y, '#ff6644', 14);
+          takeDamage(s);
+          const bdx = e.x - p.x, bdy = e.y - p.y;
+          const blen = Math.hypot(bdx, bdy) || 1;
+          const shove = e._chargingPlayer ? 34 : 18;
+          e.x += (bdx / blen) * shove;
+          e.y += (bdy / blen) * shove;
+          const berserkMargin = Math.max(18, ((e.w || 44) + (e.h || 44)) * 0.28);
+          e.x = Math.min(W - berserkMargin, Math.max(berserkMargin, e.x));
+          e.y = Math.min(H - berserkMargin, Math.max(berserkMargin, e.y));
         } else {
           e.dead = true;
           spawnExplosion(s, e.x, e.y, '#ff4444', 12);
@@ -3592,6 +3865,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     // Player touches falling block cell
     s.blocks.forEach(block => {
       getBlockCells(block).forEach(cell => {
+        if (!isCellOnStage(cell, W, H)) return;
         if (p.x >= cell.x - 10 && p.x <= cell.x + BLOCK_SIZE + 10 &&
             p.y >= cell.y - 10 && p.y <= cell.y + BLOCK_SIZE + 10) {
           if (!block._dmgCooldown || block._dmgCooldown <= 0) {
@@ -3606,6 +3880,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
 
     // Player touches piled cell
     s.piledCells.forEach(cell => {
+      if (!isCellOnStage(cell, W, H)) return;
       if (!cell._dmgCooldown) cell._dmgCooldown = 0;
       if (p.x >= cell.x - 8 && p.x <= cell.x + BLOCK_SIZE + 8 &&
           p.y >= cell.y - 8 && p.y <= cell.y + BLOCK_SIZE + 8) {
@@ -3623,10 +3898,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     if (combatEnemies.length === 0) {
       s.waveTimer++;
       const nextWave = s.wave + (bossModeRef.current ? 5 : 1);
+      const targetFps = Math.max(30, gameSpeedRef.current || 30);
+      const cleanupDelayFrames = Math.round(targetFps * 5); // ~5 seconds
+      const isBossWaveClear = bossModeRef.current || (s.wave % 5 === 0);
+      const waveAdvanceDelay = isBossWaveClear ? cleanupDelayFrames : 90;
       if (s.waveTimer === 1 && nextWave % 5 === 0) {
         onBossWarningRef.current?.({ active: true, timer: 120 });
       }
-      if (s.waveTimer > 90) {
+      if (s.waveTimer > waveAdvanceDelay) {
         const survivingDroppers = s.enemies.filter(e => e.type === 'dropper');
         const repairLvl = (shopUpgradesRef.current?.repair || 0);
         const maxArmor = (shopUpgradesRef.current?.armor || 0) * 3;
@@ -3869,8 +4148,16 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
 
   // ── Keyboard ─────────────────────────────────────────────────
   useEffect(() => {
-    const down = e => { keysRef.current[e.key] = true; };
-    const up = e => { keysRef.current[e.key] = false; };
+    const down = e => {
+      keysRef.current[e.key] = true;
+      if (e.code) keysRef.current[e.code] = true;
+      if (e.code === 'Space') e.preventDefault();
+    };
+    const up = e => {
+      keysRef.current[e.key] = false;
+      if (e.code) keysRef.current[e.code] = false;
+      if (e.code === 'Space') e.preventDefault();
+    };
     const clearKeys = () => { keysRef.current = {}; };
     const onVisibilityChange = () => {
       if (document.hidden) clearKeys();

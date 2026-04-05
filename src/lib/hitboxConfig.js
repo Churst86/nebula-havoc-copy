@@ -8,7 +8,7 @@ export const HITBOX_SIZES = {
   elite: { w: 50, h: 50 },
   
   // Specialized enemies
-  berserk: { w: 80, h: 80 },      // drawn at 203-338px depending on mini
+  berserk: { w: 44, h: 44 },      // starts smaller, grows as it consumes
   eater: { w: 85, h: 85 },        // drawn at 270px
   mine: { w: 56, h: 56 },         // drawn at 108px
   dropper: { w: 60, h: 60 },      // drawn at 120px body

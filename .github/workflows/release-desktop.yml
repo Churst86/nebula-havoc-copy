@@ -1,0 +1,49 @@
+name: Release Desktop Build
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build desktop portable exe
+        env:
+          VITE_APP_VERSION: ${{ github.ref_name }}
+        run: npm run build:desktop:portable
+
+      - name: Verify release exe exists
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Path release -Filter *.exe -File
+          if (-not $files) {
+            throw "No EXE files found in release directory."
+          }
+          $files | ForEach-Object { Write-Host "Found release artifact: $($_.FullName)" }
+
+      - name: Publish GitHub release and upload artifact
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*.exe
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

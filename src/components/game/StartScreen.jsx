@@ -4,43 +4,40 @@ import { motion } from 'framer-motion';
 import { Trophy, Settings, Play } from 'lucide-react';
 import HighScoresMenu from './HighScoresMenu';
 import OptionsScreen from './OptionsScreen';
+import SavedGamesScreen from './SavedGamesScreen';
 import { sounds } from '../../hooks/useSound.js';
-import { loadSaveFile } from '../../lib/gameSettings';
+import { loadAllSaveFiles } from '../../lib/gameSettings';
 
-export const GAME_VERSION = 'v1.3.0';
-
-const DIFFICULTY_MILESTONES = {
-  easy: 25,
-  normal: 50,
-};
-
-const DIFFICULTY_LABELS = {
-  easy: 'Easy',
-  normal: 'Challenging',
-  hell: 'Hell',
-};
-
-function difficultyForWave(wave = 1) {
-  if (wave > DIFFICULTY_MILESTONES.normal) return 'hell';
-  if (wave > DIFFICULTY_MILESTONES.easy) return 'normal';
-  return 'easy';
-}
-
-function getLoadDifficulty(saveFile) {
-  const wave = saveFile?.wave || 1;
-  const byWave = difficultyForWave(wave);
-  const saved = saveFile?.difficulty;
-  const order = { easy: 1, normal: 2, hell: 3 };
-  if (!saved || !order[saved]) return byWave;
-  return order[saved] >= order[byWave] ? saved : byWave;
-}
+export const GAME_VERSION = import.meta.env.VITE_APP_VERSION || 'v1.3.0';
 
 export default function StartScreen({ onStart, onContinue, settings, onSettingsChange }) {
   const [showScores, setShowScores] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const [showSavedGames, setShowSavedGames] = useState(false);
+  const [saves, setSaves] = useState(() => loadAllSaveFiles());
+  const [patchState, setPatchState] = useState({
+    checking: false,
+    available: false,
+    patching: false,
+    progress: 0,
+    currentVersion: GAME_VERSION,
+    latestVersion: null,
+    source: 'github',
+    configured: true,
+    patch: null,
+    error: '',
+  });
+  const isDesktop = !!window?.desktopApp?.isElectron;
+  const updaterBadge = (() => {
+    if (!isDesktop) return { label: 'WEB MODE', className: 'bg-slate-700/70 text-slate-200 border-slate-500/60' };
+    if (patchState.checking) return { label: 'CHECKING...', className: 'bg-cyan-700/55 text-cyan-100 border-cyan-400/70' };
+    if (patchState.error) return { label: 'CHECK FAILED', className: 'bg-red-700/60 text-red-100 border-red-400/70' };
+    if (patchState.available) return { label: 'UPDATE AVAILABLE', className: 'bg-amber-700/60 text-amber-100 border-amber-400/70' };
+    if (patchState.configured === false) return { label: 'UPDATER OFF', className: 'bg-slate-700/70 text-slate-200 border-slate-500/60' };
+    return { label: 'UP TO DATE', className: 'bg-emerald-700/60 text-emerald-100 border-emerald-400/70' };
+  })();
   const musicEnabled = settings.musicEnabled !== false;
-  const saveFile = loadSaveFile();
-  const loadDifficulty = getLoadDifficulty(saveFile);
+  const hasAnySave = Object.values(saves || {}).some(Boolean);
 
   // Stop game music and start title music immediately on mount.
   // The IntroCrawl requires a user gesture to dismiss, so autoplay is already unblocked by the time StartScreen mounts.
@@ -50,8 +47,126 @@ export default function StartScreen({ onStart, onContinue, settings, onSettingsC
     sounds.playTitleMusic();
   }, []);
 
+  useEffect(() => {
+    const refreshSave = () => setSaves(loadAllSaveFiles());
+    refreshSave();
+    window.addEventListener('focus', refreshSave);
+    document.addEventListener('visibilitychange', refreshSave);
+    return () => {
+      window.removeEventListener('focus', refreshSave);
+      document.removeEventListener('visibilitychange', refreshSave);
+    };
+  }, []);
+
+  useEffect(() => {
+    const desktopApi = window.desktopApp;
+    if (!desktopApi?.isElectron || typeof desktopApi.checkForPatch !== 'function') return undefined;
+
+    let cancelled = false;
+    setPatchState(prev => ({ ...prev, checking: true, error: '' }));
+
+    const detachProgress = typeof desktopApi.onPatchProgress === 'function'
+      ? desktopApi.onPatchProgress((progress) => {
+          if (cancelled) return;
+          if (progress?.stage === 'downloading') {
+            setPatchState(prev => ({
+              ...prev,
+              patching: true,
+              progress: Math.max(0, Math.min(100, Number(progress.percent) || 0)),
+            }));
+          }
+        })
+      : null;
+
+    const manifestUrl = import.meta.env.VITE_PATCH_MANIFEST_URL || '';
+    const githubRepo = import.meta.env.VITE_GITHUB_REPO || 'Churst86/nebula-havoc-copy';
+    const githubAssetPattern = import.meta.env.VITE_GITHUB_ASSET_REGEX || 'Nebula-Havoc-.*\\.exe$';
+    desktopApi.checkForPatch({
+      currentVersion: GAME_VERSION,
+      manifestUrl,
+      githubRepo,
+      githubAssetPattern,
+    }).then((result) => {
+      if (cancelled) return;
+      if (!result?.ok) {
+        setPatchState(prev => ({
+          ...prev,
+          checking: false,
+          error: result?.error || 'Unable to check for updates.',
+        }));
+        return;
+      }
+
+      setPatchState(prev => ({
+        ...prev,
+        checking: false,
+        currentVersion: result.currentVersion || GAME_VERSION,
+        latestVersion: result.latestVersion || null,
+        source: result.patch?.source || (githubRepo ? 'github' : manifestUrl ? 'manifest' : 'none'),
+        configured: result.configured !== false,
+        available: !!result.updateAvailable,
+        patch: result.patch || null,
+        error: '',
+      }));
+    }).catch((error) => {
+      if (cancelled) return;
+      setPatchState(prev => ({
+        ...prev,
+        checking: false,
+        error: error?.message || 'Unable to check for updates.',
+      }));
+    });
+
+    return () => {
+      cancelled = true;
+      if (typeof detachProgress === 'function') detachProgress();
+    };
+  }, []);
+
+  const beginPatchFlow = async () => {
+    const desktopApi = window.desktopApp;
+    if (!desktopApi?.isElectron || typeof desktopApi.downloadPatch !== 'function' || typeof desktopApi.applyPatchAndRestart !== 'function') {
+      setPatchState(prev => ({ ...prev, error: 'Patching is unavailable in this build.' }));
+      return;
+    }
+
+    if (!patchState.patch) {
+      setPatchState(prev => ({ ...prev, error: 'Patch details are missing.' }));
+      return;
+    }
+
+    try {
+      setPatchState(prev => ({ ...prev, patching: true, progress: 0, error: '' }));
+      const download = await desktopApi.downloadPatch(patchState.patch);
+      if (!download?.ok) {
+        setPatchState(prev => ({ ...prev, patching: false, error: download?.error || 'Patch download failed.' }));
+        return;
+      }
+
+      setPatchState(prev => ({ ...prev, progress: 100 }));
+      const applied = await desktopApi.applyPatchAndRestart({ patchPath: download.patchPath });
+      if (!applied?.ok) {
+        setPatchState(prev => ({ ...prev, patching: false, error: applied?.error || 'Could not apply patch.' }));
+      }
+    } catch (error) {
+      setPatchState(prev => ({ ...prev, patching: false, error: error?.message || 'Could not apply patch.' }));
+    }
+  };
+
   if (showScores) return <HighScoresMenu onBack={() => setShowScores(false)} />;
   if (showOptions) return <OptionsScreen settings={settings} onSettingsChange={onSettingsChange} onBack={() => setShowOptions(false)} />;
+  if (showSavedGames) {
+    return (
+      <SavedGamesScreen
+        saves={saves}
+        onBack={() => setShowSavedGames(false)}
+        onLoad={(slot) => {
+          setShowSavedGames(false);
+          onContinue?.(slot);
+        }}
+      />
+    );
+  }
 
   return (
     <motion.div
@@ -93,14 +208,14 @@ export default function StartScreen({ onStart, onContinue, settings, onSettingsC
             ⚔ BOSS MODE
           </Button>
 
-          {saveFile &&
+          {hasAnySave &&
           <Button
-            onClick={onContinue}
+            onClick={() => setShowSavedGames(true)}
             size="lg"
             variant="outline"
             className="font-bold text-sm md:text-lg px-6 md:px-10 py-4 md:py-6 rounded-xl w-full gap-2 border-cyan-500 text-cyan-300 hover:bg-cyan-900/30">
               <Play className="w-4 h-4 md:w-5 md:h-5" />
-              LOAD — {DIFFICULTY_LABELS[loadDifficulty]} · Wave {saveFile.wave || 1}
+              LOAD GAME
             </Button>
           }
 
@@ -123,12 +238,86 @@ export default function StartScreen({ onStart, onContinue, settings, onSettingsC
             </Button>
           </div>
 
+          {patchState.checking && (
+            <div className="text-xs text-cyan-300/80 font-mono pt-1">Checking for updates...</div>
+          )}
+
+          {patchState.error && (
+            <div className="text-xs text-red-300/90 font-mono pt-1">Updater: {patchState.error}</div>
+          )}
+
+          <div className="text-[11px] text-cyan-200/80 font-mono pt-1">
+            Updater source: {isDesktop ? (patchState.source || 'github') : 'disabled (web)'}
+            {' '}| Current: {patchState.currentVersion || GAME_VERSION}
+            {' '}| Latest: {patchState.latestVersion || (patchState.checking ? 'checking...' : 'n/a')}
+            {isDesktop && !patchState.checking && patchState.configured === false ? ' | Not configured' : ''}
+          </div>
+
+          <div className="pt-1">
+            <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold tracking-wide ${updaterBadge.className}`}>
+              {updaterBadge.label}
+            </span>
+          </div>
+
           <div className="hidden md:block text-sm text-muted-foreground space-y-1 pt-2">
             <p><kbd className="px-2 py-0.5 bg-muted rounded text-xs font-mono">WASD</kbd> or <kbd className="px-2 py-0.5 bg-muted rounded text-xs font-mono">Arrow Keys</kbd> to move</p>
             <p>Auto-fire enabled &bull; <kbd className="px-2 py-0.5 bg-muted rounded text-xs font-mono">Enter</kbd> to pause</p>
           </div>
         </div>
       </div>
+
+      {patchState.available && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/70" />
+          <div className="relative w-full max-w-md rounded-2xl border border-cyan-500/40 bg-slate-950/95 p-6 text-left shadow-[0_0_40px_rgba(0,240,255,0.2)]">
+            <div className="text-cyan-300 font-black tracking-wide text-lg">Patch Available</div>
+            <p className="mt-2 text-sm text-slate-200">
+              New version {patchState.latestVersion || 'available'} detected (current {patchState.currentVersion || GAME_VERSION}).
+            </p>
+            <p className="mt-1 text-xs text-cyan-200/80 font-mono">Source: {patchState.patch?.source || patchState.source || 'github'}</p>
+            {patchState.patch?.notes && (
+              <p className="mt-2 text-xs text-cyan-200/80 whitespace-pre-wrap">{patchState.patch.notes}</p>
+            )}
+
+            {patchState.patching && (
+              <div className="mt-4">
+                <div className="mb-1 flex justify-between text-xs text-cyan-200/90 font-mono">
+                  <span>Patching...</span>
+                  <span>{Math.round(patchState.progress)}%</span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-cyan-900/40">
+                  <div
+                    className="h-full rounded-full bg-cyan-300 transition-all duration-150"
+                    style={{ width: `${Math.max(0, Math.min(100, patchState.progress))}%` }}
+                  />
+                </div>
+                <div className="mt-2 text-xs text-slate-300/90">The game will restart automatically when patching finishes.</div>
+              </div>
+            )}
+
+            {patchState.error && (
+              <div className="mt-3 text-xs text-red-300">{patchState.error}</div>
+            )}
+
+            <div className="mt-5 flex gap-2 justify-end">
+              <Button
+                onClick={() => setPatchState(prev => ({ ...prev, available: false }))}
+                variant="outline"
+                disabled={patchState.patching}
+              >
+                Later
+              </Button>
+              <Button
+                onClick={beginPatchFlow}
+                disabled={patchState.patching}
+                className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold"
+              >
+                {patchState.patching ? 'Patching...' : 'Patch and Restart'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>);
 
 }

@@ -2,7 +2,7 @@
 import { HITBOX_SIZES } from './hitboxConfig.js';
 
 export function spawnBerserk(enemies, W, wave, hpMult, isHell) {
-  const berserkHp = Math.round((8 + wave * 2.5) * hpMult);
+  const berserkHp = Math.round((24 + wave * 4.5) * hpMult);
   
   enemies.push({
     type: 'berserk',

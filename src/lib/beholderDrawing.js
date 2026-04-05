@@ -55,24 +55,22 @@ export function drawBeholderLasers(ctx, e) {
   }
 
   // ── Laser 1: wide tracking beam ──
-  if (e._laserEndX !== undefined) {
+  // Render the expensive main beam only while it is actively firing.
+  if (e._laserFiring && e._laserEndX !== undefined) {
     const isStage2 = e._stage2Triggered && e.hp <= e.maxHp / 3;
     const laserColor = isStage2 ? '#ff00ff' : '#aa00ff';
     const laserRgb = isStage2 ? '255,0,255' : '170,0,255';
     ctx.save();
-    // Wide outer glow
-    ctx.shadowColor = laserColor; ctx.shadowBlur = 40;
-    ctx.strokeStyle = `rgba(${laserRgb},0.18)`; ctx.lineWidth = 52;
+    // Outer glow
+    ctx.shadowColor = laserColor; ctx.shadowBlur = 20;
+    ctx.strokeStyle = `rgba(${laserRgb},0.22)`; ctx.lineWidth = 30;
     ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(e._laserEndX, e._laserEndY); ctx.stroke();
     // Mid beam
-    ctx.shadowBlur = 20;
-    ctx.strokeStyle = `rgba(${laserRgb},0.55)`; ctx.lineWidth = 22;
-    ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(e._laserEndX, e._laserEndY); ctx.stroke();
-    // Bright core
-    ctx.strokeStyle = `rgba(${laserRgb},0.9)`; ctx.lineWidth = 8;
+    ctx.shadowBlur = 10;
+    ctx.strokeStyle = `rgba(${laserRgb},0.72)`; ctx.lineWidth = 12;
     ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(e._laserEndX, e._laserEndY); ctx.stroke();
     // White hot center line
-    ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 2.5;
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(e._laserEndX, e._laserEndY); ctx.stroke();
     ctx.restore();
   }

@@ -48,7 +48,9 @@ const SHOP_ICONS = {
   armor: '🛡', repair: '🔧', drone: '🤖', harvester: '⛏',
 };
 
-export default function GameHUD({ score, lives, maxLives, wave, activePowerup, continuesLeft, isPaused, onPauseToggle, onOpenOptions, blockScore, shopUpgrades, armorHp }) {
+export default function GameHUD({ score, lives, maxLives, wave, liveFps = 0, activePowerup, continuesLeft, isPaused, onPauseToggle, onOpenOptions, blockScore, shopUpgrades, armorHp, autoFireEnabled = true, lastSaveAt }) {
+  const [showSaveFlash, setShowSaveFlash] = React.useState(false);
+  const [saveFlashLabel, setSaveFlashLabel] = React.useState('AUTOSAVED');
   const powerups = activePowerup || {};
   const shieldHp = powerups.shieldHp || 0;
   const starInvincible = powerups.starInvincible || false;
@@ -56,6 +58,15 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
   const gunKeys = GUN_POWERUPS.filter(k => (powerups[k] || 0) > 0);
   const utilityKeys = ['speed', 'rapidfire', 'wingman', 'shield'].filter(k => (powerups[k] || 0) > 0);
   const shopKeys = shopUpgrades ? Object.entries(shopUpgrades).filter(([, v]) => v > 0) : [];
+
+  React.useEffect(() => {
+    if (!lastSaveAt) return;
+    const stamp = new Date(lastSaveAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    setSaveFlashLabel(`AUTOSAVED ${stamp}`);
+    setShowSaveFlash(true);
+    const id = window.setTimeout(() => setShowSaveFlash(false), 1400);
+    return () => window.clearTimeout(id);
+  }, [lastSaveAt]);
 
   return (
     <div className="absolute inset-0 z-20 pointer-events-none">
@@ -65,6 +76,18 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
           Wave {wave}
         </div>
         <div className="flex flex-wrap justify-center gap-1">
+          <div className="text-xs font-bold px-2 py-0.5 rounded-full"
+            style={{ color: '#8ad4ff', border: '1px solid #3a6fa3', background: '#11253b99' }}>
+            FPS {liveFps || 0}
+          </div>
+          <div className="text-xs font-bold px-2 py-0.5 rounded-full"
+            style={{
+              color: autoFireEnabled ? '#00f0ff' : '#ffc14d',
+              border: `1px solid ${autoFireEnabled ? '#00f0ff' : '#ffc14d'}`,
+              background: autoFireEnabled ? '#00f0ff22' : '#ffc14d22',
+            }}>
+            AUTO FIRE {autoFireEnabled ? 'ON' : 'OFF'}
+          </div>
           {starInvincible && (
             <div className="text-xs font-bold px-2 py-0.5 rounded-full animate-pulse"
               style={{ color: '#fff', border: '1px solid #fff', background: 'rgba(255,255,255,0.15)' }}>
@@ -93,6 +116,11 @@ export default function GameHUD({ score, lives, maxLives, wave, activePowerup, c
           <div className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-0.5 md:py-1 rounded-lg" style={{ background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(4px)', border: '1px solid rgba(100,200,255,0.35)' }}>
             <span className="text-xs font-bold text-cyan-400">BLOCKS</span>
             <span className="text-xs md:text-sm font-black text-cyan-300 tabular-nums">{blockScore.toLocaleString()}</span>
+          </div>
+        )}
+        {showSaveFlash && (
+          <div className="px-2 md:px-3 py-0.5 md:py-1 rounded-lg animate-pulse" style={{ background: 'rgba(0,0,0,0.78)', backdropFilter: 'blur(4px)', border: '1px solid rgba(120,255,170,0.5)' }}>
+            <span className="text-[10px] md:text-xs font-bold tracking-wide text-emerald-300">{saveFlashLabel}</span>
           </div>
         )}
       </div>
