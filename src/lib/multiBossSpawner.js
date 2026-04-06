@@ -24,7 +24,7 @@ export function getBossCountForWave(wave) {
  */
 export function createBossWaveEnemies(W, wave, hpMult) {
   const count = getBossCountForWave(wave);
-  const bossHp = Math.round((20 + wave * 5) * hpMult * 2);
+  const bossHp = Math.round((20 + wave * 5) * hpMult * 2 * 2);
   const primaryType = BOSS_TYPES[Math.min(Math.max(1, Math.floor(wave / 5)) - 1, BOSS_TYPES.length - 1)];
 
   const createBossFromType = (typeDef, x, variant = null) => {

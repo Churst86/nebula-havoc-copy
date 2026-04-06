@@ -83,12 +83,26 @@ export function removeWhiteBackground(img, threshold = 240) {
   for (let i = 0; i < W * H; i++) {
     if (!removed[i] && data[i * 4 + 3] > 0) {
       const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2];
-      if (r > 180 && g > 180 && b > 180) {
+      if (r > 165 && g > 165 && b > 165) {
         const brightness = (r + g + b) / 3;
-        const factor = Math.max(0, (brightness - 180) / 75);
+        const factor = Math.max(0, (brightness - 165) / 65);
         data[i * 4 + 3] = Math.round(data[i * 4 + 3] * (1 - factor));
       }
     }
+  }
+
+  // --- Pass 6: remove nearly-white pixels touching transparent regions ---
+  for (let i = 0; i < W * H; i++) {
+    if (data[i * 4 + 3] === 0) continue;
+    const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2];
+    if (!(r > 190 && g > 190 && b > 190)) continue;
+    const x = i % W, y = Math.floor(i / W);
+    const hasTransparentNeighbor =
+      (x > 0 && data[(i - 1) * 4 + 3] === 0) ||
+      (x < W - 1 && data[(i + 1) * 4 + 3] === 0) ||
+      (y > 0 && data[(i - W) * 4 + 3] === 0) ||
+      (y < H - 1 && data[(i + W) * 4 + 3] === 0);
+    if (hasTransparentNeighbor) data[i * 4 + 3] = Math.round(data[i * 4 + 3] * 0.08);
   }
 
   ctx.putImageData(imageData, 0, 0);

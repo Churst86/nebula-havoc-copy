@@ -9,6 +9,8 @@ import { loadSprites, getSprite, drawSprite, isSpritesLoaded, getBossSpriteKey, 
 import { updateBeholderMovement, updateBeholderShield, updateBeholderFire, getBeholderShieldRadius } from '../../lib/beholderLogic.js';
 import { drawBeholderShield, drawBeholderLasers } from '../../lib/beholderDrawing.js';
 import { createBossWaveEnemies } from '../../lib/multiBossSpawner.js';
+import { drawBossHUD } from '../../lib/bossHudUtils.js';
+import { HITBOX_SIZES } from '../../lib/hitboxConfig.js';
 
 // Laser beam constants
 const LASER_CHARGE_FRAMES = 90;      // frames to charge before firing (slower = fires less often)
@@ -69,6 +71,10 @@ function initState() {
     superWingmanFireTimer: 0,
     reverseFireTimer: 0,
     missileFireSide: -1,
+    missileVolleyShotsLeft: 0,
+    missileVolleyTimer: 0,
+    missileVolleyCooldown: 0,
+    missileVolleyIndex: 0,
     powerups: {},
     lockedPowerups: [],
     shieldHp: 0,
@@ -378,25 +384,40 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
 
   function spawnMiniEaters(W, s, parent) {
     const totalEaters = s.enemies.filter((enemy) => enemy && !enemy.dead && enemy.type === 'eater').length;
-    const maxEaters = Math.min(18, 6 + Math.floor((s.wave || 1) / 3) + Math.floor((s.wave || 1) / 5));
-    const remainingSlots = Math.max(0, maxEaters - totalEaters);
-    const parentSpawnCap = Math.max(0, Number(parent?._offspringCap) || 0);
-    const parentSpawned = Math.max(0, Number(parent?._offspringCount) || 0);
-    const parentRemaining = Math.max(0, parentSpawnCap - parentSpawned);
-    const spawnCount = Math.min(2, remainingSlots, parentRemaining);
+    const blockFoodCells = s.blocks.reduce((total, block) => {
+      if (!block || block.dead || block.invulnerable) return total;
+      return total + getBlockCells(block).length;
+    }, 0);
+    const availableFoodUnits = blockFoodCells + s.piledCells.length;
+    // Dynamic population gate: food on screen controls how many eaters can exist.
+    const remainingFoodSlots = Math.max(0, Math.floor(availableFoodUnits * 0.9) - totalEaters);
+    const spawnCount = Math.min(4, remainingFoodSlots);
     if (spawnCount <= 0) return 0;
 
     let created = 0;
     for (let i = 0; i < spawnCount; i++) {
-      const miniHp = Math.max(3, Math.floor((parent.maxHp || parent.hp || 10) * 0.45));
+      const miniHp = Math.max(6, Math.floor((parent.maxHp || parent.hp || 10) * 0.62));
+      const spreadBase = (Math.PI / 2) + ((i - (spawnCount - 1) / 2) * 2.2);
+      const scatterAngle = spreadBase + randomBetween(-0.3, 0.3);
+      const spawnRadius = 110 + i * 18;
+      const scatterTimer = 58;
+      const scatterDamp = 0.985;
+      const targetTravel = Math.max(260, Math.min(W * 0.52, 680));
+      const distanceScale = 0.9 + (i / Math.max(1, spawnCount - 1 || 1)) * 0.3;
+      const desiredTravel = targetTravel * distanceScale;
+      const geometricDen = Math.max(0.0001, 1 - Math.pow(scatterDamp, scatterTimer));
+      const baseScatterSpeed = desiredTravel * (1 - scatterDamp) / geometricDen;
+      const scatterSpeed = baseScatterSpeed * randomBetween(0.95, 1.08);
+      const miniScale = 0.54;
       const mini = {
         type: 'eater',
         _mini: true,
         _growthStage: 0,
         _growthMeter: 0,
-        x: parent.x + (i === 0 ? -30 : 30),
-        y: parent.y,
-        w: 15, h: 15,
+        x: parent.x + Math.cos(scatterAngle) * spawnRadius,
+        y: parent.y + Math.sin(scatterAngle) * spawnRadius,
+        w: Math.round(HITBOX_SIZES.eater.w * miniScale),
+        h: Math.round(HITBOX_SIZES.eater.h * miniScale),
         hp: miniHp,
         maxHp: miniHp,
         vx: randomBetween(-0.6, 0.6),
@@ -409,12 +430,15 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         _lineageDepth: Math.min(2, (parent?._lineageDepth || 0) + 1),
         _spawnCooldown: 540,
         _passiveRoamPhase: Math.random() * Math.PI * 2,
+        _scatterTimer: scatterTimer,
+        _scatterDamp: scatterDamp,
+        _scatterVx: Math.cos(scatterAngle) * scatterSpeed,
+        _scatterVy: Math.sin(scatterAngle) * scatterSpeed,
       };
       s.enemies.push(mini);
       spawnExplosion(s, mini.x, mini.y, '#44ff88', 8);
       created += 1;
     }
-    parent._offspringCount = parentSpawned + created;
     return created;
   }
 
@@ -467,7 +491,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     const laserTier  = pw.laser  || 0;
     const photonTier = pw.photon || 0;
     const bounceTier = pw.bounce || 0;
-    const missileTier = pw.missile || 0;
 
     // Photon tiers:
     // - Lvl 1-4: single center shot
@@ -500,42 +523,41 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       acquireBullet(s, { x: p.x + side * 8, y: p.y - 14, vx: side * 3.5, vy: -10, type: 'bounce', bouncesLeft: bounces }, 'player');
     }
 
-    if (missileTier > 0) {
-      const missileCount = Math.max(1, missileTier);
-      const center = (missileCount - 1) / 2;
-      const baseSpeed = 7.4 + Math.min(missileTier, 10) * 0.22;
-      const maxTurnRate = 0.085 + Math.min(missileTier, 10) * 0.011;
-      const missileTargets = s.enemies
-        .filter(e => !e.dead && e.type !== 'dropper')
-        .sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y));
-      const hardpoints = [-48, -32, -16, 16, 32, 48];
-
-      for (let i = 0; i < missileCount; i++) {
-        const lane = i - center;
-        const hardpoint = hardpoints[((i + (s.missileFireSide > 0 ? 1 : 0)) % hardpoints.length + hardpoints.length) % hardpoints.length];
-        const row = Math.floor(i / hardpoints.length);
-        const yOffset = row * 5;
-        const xOffset = hardpoint + lane * 4.6;
-        const startAngle = -Math.PI / 2 + lane * 0.2;
-        const preferredTarget = missileTargets.length > 0 ? missileTargets[i % missileTargets.length] : null;
-        acquireBullet(s, {
-          x: p.x + xOffset,
-          y: p.y - 14 - yOffset,
-          vx: Math.cos(startAngle) * baseSpeed,
-          vy: Math.sin(startAngle) * baseSpeed,
-          type: 'missile',
-          missileTier,
-          speed: baseSpeed,
-          maxTurnRate,
-          preferredTarget,
-        }, 'player');
-      }
-
-      s.missileFireSide = (s.missileFireSide || -1) * -1;
-    }
-
     // Always keep the base blue shot active alongside other weapon powerups.
     acquireBullet(s, { x: p.x, y: p.y - 18, vx: 0, vy: -7, type: 'normal' }, 'player');
+  }
+
+  function fireMissileVolleyShot(s, missileTier) {
+    if (!missileTier || missileTier <= 0) return;
+    const p = s.player;
+    const shotIndex = Math.max(0, s.missileVolleyIndex || 0);
+    const baseSpeed = 7.4 + Math.min(missileTier, 10) * 0.22;
+    const maxTurnRate = 0.085 + Math.min(missileTier, 10) * 0.011;
+    const hardpoints = [-48, -32, -16, 16, 32, 48];
+    const maxHardpointAbs = Math.max(...hardpoints.map(v => Math.abs(v)));
+    const hardpoint = hardpoints[((shotIndex + (s.missileFireSide > 0 ? 1 : 0)) % hardpoints.length + hardpoints.length) % hardpoints.length];
+    const row = Math.floor(shotIndex / hardpoints.length);
+    const yOffset = row * 5;
+    const laneJitter = ((shotIndex % hardpoints.length) - (hardpoints.length - 1) / 2) * 0.03;
+    const lateralBias = (hardpoint / maxHardpointAbs) * 0.48;
+    const startAngle = -Math.PI / 2 + lateralBias + laneJitter;
+    const homingDelay = 12 + Math.floor(Math.abs(hardpoint) / 8) + row * 2;
+
+    acquireBullet(s, {
+      x: p.x + hardpoint,
+      y: p.y - 14 - yOffset,
+      vx: Math.cos(startAngle) * baseSpeed,
+      vy: Math.sin(startAngle) * baseSpeed,
+      type: 'missile',
+      missileTier,
+      speed: baseSpeed,
+      maxTurnRate,
+      homingDelay,
+      preferredTarget: null,
+    }, 'player');
+
+    s.missileVolleyIndex = shotIndex + 1;
+    s.missileFireSide = (s.missileFireSide || -1) * -1;
   }
 
   function getFireRate(pw) {
@@ -666,12 +688,26 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   function drawPiledCells(ctx, cells) {
     cells.forEach(cell => {
       ctx.save();
-      ctx.shadowColor = cell.color; ctx.shadowBlur = 6;
-      ctx.fillStyle = cell.color + '99';
-      ctx.fillRect(cell.x + 1, cell.y + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
-      ctx.strokeStyle = cell.color;
-      ctx.lineWidth = 1;
-      ctx.strokeRect(cell.x + 1, cell.y + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+      if (cell.invulnerable) {
+        ctx.shadowColor = '#8888bb'; ctx.shadowBlur = 6;
+        ctx.fillStyle = '#555577';
+        ctx.fillRect(cell.x + 1, cell.y + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+        ctx.strokeStyle = '#9999bb';
+        ctx.lineWidth = 1.2;
+        ctx.strokeRect(cell.x + 1, cell.y + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+        ctx.fillStyle = 'rgba(210,210,255,0.6)';
+        ctx.font = `bold ${Math.round(BLOCK_SIZE * 0.5)}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('∞', cell.x + BLOCK_SIZE / 2, cell.y + BLOCK_SIZE / 2);
+      } else {
+        ctx.shadowColor = cell.color; ctx.shadowBlur = 6;
+        ctx.fillStyle = cell.color + '99';
+        ctx.fillRect(cell.x + 1, cell.y + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+        ctx.strokeStyle = cell.color;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cell.x + 1, cell.y + 1, BLOCK_SIZE - 2, BLOCK_SIZE - 2);
+      }
       ctx.restore();
     });
   }
@@ -1373,10 +1409,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const stage = e._growthStage === undefined ? (e._mini ? 0 : 1) : e._growthStage;
       const isMini = e._mini;
       const isBreeder = stage >= 2;
-      const baseScale = stage === 0 ? 0.42 : stage === 1 ? 1 : 1.18;
+      const isEatingVisual = e._eating || (e._eatAnimTimer || 0) > 0;
+      const baseScale = stage === 0 ? 0.54 : stage === 1 ? 0.84 : 1.12;
       const eaterColor = isBreeder
         ? '#d3ff8a'
-        : e._eating
+        : isEatingVisual
           ? '#00ff44'
           : stage === 0
             ? '#78ffb0'
@@ -1389,7 +1426,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       if (useSpriteRender) {
         const bob = Math.sin(t * 0.005 + (e._animPhase || 0)) * (stage === 0 ? 1.2 : 2.5);
         const wobble = 1 + Math.sin(t * 0.006 + (e._animPhase || 0)) * 0.03;
-        const targetChomp = e._eating ? 1 : 0;
+        if (e._chewAnimOffset === undefined) e._chewAnimOffset = Math.random() * Math.PI * 2;
+        const isChewingTarget = e._eating && (e._targetBlock || Number.isInteger(e._targetCellIdx));
+        const chewLoop = 0.22 + (0.78 * (0.5 + Math.sin(t * 0.05 + e._chewAnimOffset) * 0.5));
+        const targetChomp = isChewingTarget ? chewLoop : (isEatingVisual ? 0.88 : 0);
         e._chompBlend = (e._chompBlend || 0) + (targetChomp - (e._chompBlend || 0)) * 0.15;
         const pulse = 0.55 + Math.sin(t * 0.02) * 0.45;
         const chompAlpha = eaterChompSprite ? Math.max(0, Math.min(1, e._chompBlend * (0.35 + pulse * 0.65))) : 0;
@@ -1443,25 +1483,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         ctx.fillStyle = e.hp / e.maxHp > 0.5 ? '#33cc77' : e.hp / e.maxHp > 0.25 ? '#ffaa00' : '#ff2200';
         ctx.fillRect(-bw / 2, -44, bw * (e.hp / e.maxHp), bh);
         ctx.strokeStyle = eaterColor; ctx.lineWidth = 1; ctx.strokeRect(-bw / 2, -44, bw, bh);
-        ctx.fillStyle = eaterColor; ctx.font = 'bold 7px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(isBreeder ? 'BROOD EATER' : 'EATER', 0, -52);
-      }
-
-      // Visibility guard: keep eater outlined even during heavy post effects.
-      ctx.shadowBlur = 0;
-      ctx.strokeStyle = '#9effc9';
-      ctx.lineWidth = isMini ? 1.5 : 2;
-      ctx.beginPath();
-      ctx.arc(0, 0, isMini ? 18 : 26, 0, Math.PI * 2);
-      ctx.stroke();
-
-      if (import.meta.env.DEV) {
-        // Debug identity label for visibility troubleshooting during local tuning.
-        ctx.fillStyle = '#eaffea';
-        ctx.font = `bold ${isMini ? 8 : 10}px monospace`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(stage === 0 ? 'MINI EATER' : isBreeder ? 'BROOD' : 'EATER', 0, 0);
       }
      } else if (e.type === 'glutton') {
        const t = Date.now();
@@ -2006,6 +2027,38 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       }
     }
 
+    // Missile volleys: fire `missile tier` shots per volley, then cool down.
+    const missileTier = s.powerups.missile || 0;
+    if (missileTier > 0 && wantsToFire) {
+      const rapidfireBonus = (s.powerups.rapidfire || 0) === 1 ? 10 : (s.powerups.rapidfire || 0) * 8;
+      const volleyCadence = Math.max(2, 7 - Math.floor(Math.min(missileTier, 10) / 3));
+      const volleyCooldown = Math.max(22, 95 - Math.min(missileTier, 10) * 6 - Math.floor(rapidfireBonus * 0.6));
+
+      s.missileVolleyCooldown = Math.max(0, (s.missileVolleyCooldown || 0) - 1);
+      s.missileVolleyTimer = Math.max(0, (s.missileVolleyTimer || 0) - 1);
+
+      if ((s.missileVolleyShotsLeft || 0) <= 0 && s.missileVolleyCooldown <= 0) {
+        s.missileVolleyShotsLeft = Math.max(1, missileTier);
+        s.missileVolleyIndex = 0;
+      }
+
+      if ((s.missileVolleyShotsLeft || 0) > 0 && s.missileVolleyTimer <= 0) {
+        fireMissileVolleyShot(s, missileTier);
+        s.missileVolleyShotsLeft -= 1;
+        if (s.missileVolleyShotsLeft > 0) {
+          s.missileVolleyTimer = volleyCadence;
+        } else {
+          s.missileVolleyCooldown = volleyCooldown;
+          s.missileVolleyTimer = 0;
+        }
+      }
+    } else if (missileTier <= 0) {
+      s.missileVolleyShotsLeft = 0;
+      s.missileVolleyTimer = 0;
+      s.missileVolleyCooldown = 0;
+      s.missileVolleyIndex = 0;
+    }
+
     // Reverse shotgun timer
     if (wantsToFire && (s.powerups.reverse || 0) > 0) {
       s.reverseFireTimer--;
@@ -2058,12 +2111,21 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       }
     }
 
-    // Super wingmen fire player's weapon loadout
+    // Super wingmen fire one random gun from the player's currently unlocked weapon pool.
     if (wantsToFire && s.superWingmen && s.superWingmen.length > 0) {
       s.superWingmanFireTimer = (s.superWingmanFireTimer || 0) - 1;
       if (s.superWingmanFireTimer <= 0) {
         const pw = s.powerups;
-        const rapidfireBonus = (pw.rapidfire || 0) === 1 ? 10 : (pw.rapidfire || 0) * 8;
+        const spreadTier = (pw.spread || 0) || (pw.shotgun || 0);
+        const availableSuperGuns = [];
+        if ((pw.laser || 0) > 0) availableSuperGuns.push('laser');
+        if ((pw.bounce || 0) > 0) availableSuperGuns.push('bounce');
+        if (spreadTier > 0) availableSuperGuns.push('spread');
+        if ((pw.missile || 0) > 0) availableSuperGuns.push('missile');
+        if ((pw.reverse || 0) > 0) availableSuperGuns.push('reverse');
+        if ((pw.photon || 0) > 0) availableSuperGuns.push('photon');
+        if (availableSuperGuns.length === 0) availableSuperGuns.push('normal');
+
         const liveTargets = s.enemies.filter(e => !e.dead && e.type !== 'dropper' && isEnemyVisibleForTargeting(e));
         s.superWingmen.forEach(sw => {
           let target = sw.aimTarget && !sw.aimTarget.dead && isEnemyVisibleForTargeting(sw.aimTarget) ? sw.aimTarget : null;
@@ -2082,20 +2144,93 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           const aimDirX = Math.cos(aimAngle);
           const aimDirY = Math.sin(aimAngle);
 
-          const photonTier = pw.photon || 0;
-          if (photonTier > 0) {
-            const size = 6 + photonTier * 3;
-            const photonSpeed = 11;
-            acquireBullet(s, { x: sw.x, y: sw.y - 14, vx: aimDirX * photonSpeed, vy: aimDirY * photonSpeed, type: 'photon', size, orbitAngle: 0 }, 'player');
+          const selectedGun = availableSuperGuns[Math.floor(Math.random() * availableSuperGuns.length)];
+          if (selectedGun === 'laser') {
+            const laserTier = Math.max(1, pw.laser || 1);
+            const laserSpeed = 9.2;
+            acquireBullet(s, {
+              x: sw.x,
+              y: sw.y - 14,
+              vx: aimDirX * laserSpeed,
+              vy: aimDirY * laserSpeed,
+              type: 'laser',
+              fat: Math.min(2, 1 + Math.floor(laserTier / 5)),
+            }, 'player');
+          } else if (selectedGun === 'bounce') {
+            const bounceSpeed = 8.2;
+            acquireBullet(s, {
+              x: sw.x,
+              y: sw.y - 14,
+              vx: aimDirX * bounceSpeed,
+              vy: aimDirY * bounceSpeed,
+              type: 'bounce',
+              bouncesLeft: Math.max(1, Math.min(3, pw.bounce || 1)),
+            }, 'player');
+          } else if (selectedGun === 'spread') {
+            const pelletCount = Math.min(5, 2 + Math.floor(Math.max(1, spreadTier) / 3));
+            const spreadDeg = Math.min(80, 24 + spreadTier * 4);
+            for (let i = 0; i < pelletCount; i++) {
+              const t = pelletCount === 1 ? 0.5 : i / (pelletCount - 1);
+              const a = aimAngle - (spreadDeg * Math.PI / 180) / 2 + (spreadDeg * Math.PI / 180) * t;
+              acquireBullet(s, {
+                x: sw.x,
+                y: sw.y - 12,
+                vx: Math.cos(a) * 6.8,
+                vy: Math.sin(a) * 6.8,
+                type: 'spreadPellet',
+              }, 'player');
+            }
+          } else if (selectedGun === 'missile') {
+            const missileTier = Math.max(1, pw.missile || 1);
+            const missileSpeed = 7.2 + Math.min(missileTier, 10) * 0.16;
+            acquireBullet(s, {
+              x: sw.x,
+              y: sw.y - 14,
+              vx: aimDirX * missileSpeed,
+              vy: aimDirY * missileSpeed,
+              type: 'missile',
+              missileTier,
+              speed: missileSpeed,
+              maxTurnRate: 0.08 + Math.min(missileTier, 10) * 0.008,
+              homingDelay: 10,
+              preferredTarget: target || null,
+            }, 'player');
+          } else if (selectedGun === 'reverse') {
+            const reverseTier = Math.max(1, pw.reverse || 1);
+            const pelletCount = Math.max(1, Math.min(5, reverseTier));
+            const spreadDeg = pelletCount === 1 ? 0 : Math.min(90, 12 + reverseTier * 8);
+            const reverseBaseAngle = aimAngle + Math.PI;
+            for (let i = 0; i < pelletCount; i++) {
+              const t = pelletCount === 1 ? 0.5 : i / (pelletCount - 1);
+              const a = reverseBaseAngle - (spreadDeg * Math.PI / 180) / 2 + (spreadDeg * Math.PI / 180) * t;
+              acquireBullet(s, {
+                x: sw.x,
+                y: sw.y + 12,
+                vx: Math.cos(a) * 6.7,
+                vy: Math.sin(a) * 6.7,
+                type: 'reverse',
+              }, 'player');
+            }
+          } else if (selectedGun === 'photon') {
+            const photonTier = Math.max(1, pw.photon || 1);
+            const size = Math.min(12, 6 + photonTier);
+            const photonSpeed = 9.2;
+            acquireBullet(s, {
+              x: sw.x,
+              y: sw.y - 14,
+              vx: aimDirX * photonSpeed,
+              vy: aimDirY * photonSpeed,
+              type: 'photon',
+              size,
+              orbitAngle: 0,
+            }, 'player');
+          } else {
+            const normalSpeed = 6.4;
+            acquireBullet(s, { x: sw.x, y: sw.y - 18, vx: aimDirX * normalSpeed, vy: aimDirY * normalSpeed, type: 'normal' }, 'player');
           }
-          if ((pw.bounce || 0) > 0) {
-            const bounceSpeed = 10;
-            acquireBullet(s, { x: sw.x, y: sw.y - 14, vx: aimDirX * bounceSpeed, vy: aimDirY * bounceSpeed, type: 'bounce', bouncesLeft: pw.bounce }, 'player');
-          }
-          const normalSpeed = 7.2;
-          acquireBullet(s, { x: sw.x, y: sw.y - 18, vx: aimDirX * normalSpeed, vy: aimDirY * normalSpeed, type: 'normal' }, 'player');
         });
-        s.superWingmanFireTimer = Math.max(10, getFireRate(pw) + 5 - rapidfireBonus);
+        // Intentionally slower than player fire rate so super wingmen assist instead of dominate.
+        s.superWingmanFireTimer = Math.max(18, getFireRate(pw) + 12);
       }
     }
 
@@ -2261,6 +2396,52 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     }
 
     // ── Enemy movement ────────────────────────────────────────
+    const eaterDifficultyTier = (difficultyConfigRef.current?.maxWave || 25) >= 100
+      ? 'hell'
+      : (difficultyConfigRef.current?.maxWave || 25) >= 50
+        ? 'normal'
+        : 'easy';
+    const eaterTuning = eaterDifficultyTier === 'hell'
+      ? {
+          moveMult: 1.26,
+          roamMult: 1.22,
+          biteMult: 1.35,
+          stage0GrowthNeed: 1,
+          stage1GrowthNeed: 2,
+          stage2SpawnCooldown: 260,
+          stage1SpawnCooldown: 320,
+          miniHitDamage: 0.5,
+        }
+      : eaterDifficultyTier === 'normal'
+        ? {
+            moveMult: 1.14,
+            roamMult: 1.12,
+            biteMult: 1.18,
+            stage0GrowthNeed: 1,
+            stage1GrowthNeed: 2,
+            stage2SpawnCooldown: 300,
+            stage1SpawnCooldown: 360,
+            miniHitDamage: 0.6,
+          }
+        : {
+            moveMult: 1,
+            roamMult: 1,
+            biteMult: 1,
+            stage0GrowthNeed: 1,
+            stage1GrowthNeed: 3,
+            stage2SpawnCooldown: 360,
+            stage1SpawnCooldown: 420,
+            miniHitDamage: 0.7,
+          };
+
+    const basicCoverCrowding = new Map();
+    s.enemies.forEach((enemy) => {
+      if (!enemy || enemy.dead || enemy.type !== 'basic') return;
+      const blockIdx = enemy._coverBlockIdx;
+      if (!Number.isInteger(blockIdx) || blockIdx < 0) return;
+      basicCoverCrowding.set(blockIdx, (basicCoverCrowding.get(blockIdx) || 0) + 1);
+    });
+
     s.enemies.forEach(e => {
       if (e.type === 'boss') {
         const bt = e.tier || 1;
@@ -2362,14 +2543,47 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             e._laserDamageTick = 0;
           }
         } else if (bossWave === 20) {
-          // Pirate: aggressively seek blocks to absorb; fallback to jagged zig-zag.
-          let target = null;
-          let bestDist = Infinity;
+          // Pirate: opening behavior is an immediate bottom swoop, then harvest mode.
+          if (!e._pirateMovePhase) e._pirateMovePhase = 'swoop';
 
-          s.blocks.forEach(block => {
-            if (block.dead) return;
-            const cells = getBlockCells(block);
-            cells.forEach(cell => {
+          const bottomY = H - 86;
+          const lowBandY = H * 0.72;
+          const hasPiles = s.piledCells.length > 0;
+
+          if (e._pirateMovePhase === 'swoop') {
+            // Aim the dive toward built-up piles so collection begins as soon as it arrives.
+            let targetX = W / 2;
+            if (hasPiles) {
+              let nearest = null;
+              let nearestDist = Infinity;
+              s.piledCells.forEach(cell => {
+                const cx = cell.x + BLOCK_SIZE / 2;
+                const cy = cell.y + BLOCK_SIZE / 2;
+                const d = Math.hypot(cx - e.x, cy - e.y);
+                if (d < nearestDist) {
+                  nearestDist = d;
+                  nearest = { x: cx, y: cy };
+                }
+              });
+              if (nearest) targetX = nearest.x;
+            }
+
+            const dx = targetX - e.x;
+            const diveXStep = Math.max(-4.2, Math.min(4.2, dx * 0.09));
+            e.x += diveXStep;
+            e.y += enraged ? 4.8 : 4.1;
+
+            if (e.y >= lowBandY) {
+              e._pirateMovePhase = 'harvest';
+            }
+          }
+
+          if (e._pirateMovePhase === 'harvest') {
+            let target = null;
+            let bestDist = Infinity;
+
+            // Prefer built-up stage cells first, then active falling blocks.
+            s.piledCells.forEach(cell => {
               const cx = cell.x + BLOCK_SIZE / 2;
               const cy = cell.y + BLOCK_SIZE / 2;
               const d = Math.hypot(cx - e.x, cy - e.y);
@@ -2378,33 +2592,41 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
                 target = { x: cx, y: cy };
               }
             });
-          });
 
-          s.piledCells.forEach(cell => {
-            const cx = cell.x + BLOCK_SIZE / 2;
-            const cy = cell.y + BLOCK_SIZE / 2;
-            const d = Math.hypot(cx - e.x, cy - e.y);
-            if (d < bestDist) {
-              bestDist = d;
-              target = { x: cx, y: cy };
+            if (!target) {
+              s.blocks.forEach(block => {
+                if (block.dead) return;
+                const cells = getBlockCells(block);
+                cells.forEach(cell => {
+                  const cx = cell.x + BLOCK_SIZE / 2;
+                  const cy = cell.y + BLOCK_SIZE / 2;
+                  const d = Math.hypot(cx - e.x, cy - e.y);
+                  if (d < bestDist) {
+                    bestDist = d;
+                    target = { x: cx, y: cy };
+                  }
+                });
+              });
             }
-          });
 
-          if (target) {
-            const dx = target.x - e.x;
-            const dy = target.y - e.y;
-            const len = Math.hypot(dx, dy) || 1;
-            const seekSpd = enraged ? 3.6 : 2.4;
-            e.x += (dx / len) * seekSpd;
-            e.y += (dy / len) * seekSpd;
-          } else {
-            e.y = Math.min(e.y + (enraged ? 0.5 : 0.2), H * 0.33);
-            e.x += e.vx * (enraged ? 3.6 : 1.8);
-            if (e.x < 70 || e.x > W - 70) e.vx *= -1;
+            if (target) {
+              const dx = target.x - e.x;
+              const dy = target.y - e.y;
+              const len = Math.hypot(dx, dy) || 1;
+              const seekSpd = enraged ? 4.0 : 2.8;
+              e.x += (dx / len) * seekSpd;
+              e.y += (dy / len) * seekSpd;
+            } else {
+              // Keep pressure in the lower half when no food is available.
+              const targetY = H * 0.78;
+              e.y += (targetY - e.y) * (enraged ? 0.18 : 0.12);
+              e.x += e.vx * (enraged ? 3.8 : 2.0);
+              if (e.x < 70 || e.x > W - 70) e.vx *= -1;
+            }
           }
 
           if (e.y < 60) e.y = 60;
-          if (e.y > H - 60) e.y = H - 60;
+          if (e.y > bottomY) e.y = bottomY;
           updatePirateBlockShield(e, s, p);
         } else {
           // Final: orbital pattern with vertical breathing.
@@ -2453,7 +2675,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           }
         }
       } else if (e.type === 'eater') {
-        e._eating = false;
+        if (e._eatAnimTimer === undefined) e._eatAnimTimer = 0;
+        e._eatAnimTimer = Math.max(0, e._eatAnimTimer - 1);
+        e._eating = e._eatAnimTimer > 0;
         e._chargingPlayer = false;
         if (e._growthStage === undefined) e._growthStage = e._mini ? 0 : 1;
         if (e._growthMeter === undefined) e._growthMeter = 0;
@@ -2463,35 +2687,42 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         if (e._lineageDepth === undefined) e._lineageDepth = e._mini ? 1 : 0;
         if (e._spawnCooldown === undefined) e._spawnCooldown = 0;
         e._spawnCooldown = Math.max(0, (e._spawnCooldown || 0) - 1);
+        if (e._biteCooldown === undefined) e._biteCooldown = 0;
+        e._biteCooldown = Math.max(0, (e._biteCooldown || 0) - 1);
+        if (e._scatterTimer === undefined) e._scatterTimer = 0;
+        if (e._scatterDamp === undefined) e._scatterDamp = 0.96;
+        if (e._scatterVx === undefined) e._scatterVx = 0;
+        if (e._scatterVy === undefined) e._scatterVy = 0;
 
-        const stageScale = e._growthStage === 0 ? 0.42 : e._growthStage === 1 ? 1 : 1.24;
+        const stageScale = e._growthStage === 0 ? 0.54 : e._growthStage === 1 ? 0.84 : 1.12;
         const targetW = HITBOX_SIZES.eater.w * stageScale;
         const targetH = HITBOX_SIZES.eater.h * stageScale;
         e.w = Number.isFinite(e.w) ? e.w + (targetW - e.w) * 0.18 : targetW;
         e.h = Number.isFinite(e.h) ? e.h + (targetH - e.h) * 0.18 : targetH;
 
         const bound = Math.max(15, Math.round(Math.max(e.w || 0, e.h || 0) * 0.3));
+        const maxReachableTargetY = H - bound - 6;
         const isEnemyOnStage = e.x >= -80 && e.x <= W + 80 && e.y >= -80 && e.y <= H + 80;
         let targetX = null;
         let targetY = null;
         let distToTarget = Infinity;
-        let bestPlayerDist = -1;
+        let bestTargetDist = Infinity;
         e._targetBlock = null;
         e._targetCellIdx = undefined;
 
-        // Prioritize blocks farthest from the player.
+        // Prioritize the closest block/cell to reduce wandering and make eaters commit to targets.
         s.blocks.forEach(block => {
           if (block.dead) return;
           if (block.invulnerable) return;
           getBlockCells(block).forEach(cell => {
             const cx = cell.x + BLOCK_SIZE / 2;
-            const cy = cell.y + BLOCK_SIZE / 2;
-            const dPlayer = Math.hypot(cx - p.x, cy - p.y);
-            if (dPlayer > bestPlayerDist) {
-              bestPlayerDist = dPlayer;
+            const cy = Math.min(cell.y + BLOCK_SIZE / 2, maxReachableTargetY);
+            const dEater = Math.hypot(cx - e.x, cy - e.y);
+            if (dEater < bestTargetDist) {
+              bestTargetDist = dEater;
               targetX = cx;
               targetY = cy;
-              distToTarget = Math.hypot(cx - e.x, cy - e.y);
+              distToTarget = dEater;
               e._targetBlock = block;
               e._targetCellIdx = undefined;
             }
@@ -2499,14 +2730,15 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         });
 
         s.piledCells.forEach((cell, idx) => {
+          if (cell.invulnerable) return;
           const cx = cell.x + BLOCK_SIZE / 2;
-          const cy = cell.y + BLOCK_SIZE / 2;
-          const dPlayer = Math.hypot(cx - p.x, cy - p.y);
-          if (dPlayer > bestPlayerDist) {
-            bestPlayerDist = dPlayer;
+          const cy = Math.min(cell.y + BLOCK_SIZE / 2, maxReachableTargetY);
+          const dEater = Math.hypot(cx - e.x, cy - e.y);
+          if (dEater < bestTargetDist) {
+            bestTargetDist = dEater;
             targetX = cx;
             targetY = cy;
-            distToTarget = Math.hypot(cx - e.x, cy - e.y);
+            distToTarget = dEater;
             e._targetBlock = null;
             e._targetCellIdx = idx;
           }
@@ -2514,21 +2746,31 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
 
         if (targetX !== null && targetY !== null) {
           // Passive ecosystem behavior: eat blocks first and grow through stages.
-          if (distToTarget > 12) {
+          if (e._scatterTimer > 0) {
+            e.x += e._scatterVx;
+            e.y += e._scatterVy;
+            e._scatterVx *= e._scatterDamp;
+            e._scatterVy *= e._scatterDamp;
+            e._scatterTimer -= 1;
+          } else if (distToTarget > 10) {
             const dx2 = targetX - e.x;
             const dy2 = targetY - e.y;
             const len2 = Math.hypot(dx2, dy2) || 1;
-            const eSpd = (e._growthStage === 0 ? 1.35 : e._growthStage === 1 ? 2.05 : 1.85) + (s.wave * 0.03);
+            const eSpd = ((e._growthStage === 0 ? 1.8 : e._growthStage === 1 ? 2.3 : 2.05) + (s.wave * 0.03)) * eaterTuning.moveMult;
             e.x += (dx2 / len2) * eSpd;
             e.y += (dy2 / len2) * eSpd;
           } else if (isEnemyOnStage) {
             e._eating = true;
+            e._eatAnimTimer = Math.max(e._eatAnimTimer || 0, 18);
+            const biteInterval = Math.max(2, Math.round((e._growthStage === 0 ? 9 : e._growthStage === 1 ? 7 : 6) / eaterTuning.biteMult));
             let justAte = false;
             if (e._targetBlock && !e._targetBlock.dead) {
               if (e._targetBlock.invulnerable) {
                 e._targetBlock = null;
-              } else {
-                e._targetBlock.hp -= 0.06;
+              } else if (e._biteCooldown <= 0) {
+                const biteDamage = (e._growthStage === 0 ? 0.11 : e._growthStage === 1 ? 0.15 : 0.19) * eaterTuning.biteMult;
+                e._targetBlock.hp -= biteDamage;
+                e._biteCooldown = biteInterval;
                 if (e._targetBlock.hp <= 0) {
                   e._targetBlock.dead = true;
                   e.hp = Math.min(e.hp + 3, e.maxHp + 5);
@@ -2538,8 +2780,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
                   e._blocksEaten = (e._blocksEaten || 0) + 1;
                 }
               }
-            } else if (e._targetCellIdx !== undefined && s.piledCells[e._targetCellIdx]) {
+            } else if (e._targetCellIdx !== undefined && s.piledCells[e._targetCellIdx] && e._biteCooldown <= 0) {
               s.piledCells.splice(e._targetCellIdx, 1);
+              e._biteCooldown = biteInterval;
               e.hp = Math.min(e.hp + 2, e.maxHp + 5);
               e.maxHp = Math.max(e.maxHp, e.hp);
               spawnExplosion(s, e.x, e.y, '#44ff88', 6);
@@ -2549,28 +2792,28 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             if (justAte) {
               e._growthMeter = (e._growthMeter || 0) + 1;
 
-              if (e._growthStage === 0 && e._growthMeter >= 2) {
+              if (e._growthStage === 0 && e._growthMeter >= eaterTuning.stage0GrowthNeed) {
                 e._growthStage = 1;
                 e._mini = false;
                 e.hp += 4;
                 e.maxHp += 6;
                 e._growthMeter = 0;
                 spawnExplosion(s, e.x, e.y, '#99ffbb', 16);
-              } else if (e._growthStage === 1 && e._growthMeter >= 4) {
+              } else if (e._growthStage === 1 && e._growthMeter >= eaterTuning.stage1GrowthNeed) {
                 e._growthStage = 2;
                 e.hp += 6;
                 e.maxHp += 8;
                 e._growthMeter = 0;
-                e._spawnCooldown = 240;
+                e._spawnCooldown = eaterTuning.stage2SpawnCooldown;
                 spawnExplosion(s, e.x, e.y, '#d2ffd9', 20);
               }
 
-              if (e._growthStage >= 2 && e._spawnCooldown <= 0 && e._offspringCount < e._offspringCap) {
+              if (e._growthStage >= 2 && e._spawnCooldown <= 0) {
                 const spawned = spawnMiniEaters(W, s, e);
-                if (spawned > 0) e._spawnCooldown = 360;
-              } else if (e._growthStage === 1 && !e._mini && e._blocksEaten >= 3 && e._offspringCount < 1 && e._spawnCooldown <= 0) {
+                if (spawned > 0) e._spawnCooldown = eaterTuning.stage2SpawnCooldown;
+              } else if (e._growthStage === 1 && !e._mini && e._blocksEaten >= 3 && e._spawnCooldown <= 0) {
                 const spawned = spawnMiniEaters(W, s, e);
-                if (spawned > 0) e._spawnCooldown = 420;
+                if (spawned > 0) e._spawnCooldown = eaterTuning.stage1SpawnCooldown;
               }
 
             }
@@ -2585,7 +2828,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             e._retargetRoamTimer = randomBetween(30, 80);
           }
           e._retargetRoamTimer -= 1;
-          const roamSpeed = (e._growthStage === 0 ? 1.1 : e._growthStage === 1 ? 1.45 : 1.3) + (s.wave * 0.015);
+          const roamSpeed = ((e._growthStage === 0 ? 1.1 : e._growthStage === 1 ? 1.45 : 1.3) + (s.wave * 0.015)) * eaterTuning.roamMult;
           const driftBiasX = Math.cos(e._passiveRoamPhase) * 0.35;
           const driftBiasY = Math.sin(e._passiveRoamPhase * 1.2) * 0.28;
           e.x += (e._roamDirX + driftBiasX) * roamSpeed;
@@ -2622,10 +2865,12 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         if (e._chargeCooldown === undefined) e._chargeCooldown = Math.floor(randomBetween(160, 280));
         if (e._chargeFrames === undefined) e._chargeFrames = 0;
         if (e._eatingFrames === undefined) e._eatingFrames = 0;
+        if (e._bitePauseFrames === undefined) e._bitePauseFrames = 0;
 
         e._consumeCooldown = Math.max(0, (e._consumeCooldown || 0) - 1);
         e._targetRetargetTimer = Math.max(0, (e._targetRetargetTimer || 0) - 1);
         e._eatingFrames = Math.max(0, (e._eatingFrames || 0) - 1);
+        e._bitePauseFrames = Math.max(0, (e._bitePauseFrames || 0) - 1);
 
         const consumeCandidates = [];
 
@@ -2659,6 +2904,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         });
 
         s.piledCells.forEach((cell) => {
+          if (cell.invulnerable) return;
           consumeCandidates.push({
             kind: 'piledCell',
             target: cell,
@@ -2671,31 +2917,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           });
         });
 
-        const isTargetStillValid = () => {
-          if (e._consumeKind === 'block') return !!(e._consumeTargetRef && !e._consumeTargetRef.dead);
-          if (e._consumeKind === 'piledCell') return !!(e._consumeTargetRef && s.piledCells.includes(e._consumeTargetRef));
-          return false;
-        };
-
-        if (!isTargetStillValid()) {
-          e._consumeTargetRef = null;
-          e._consumeKind = null;
-          e._targetX = undefined;
-          e._targetY = undefined;
-          e._targetMass = 0;
-          e._targetSourceW = 0;
-          e._targetSourceH = 0;
-          e._targetColor = '#ff6666';
-        }
-
         const applyGluttonGrowth = (mass, sourceW, sourceH) => {
-          const maxGrowthPerConsume = 15;
-          const rawGainW = Math.max(3, sourceW * 0.52);
-          const rawGainH = Math.max(3, sourceH * 0.52);
+          const maxGrowthPerConsume = 7;
+          const rawGainW = Math.max(1.4, sourceW * 0.24);
+          const rawGainH = Math.max(1.4, sourceH * 0.24);
           const sizeGainW = Math.min(rawGainW, maxGrowthPerConsume);
           const sizeGainH = Math.min(rawGainH, maxGrowthPerConsume);
-          e.w = Math.min((e.w || e._baseW || 94) + sizeGainW, 260);
-          e.h = Math.min((e.h || e._baseH || 94) + sizeGainH, 260);
+          e.w = Math.min((e.w || e._baseW || 94) + sizeGainW, 180);
+          e.h = Math.min((e.h || e._baseH || 94) + sizeGainH, 180);
 
           const currentMax = e.maxHp || e.hp || 1;
           const cap = e._isHell ? 1050 : 900;
@@ -2709,71 +2938,61 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           e.hp = Math.min((e.hp || 1) + heal, e.maxHp);
 
           e._absorbedUnits = Math.min((e._absorbedUnits || 0) + mass, 36);
-          e._gluttonGrowthMeter = (e._gluttonGrowthMeter || 0) + Math.max(1, mass * 0.9 + (sourceW + sourceH) / 42);
+          e._gluttonGrowthMeter = (e._gluttonGrowthMeter || 0) + Math.max(1.6, mass * 1.9 + (sourceW + sourceH) / 18);
 
-          const segmentThreshold = 7 + (e._segmentCount || 0) * 3.5;
+          const segmentThreshold = 4 + (e._segmentCount || 0) * 1.65;
           if ((e._segmentCount || 0) < (e._maxSegments || 0) && e._gluttonGrowthMeter >= segmentThreshold) {
-            e._segmentCount = Math.min((e._maxSegments || 0), (e._segmentCount || 0) + 1);
+            const newSegIndex = e._segmentCount || 0;
+            e._segmentCount = Math.min((e._maxSegments || 0), newSegIndex + 1);
             e._gluttonGrowthMeter = Math.max(0, e._gluttonGrowthMeter - segmentThreshold);
+            // Give the new segment its own HP pool — tougher as the Glutton grows.
+            if (!Array.isArray(e._segmentHp)) e._segmentHp = [];
+            const segHp = Math.max(18, Math.round((e.maxHp || e.hp || 80) * 0.32));
+            e._segmentHp[newSegIndex] = segHp;
           }
         };
 
-        const needsNewTarget = !e._consumeKind || !isTargetStillValid() || e._targetRetargetTimer <= 0;
-        if (needsNewTarget && consumeCandidates.length > 0) {
-          let nearest = null;
-          let nearestDist = Infinity;
-          consumeCandidates.forEach(c => {
-            const d = Math.hypot(c.x - e.x, c.y - e.y);
-            if (d < nearestDist) {
-              nearestDist = d;
-              nearest = c;
-            }
-          });
-          if (nearest) {
-            e._consumeTargetRef = nearest.target;
-            e._consumeKind = nearest.kind;
-            e._targetX = nearest.x;
-            e._targetY = nearest.y;
-            e._targetMass = nearest.mass;
-            e._targetSourceW = nearest.sourceW;
-            e._targetSourceH = nearest.sourceH;
-            e._targetColor = nearest.color;
-            e._targetRetargetTimer = 20;
-          }
-        }
-
         e._chargeFrames = 0;
         e._chargingPlayer = false;
+        const patrolSpeed = (e._isHell ? 4.35 : 3.75) + Math.min((e._segmentCount || 0) * 0.08, 0.75);
+        const visualHalf = Math.max((e.w || e._baseW || 94) * 0.9, (e.h || e._baseH || 94) * 0.9, 36) + Math.min(e._absorbedUnits || 0, 36) * 1.4;
+        const margin = Math.max(20, visualHalf + 6);
+        // Concentric inward spiral — starts at the perimeter, each completed lap tightens inward,
+        // then resets to perimeter when the innermost ring is complete.
+        const maxInset = Math.max(0, Math.min(W, H) * 0.5 - margin - 60);
+        const insetStep = Math.max(30, Math.min(W, H) * 0.12);
+        const buildLapRoute = (inset) => {
+          const xl = inset, xr = W - inset;
+          const yt = inset, yb = Math.min(H - inset, H - margin);
+          return [
+            { x: xl, y: yt }, { x: W * 0.5, y: yt }, { x: xr, y: yt },
+            { x: xr, y: (yt + yb) * 0.5 }, { x: xr, y: yb },
+            { x: W * 0.5, y: yb }, { x: xl, y: yb }, { x: xl, y: (yt + yb) * 0.5 },
+          ];
+        };
+        if (!Number.isFinite(e._patrolVx) || !Number.isFinite(e._patrolVy)) { e._patrolVx = patrolSpeed; e._patrolVy = 0; }
+        if (!Number.isInteger(e._patrolWaypointIndex)) e._patrolWaypointIndex = 0;
+        if (e._patrolInset === undefined) e._patrolInset = 0;
 
-        if (e._consumeKind && isTargetStillValid()) {
-          if (e._consumeKind === 'block' && e._consumeTargetRef && !e._consumeTargetRef.dead) {
-            const cells = getBlockCells(e._consumeTargetRef);
-            if (cells.length > 0) {
-              e._targetX = cells.reduce((sum, c) => sum + c.x + BLOCK_SIZE / 2, 0) / cells.length;
-              e._targetY = cells.reduce((sum, c) => sum + c.y + BLOCK_SIZE / 2, 0) / cells.length;
+        const isEnemyOnStageNow = e.x >= -80 && e.x <= W + 80 && e.y >= -80 && e.y <= H + 80;
+        if (e._bitePauseFrames <= 0 && e._consumeCooldown <= 0 && isEnemyOnStageNow && consumeCandidates.length > 0) {
+          let biteTarget = null;
+          let biteDist = Infinity;
+          consumeCandidates.forEach(c => {
+            const d = Math.hypot(c.x - e.x, c.y - e.y);
+            if (d < biteDist) {
+              biteDist = d;
+              biteTarget = c;
             }
-          } else if (e._consumeKind === 'piledCell' && e._consumeTargetRef) {
-            const cell = e._consumeTargetRef;
-            e._targetX = cell.x + BLOCK_SIZE / 2;
-            e._targetY = cell.y + BLOCK_SIZE / 2;
-          }
-
-          const dx = (e._targetX ?? e.x) - e.x;
-          const dy = (e._targetY ?? e.y) - e.y;
-          const len = Math.hypot(dx, dy) || 1;
-          const feedSpd = (e._isHell ? 4.7 : 3.9) + Math.min((e._absorbedUnits || 0) * 0.03, 1.4);
-          e.x += (dx / len) * feedSpd;
-          e.y += (dy / len) * feedSpd;
-
-          const consumeRange = Math.max(26, ((e.w || 80) + (e.h || 80)) * 0.22);
-          const isEnemyOnStageNow = e.x >= -80 && e.x <= W + 80 && e.y >= -80 && e.y <= H + 80;
-          if (len <= consumeRange && e._consumeCooldown <= 0 && isEnemyOnStageNow) {
+          });
+          const consumeRange = Math.max(28, ((e.w || 80) + (e.h || 80)) * 0.21);
+          if (biteTarget && biteDist <= consumeRange) {
             let consumed = false;
-            if (e._consumeKind === 'block' && e._consumeTargetRef && !e._consumeTargetRef.dead) {
-              e._consumeTargetRef.dead = true;
+            if (biteTarget.kind === 'block' && biteTarget.target && !biteTarget.target.dead) {
+              biteTarget.target.dead = true;
               consumed = true;
-            } else if (e._consumeKind === 'piledCell' && e._consumeTargetRef) {
-              const idx = s.piledCells.indexOf(e._consumeTargetRef);
+            } else if (biteTarget.kind === 'piledCell' && biteTarget.target) {
+              const idx = s.piledCells.indexOf(biteTarget.target);
               if (idx >= 0) {
                 s.piledCells.splice(idx, 1);
                 consumed = true;
@@ -2781,41 +3000,68 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             }
 
             if (consumed) {
-              applyGluttonGrowth(e._targetMass || 1, e._targetSourceW || BLOCK_SIZE, e._targetSourceH || BLOCK_SIZE);
-              spawnExplosion(s, e._targetX || e.x, e._targetY || e.y, e._targetColor || '#ff6666', 14);
-              e._consumeCooldown = 8;
-              e._eatingFrames = 14;
+              applyGluttonGrowth(biteTarget.mass || 1, biteTarget.sourceW || BLOCK_SIZE, biteTarget.sourceH || BLOCK_SIZE);
+              spawnExplosion(s, biteTarget.x || e.x, biteTarget.y || e.y, biteTarget.color || '#ff6666', 14);
+              e._consumeCooldown = 20;
+              e._bitePauseFrames = 8;
+              e._eatingFrames = 16;
             }
-
-            e._consumeTargetRef = null;
-            e._consumeKind = null;
-            e._targetRetargetTimer = 0;
           }
-        } else {
-          e._roamPhase = (e._roamPhase || Math.random() * Math.PI * 2) + 0.04;
-          const roamSpeed = (e._isHell ? 2.1 : 1.7) + Math.min((e._segmentCount || 0) * 0.08, 0.55);
-          if (!Number.isFinite(e._roamDirX) || !Number.isFinite(e._roamDirY) || (e._retargetRoamTimer || 0) <= 0) {
-            const roamAngle = Math.random() * Math.PI * 2;
-            e._roamDirX = Math.cos(roamAngle);
-            e._roamDirY = Math.sin(roamAngle);
-            e._retargetRoamTimer = Math.floor(randomBetween(40, 90));
-          }
-          e._retargetRoamTimer -= 1;
-          const wobbleX = Math.cos(e._roamPhase) * 0.45;
-          const wobbleY = Math.sin(e._roamPhase * 1.3) * 0.35;
-          e.x += (e._roamDirX + wobbleX) * roamSpeed;
-          e.y += (e._roamDirY + wobbleY) * roamSpeed;
         }
 
-        const visualHalf = Math.max((e.w || e._baseW || 94) * 0.9, (e.h || e._baseH || 94) * 0.9, 36) + Math.min(e._absorbedUnits || 0, 36) * 1.4;
-        const margin = Math.max(20, visualHalf + 6);
-        if (e.x < margin) e.x = margin;
-        if (e.x > W - margin) e.x = W - margin;
-        if (e.y < margin) e.y = margin;
-        if (e.y > H - margin) e.y = H - margin;
+        const currentLapRoute = buildLapRoute(margin + e._patrolInset);
+        if (e._patrolWaypointIndex >= currentLapRoute.length) e._patrolWaypointIndex = 0;
+        let patrolTarget = currentLapRoute[e._patrolWaypointIndex];
+        let patrolDx = patrolTarget.x - e.x;
+        let patrolDy = patrolTarget.y - e.y;
+        let patrolDist = Math.hypot(patrolDx, patrolDy);
+        const arrivalThreshold = Math.max(24, patrolSpeed * 8);
+        if (patrolDist <= arrivalThreshold) {
+          e._patrolWaypointIndex += 1;
+          if (e._patrolWaypointIndex >= currentLapRoute.length) {
+            e._patrolWaypointIndex = 0;
+            e._patrolInset = e._patrolInset + insetStep > maxInset ? 0 : e._patrolInset + insetStep;
+          }
+          const refreshedRoute = buildLapRoute(margin + e._patrolInset);
+          patrolTarget = refreshedRoute[e._patrolWaypointIndex] || refreshedRoute[0];
+          patrolDx = patrolTarget.x - e.x;
+          patrolDy = patrolTarget.y - e.y;
+          patrolDist = Math.hypot(patrolDx, patrolDy);
+        }
+        const toTargetX = patrolDist > 0.001 ? patrolDx / patrolDist : 1;
+        const toTargetY = patrolDist > 0.001 ? patrolDy / patrolDist : 0;
+        const steerRate = e._bitePauseFrames > 0 ? 0.06 : 0.14;
+        e._patrolVx += (toTargetX * patrolSpeed - e._patrolVx) * steerRate;
+        e._patrolVy += (toTargetY * patrolSpeed - e._patrolVy) * steerRate;
+        const velocityMag = Math.hypot(e._patrolVx, e._patrolVy) || 1;
+        e._patrolVx = (e._patrolVx / velocityMag) * patrolSpeed;
+        e._patrolVy = (e._patrolVy / velocityMag) * patrolSpeed;
+
+        const biteSlow = e._bitePauseFrames > 0 ? 0.2 : 1;
+        e.x += e._patrolVx * biteSlow;
+        e.y += e._patrolVy * biteSlow;
+
+        if (e.x < margin) {
+          e.x = margin;
+          e._patrolVx = Math.abs(e._patrolVx);
+        }
+        if (e.x > W - margin) {
+          e.x = W - margin;
+          e._patrolVx = -Math.abs(e._patrolVx);
+        }
+        if (e.y < margin) {
+          e.y = margin;
+          e._patrolVy = Math.abs(e._patrolVy);
+        }
+        if (e.y > H - margin) {
+          e.y = H - margin;
+          e._patrolVy = -Math.abs(e._patrolVy);
+        }
         if (!Number.isFinite(e.x) || !Number.isFinite(e.y)) {
           e.x = Math.min(W - margin, Math.max(margin, W * 0.5));
           e.y = Math.min(H - margin, Math.max(margin, H * 0.25));
+          e._patrolVx = patrolSpeed;
+          e._patrolVy = 0;
         }
         const headingX = Number(e.x) - Number(e._prevX ?? e.x - (e.vx || 0));
         const headingY = Number(e.y) - Number(e._prevY ?? e.y - (e.vy || 1));
@@ -2823,15 +3069,34 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           e._angle = Math.atan2(headingY, headingX);
         }
 
-        const segmentGap = Math.max(34, Number(e._gluttonSegmentGap) || Math.max(e.w || 0, e.h || 0) * 0.58 || 56);
-        const sampleStride = Math.max(6, Math.round(segmentGap * 0.2));
+        const segmentCount = e._segmentCount || 0;
+        const gluttonBodySize = Math.max(e.w || 94, e.h || 94);
+        const segmentGap = Math.max(56, gluttonBodySize * 0.66);
         e._gluttonSegmentGap = segmentGap;
-        e._trailPoints.unshift({ x: e.x, y: e.y, angle: e._angle || Math.PI / 2 });
-
-        const requiredTrailLength = Math.max(18, Math.ceil(((e._segmentCount || 0) + 2) * segmentGap / sampleStride) + 6);
-        if (e._trailPoints.length > requiredTrailLength) {
-          e._trailPoints.length = requiredTrailLength;
+        // Dense trail points so turns are faithfully reproduced by rear segments.
+        const trailPointSpacing = 3;
+        const trailHead = e._trailPoints[0];
+        if (!trailHead || Math.hypot((trailHead.x || 0) - e.x, (trailHead.y || 0) - e.y) >= trailPointSpacing) {
+          e._trailPoints.unshift({ x: e.x, y: e.y, angle: e._angle || Math.PI / 2 });
         }
+
+        // Keep enough history for every segment + tail at max train length.
+        const requiredTrailDistance = segmentGap * ((e._maxSegments || 24) + 2.5) + 400;
+        let accumulatedTrailDistance = 0;
+        for (let i = 0; i < e._trailPoints.length - 1; i += 1) {
+          const a = e._trailPoints[i];
+          const b = e._trailPoints[i + 1];
+          accumulatedTrailDistance += Math.hypot((a.x || 0) - (b.x || 0), (a.y || 0) - (b.y || 0));
+          if (accumulatedTrailDistance >= requiredTrailDistance) {
+            e._trailPoints.length = Math.max(i + 2, 2);
+            break;
+          }
+        }
+
+        const interpolateAngle = (from, to, mix) => {
+          const delta = Math.atan2(Math.sin(to - from), Math.cos(to - from));
+          return from + delta * mix;
+        };
 
         const sampleTrailPoint = (distance, out = {}) => {
           const trail = e._trailPoints;
@@ -2841,34 +3106,62 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             out.angle = e._angle || Math.PI / 2;
             return out;
           }
-          const rawIndex = Math.max(0, distance / sampleStride);
-          const lowerIndex = Math.min(trail.length - 1, Math.floor(rawIndex));
-          const upperIndex = Math.min(trail.length - 1, lowerIndex + 1);
-          const lower = trail[lowerIndex] || trail[trail.length - 1];
-          const upper = trail[upperIndex] || lower;
-          const mix = Math.max(0, Math.min(1, rawIndex - lowerIndex));
-          out.x = lower.x + (upper.x - lower.x) * mix;
-          out.y = lower.y + (upper.y - lower.y) * mix;
-          out.angle = lower.angle + ((upper.angle || lower.angle) - lower.angle) * mix;
+          if (trail.length === 1) {
+            out.x = trail[0].x;
+            out.y = trail[0].y;
+            out.angle = trail[0].angle || e._angle || Math.PI / 2;
+            return out;
+          }
+
+          let traversed = 0;
+          for (let i = 0; i < trail.length - 1; i += 1) {
+            const a = trail[i];
+            const b = trail[i + 1];
+            const segLen = Math.hypot((a.x || 0) - (b.x || 0), (a.y || 0) - (b.y || 0));
+            if (traversed + segLen >= distance) {
+              const remain = Math.max(0, distance - traversed);
+              const mix = segLen > 0.0001 ? (remain / segLen) : 0;
+              out.x = a.x + (b.x - a.x) * mix;
+              out.y = a.y + (b.y - a.y) * mix;
+              out.angle = interpolateAngle(a.angle || e._angle || Math.PI / 2, b.angle || a.angle || e._angle || Math.PI / 2, mix);
+              return out;
+            }
+            traversed += segLen;
+          }
+
+          const last = trail[trail.length - 1] || trail[0];
+          out.x = last.x;
+          out.y = last.y;
+          out.angle = last.angle || e._angle || Math.PI / 2;
           return out;
         };
 
-        const segmentCount = e._segmentCount || 0;
+        // Pure trail following — each segment snaps directly to its historic trail position.
+        // No spring, no separation clamp: this guarantees correct facing and no clustering.
         if (!Array.isArray(e._segmentPositions)) e._segmentPositions = [];
         e._segmentPositions.length = segmentCount;
+        const sampled = {};
         for (let index = 0; index < segmentCount; index += 1) {
           const existing = e._segmentPositions[index] || {};
-          sampleTrailPoint(segmentGap * (index + 1), existing);
-          existing.sizeScale = Math.max(0.68, 0.88 - index * 0.04);
+          sampleTrailPoint(segmentGap * (index + 1), sampled);
+          existing.x = sampled.x;
+          existing.y = sampled.y;
+          existing.angle = sampled.angle;
+          existing.sizeScale = Math.max(0.78, 0.94 - index * 0.025);
           e._segmentPositions[index] = existing;
         }
 
         if (segmentCount > 0) {
           const tail = e._tailPosition || {};
-          e._tailPosition = sampleTrailPoint(segmentGap * (segmentCount + 1), tail);
+          sampleTrailPoint(segmentGap * (segmentCount + 1), sampled);
+          tail.x = sampled.x;
+          tail.y = sampled.y;
+          tail.angle = sampled.angle;
+          e._tailPosition = tail;
         } else {
           e._tailPosition = null;
         }
+        e._tailVelocity = null;
 
         e._prevX = e.x;
         e._prevY = e.y;
@@ -2903,8 +3196,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           e._coverRetarget = (e._coverRetarget || 0) - 1;
           if (e._coverRetarget <= 0 || !e._coverTarget) {
             const coverCandidates = [];
-            s.blocks.forEach(block => {
+            s.blocks.forEach((block, blockIdx) => {
               if (block.dead || block.invulnerable) return;
+              const crowdedCount = basicCoverCrowding.get(blockIdx) || 0;
               const cells = getBlockCells(block);
               cells.forEach(cell => {
                 const cx = cell.x + BLOCK_SIZE / 2;
@@ -2921,17 +3215,25 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
                 const playerToCell = Math.hypot(cx - p.x, cy - p.y);
                 const enemyToPlayer = Math.hypot(e.x - p.x, e.y - p.y);
                 const isBetween = playerToCell < enemyToPlayer;
-                const score = toEnemy - (isBetween ? 26 : 0);
+                const crowdPenalty = crowdedCount * 26 + (crowdedCount >= 3 ? 80 : 0);
+                const score = toEnemy - (isBetween ? 26 : 0) + crowdPenalty;
 
-                coverCandidates.push({ x: coverX, y: coverY, score });
+                coverCandidates.push({ x: coverX, y: coverY, score, blockIdx });
               });
             });
 
             if (coverCandidates.length > 0) {
               coverCandidates.sort((a, b) => a.score - b.score);
-              e._coverTarget = coverCandidates[0];
-              e._coverRetarget = 16 + Math.floor(Math.random() * 14);
-              e._coverDashTimer = 8 + Math.floor(Math.random() * 10);
+              const selected = coverCandidates[0];
+              if (Number.isInteger(e._coverBlockIdx) && e._coverBlockIdx >= 0) {
+                const prev = basicCoverCrowding.get(e._coverBlockIdx) || 0;
+                if (prev > 0) basicCoverCrowding.set(e._coverBlockIdx, prev - 1);
+              }
+              e._coverTarget = selected;
+              e._coverBlockIdx = selected.blockIdx;
+              basicCoverCrowding.set(selected.blockIdx, (basicCoverCrowding.get(selected.blockIdx) || 0) + 1);
+              e._coverRetarget = 28 + Math.floor(Math.random() * 22);
+              e._coverDashTimer = 5 + Math.floor(Math.random() * 6);
             }
           }
 
@@ -2940,18 +3242,25 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             const dy = e._coverTarget.y - e.y;
             const len = Math.hypot(dx, dy) || 1;
             const baseSpd = Math.hypot(e.vx, e.vy) || 1;
-            const dashMult = (e._coverDashTimer || 0) > 0 ? 2.2 : 1.3;
-            const spd = baseSpd * dashMult;
-            e.x += (dx / len) * spd;
-            e.y += (dy / len) * spd;
+            const dashMult = (e._coverDashTimer || 0) > 0 ? 1.7 : 1.18;
+            const targetVx = (dx / len) * (baseSpd * dashMult);
+            const targetVy = (dy / len) * (baseSpd * dashMult);
+            e._coverVx = Number.isFinite(e._coverVx) ? e._coverVx + (targetVx - e._coverVx) * 0.22 : targetVx;
+            e._coverVy = Number.isFinite(e._coverVy) ? e._coverVy + (targetVy - e._coverVy) * 0.22 : targetVy;
+            e.x += e._coverVx;
+            e.y += e._coverVy;
 
             e._coverDashTimer = Math.max(0, (e._coverDashTimer || 0) - 1);
             if (len < 10) {
-              // Short lateral shuffle while in cover so they don't sit still.
-              e.x += Math.sign(Math.sin(Date.now() * 0.01 + (e._coverRetarget || 0))) * 0.9;
-              e.y += 0.15;
+              // Gentle drift while in cover to avoid visible jitter.
+              const idlePhase = (e._coverIdlePhase || Math.random() * Math.PI * 2) + 0.18;
+              e._coverIdlePhase = idlePhase;
+              e.x += Math.sin(idlePhase) * 0.28;
+              e.y += 0.08;
             }
           } else {
+            e._coverVx = (e._coverVx || 0) * 0.78;
+            e._coverVy = (e._coverVy || 0) * 0.78;
             e.x += e.vx;
             e.y += e.vy;
           }
@@ -2960,8 +3269,12 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           e._stuckFrames = moved < 0.35 ? (e._stuckFrames || 0) + 1 : 0;
           if ((e._stuckFrames || 0) > 45) {
             e._coverTarget = null;
+            e._coverBlockIdx = null;
             e._coverRetarget = 0;
             e._coverDashTimer = 0;
+            e._coverVx = 0;
+            e._coverVy = 0;
+            e._coverIdlePhase = undefined;
             e._stuckFrames = 0;
             e.hideMode = false;
             e._hideCooldown = 55;
@@ -2990,16 +3303,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       }
       b.bouncesLeft = remaining - 1;
       b._bounceChargeSpent = true;
-      if (b.bouncesLeft <= 0) {
-        b.hit = true;
-        return false;
-      }
       return true;
     };
 
     // Move bullets
     s.bullets = s.bullets.filter(b => {
       b._bounceChargeSpent = false;
+      b.prevX = b.x;
+      b.prevY = b.y;
       b.x += b.vx; b.y += b.vy;
       if (b.type === 'photon') {
         b.orbitAngle = ((b.orbitAngle || 0) + 0.25);
@@ -3007,29 +3318,33 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         if (b.isSuperOrbit) b.orbitPhase = ((b.orbitPhase || 0) + 0.18);
       }
       if (b.type === 'missile') {
-        const liveEnemies = s.enemies.filter(e => !e.dead && e.type !== 'dropper' && isEnemyVisibleForTargeting(e));
-        if (liveEnemies.length > 0) {
-          let target = b.preferredTarget && !b.preferredTarget.dead && isEnemyVisibleForTargeting(b.preferredTarget) ? b.preferredTarget : null;
-          if (!target) {
-            let best = Infinity;
-            liveEnemies.forEach(e => {
-              const d = Math.hypot(e.x - b.x, e.y - b.y);
-              if (d < best) { best = d; target = e; }
-            });
-            b.preferredTarget = target || null;
-          }
-          if (target) {
-            const speed = b.speed || Math.hypot(b.vx, b.vy) || 7;
-            const desired = Math.atan2(target.y - b.y, target.x - b.x);
-            const current = Math.atan2(b.vy, b.vx);
-            let delta = desired - current;
-            while (delta > Math.PI) delta -= Math.PI * 2;
-            while (delta < -Math.PI) delta += Math.PI * 2;
-            const maxTurn = b.maxTurnRate || 0.13;
-            const next = current + Math.max(-maxTurn, Math.min(maxTurn, delta));
-            b.vx = Math.cos(next) * speed;
-            b.vy = Math.sin(next) * speed;
-            b.speed = speed;
+        if ((b.homingDelay || 0) > 0) {
+          b.homingDelay = Math.max(0, (b.homingDelay || 0) - 1);
+        } else {
+          const liveEnemies = s.enemies.filter(e => !e.dead && e.type !== 'dropper' && isEnemyVisibleForTargeting(e));
+          if (liveEnemies.length > 0) {
+            let target = b.preferredTarget && !b.preferredTarget.dead && isEnemyVisibleForTargeting(b.preferredTarget) ? b.preferredTarget : null;
+            if (!target) {
+              let best = Infinity;
+              liveEnemies.forEach(e => {
+                const d = Math.hypot(e.x - b.x, e.y - b.y);
+                if (d < best) { best = d; target = e; }
+              });
+              b.preferredTarget = target || null;
+            }
+            if (target) {
+              const speed = b.speed || Math.hypot(b.vx, b.vy) || 7;
+              const desired = Math.atan2(target.y - b.y, target.x - b.x);
+              const current = Math.atan2(b.vy, b.vx);
+              let delta = desired - current;
+              while (delta > Math.PI) delta -= Math.PI * 2;
+              while (delta < -Math.PI) delta += Math.PI * 2;
+              const maxTurn = b.maxTurnRate || 0.13;
+              const next = current + Math.max(-maxTurn, Math.min(maxTurn, delta));
+              b.vx = Math.cos(next) * speed;
+              b.vy = Math.sin(next) * speed;
+              b.speed = speed;
+            }
           }
         }
       }
@@ -3290,7 +3605,12 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         cells.forEach(cell => {
           // Snap y to bottom
           const snappedY = Math.min(Math.round(cell.y / BLOCK_SIZE) * BLOCK_SIZE, H - BLOCK_SIZE);
-          s.piledCells.push({ x: Math.round(cell.x / BLOCK_SIZE) * BLOCK_SIZE, y: snappedY, color: block.color });
+          s.piledCells.push({
+            x: Math.round(cell.x / BLOCK_SIZE) * BLOCK_SIZE,
+            y: snappedY,
+            color: block.color,
+            invulnerable: !!block.invulnerable,
+          });
         });
       }
     });
@@ -3309,6 +3629,39 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         const rad = (angle * Math.PI) / 180;
         newBullets.push({ x: b.x, y: b.y, vx: Math.sin(rad) * 5, vy: -Math.cos(rad) * 6, type: 'spreadPellet' });
       }
+    }
+
+    function segmentHitsCell(x1, y1, x2, y2, cell) {
+      const left = cell.x;
+      const right = cell.x + BLOCK_SIZE;
+      const top = cell.y;
+      const bottom = cell.y + BLOCK_SIZE;
+
+      if (x2 >= left && x2 <= right && y2 >= top && y2 <= bottom) return true;
+
+      let t0 = 0;
+      let t1 = 1;
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+
+      const clip = (p, q) => {
+        if (p === 0) return q >= 0;
+        const r = q / p;
+        if (p < 0) {
+          if (r > t1) return false;
+          if (r > t0) t0 = r;
+        } else {
+          if (r < t0) return false;
+          if (r < t1) t1 = r;
+        }
+        return true;
+      };
+
+      return clip(-dx, x1 - left)
+        && clip(dx, right - x1)
+        && clip(-dy, y1 - top)
+        && clip(dy, bottom - y1)
+        && t1 >= t0;
     }
 
     // ── Bullet vs enemy ───────────────────────────────────────
@@ -3342,6 +3695,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     s.bullets.forEach(b => {
       if (b.hit) return;
       s.enemies.forEach(e => {
+        if (b.hit) return;
         if (e.dead) return;
         if (!isEnemyVisibleForBulletCollision(e)) return;
         if (e.type === 'boss' && (e.wave || 0) === 15 && e._shieldActive) {
@@ -3350,6 +3704,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           if (distToBoss < shieldRadius && distToBoss > Math.max(e.w, e.h)) {
             b.hit = true;
             spawnExplosion(s, b.x, b.y, '#ff6633', 5);
+            return;
+          }
+        }
+        // Pirate shield pre-check — intercept bullets while they are in the
+        // shield zone (~206px out), before they ever reach the boss body.
+        if (e.type === 'boss' && (e.wave || 0) === 20 && e._armorBlocks?.length > 0) {
+          if (consumePirateShieldPiece(s, e, b.x, b.y, getProjectileImpactColor(b.type))) {
+            b.hit = true;
             return;
           }
         }
@@ -3366,7 +3728,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
               b.hit = true;
               return;
             }
-            e.hp--;
+            const hitDamage = (e.type === 'eater' && (e._growthStage === 0 || e._mini)) ? eaterTuning.miniHitDamage : 1;
+            e.hp -= hitDamage;
             sounds.hit();
             spawnExplosion(s, e.x, e.y, getProjectileImpactColor(b.type), 4);
             if (e.hp <= 0) {
@@ -3406,7 +3769,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             b.hit = true;
             return;
           }
-          e.hp--;
+          const hitDamage = (e.type === 'eater' && (e._growthStage === 0 || e._mini)) ? eaterTuning.miniHitDamage : 1;
+          e.hp -= hitDamage;
           sounds.hit();
           if (b.type === 'missile') {
             // Missile impact: brighter, larger burst so the hit reads as intentional.
@@ -3482,6 +3846,53 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       });
     });
 
+    // Glutton segment hit detection — separate from head so each link has its own HP.
+    s.bullets.forEach(b => {
+      if (b.hit) return;
+      s.enemies.forEach(e => {
+        if (e.dead || e.type !== 'glutton') return;
+        if (!Array.isArray(e._segmentPositions)) return;
+        if (!Array.isArray(e._segmentHp)) e._segmentHp = [];
+        const segRadius = Math.max(14, (e.w || 94) * 0.34);
+        const segRadiusSq = segRadius * segRadius;
+        for (let si = 0; si < e._segmentPositions.length; si++) {
+          const seg = e._segmentPositions[si];
+          if (!seg) continue;
+          const sdx = b.x - seg.x;
+          const sdy = b.y - seg.y;
+          if (sdx * sdx + sdy * sdy > segRadiusSq) continue;
+          // Initialise HP lazily in case the segment pre-dates this feature.
+          if (!(e._segmentHp[si] > 0)) e._segmentHp[si] = Math.max(18, Math.round((e.maxHp || 80) * 0.32));
+          e._segmentHp[si] -= 1;
+          sounds.hit();
+          spawnExplosion(s, b.x, b.y, '#7cff6a', 5);
+          if (b.type === 'bounce' && (b.bouncesLeft || 0) > 0) {
+            b.vy *= -1;
+            b.vx += (Math.random() - 0.5) * 1.5;
+            b.y += Math.sign(b.vy) * 4;
+            consumeBounceCharge(b);
+          } else if (b.type !== 'missile') {
+            b.hit = true;
+          } else {
+            spawnExplosion(s, b.x, b.y, '#ff00ff', 12);
+            spawnExplosion(s, b.x, b.y, '#ffd6ff', 8);
+            b.hit = true;
+          }
+          if (e._segmentHp[si] <= 0) {
+            spawnExplosion(s, seg.x, seg.y, '#7cff6a', 20);
+            spawnExplosion(s, seg.x, seg.y, '#ffffff', 8);
+            s.score += 200;
+            onScoreChange(s.score);
+            sounds.kill();
+            e._segmentPositions.splice(si, 1);
+            e._segmentHp.splice(si, 1);
+            e._segmentCount = Math.max(0, (e._segmentCount || 1) - 1);
+          }
+          return; // one segment hit per bullet per enemy
+        }
+      });
+    });
+
     // Add spread pellets spawned from enemy hits
     newSpreadPellets.forEach(p => acquireBullet(s, p, 'player'));
 
@@ -3489,17 +3900,23 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     const newSpreadPelletsFromBlocks = [];
     s.bullets.forEach(b => {
       if (b.hit) return;
-      if (b.type === 'missile') return;
       s.blocks.forEach(block => {
         if (block.dead) return;
         const cells = getBlockCells(block);
         cells.forEach(cell => {
           if (b.hit) return;
           if (!isCellOnStage(cell, W, H)) return;
-          if (b.x >= cell.x && b.x <= cell.x + BLOCK_SIZE && b.y >= cell.y && b.y <= cell.y + BLOCK_SIZE) {
+          const directHit = b.x >= cell.x && b.x <= cell.x + BLOCK_SIZE && b.y >= cell.y && b.y <= cell.y + BLOCK_SIZE;
+          const sweptHit = b.type === 'missile' && segmentHitsCell(b.prevX ?? b.x, b.prevY ?? b.y, b.x, b.y, cell);
+          if (directHit || sweptHit) {
             if (b.type === 'spread') { explodeSpread(b, newSpreadPelletsFromBlocks); b.hit = true; return; }
             if (block.invulnerable) {
-              if (b.type === 'bounce') {
+              if (b.type === 'missile') {
+                spawnExplosion(s, b.x, b.y, '#ff00ff', 12);
+                spawnExplosion(s, b.x, b.y, '#ffd6ff', 8);
+                s.particles.push({ x: b.x, y: b.y, vx: 0, vy: 0, r: 8, alpha: 0.85, color: '#ff66ff', shockwave: true, shockwaveR: 5 });
+                b.hit = true;
+              } else if (b.type === 'bounce') {
                 const leftDist = Math.abs(b.x - cell.x);
                 const rightDist = Math.abs((cell.x + BLOCK_SIZE) - b.x);
                 const topDist = Math.abs(b.y - cell.y);
@@ -3523,8 +3940,16 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
               return;
             } else {
               // Photon deals 2 damage to blocks; others deal 1
-              block.hp -= b.type === 'photon' ? 2 : 1;
-              spawnExplosion(s, b.x, b.y, getProjectileImpactColor(b.type), 3);
+              if (b.type === 'missile') {
+                block.hp -= 2;
+                spawnExplosion(s, b.x, b.y, '#ff00ff', 12);
+                spawnExplosion(s, b.x, b.y, '#ffd6ff', 8);
+                s.particles.push({ x: b.x, y: b.y, vx: 0, vy: 0, r: 8, alpha: 0.85, color: '#ff66ff', shockwave: true, shockwaveR: 5 });
+                b.hit = true;
+              } else {
+                block.hp -= b.type === 'photon' ? 2 : 1;
+                spawnExplosion(s, b.x, b.y, getProjectileImpactColor(b.type), 3);
+              }
               if (b.type === 'bounce' && (b.bouncesLeft || 0) > 0) {
                 const leftDist = Math.abs(b.x - cell.x);
                 const rightDist = Math.abs((cell.x + BLOCK_SIZE) - b.x);
@@ -3539,7 +3964,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
                   b.y += Math.sign(b.vy || -1) * 3;
                 }
                 consumeBounceCharge(b);
-              } else if (!piercingTypes.includes(b.type) && !(b.type === 'photon' && b.infinitePierce)) {
+              } else if (b.type !== 'missile' && !piercingTypes.includes(b.type) && !(b.type === 'photon' && b.infinitePierce)) {
                 b.hit = true;
               }
               if (block.hp <= 0) {
@@ -3562,11 +3987,29 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     const newSpreadPelletsFromPiled = [];
     s.bullets.forEach(b => {
       if (b.hit) return;
-      if (b.type === 'missile') return;
       s.piledCells = s.piledCells.filter(cell => {
         if (!isCellOnStage(cell, W, H)) return true;
-        if (b.x >= cell.x && b.x <= cell.x + BLOCK_SIZE && b.y >= cell.y && b.y <= cell.y + BLOCK_SIZE) {
+        const directHit = b.x >= cell.x && b.x <= cell.x + BLOCK_SIZE && b.y >= cell.y && b.y <= cell.y + BLOCK_SIZE;
+        const sweptHit = b.type === 'missile' && segmentHitsCell(b.prevX ?? b.x, b.prevY ?? b.y, b.x, b.y, cell);
+        if (directHit || sweptHit) {
+          if (cell.invulnerable) {
+            if (b.type === 'bounce' && (b.bouncesLeft || 0) > 0) {
+              b.vy *= -1;
+              b.y += Math.sign(b.vy || -1) * 3;
+              consumeBounceCharge(b);
+            } else if (!(b.type === 'photon' && b.infinitePierce)) {
+              b.hit = true;
+            }
+            spawnExplosion(s, b.x, b.y, getProjectileImpactColor(b.type), 4);
+            return true;
+          }
           if (b.type === 'spread') { explodeSpread(b, newSpreadPelletsFromPiled); b.hit = true; }
+          else if (b.type === 'missile') {
+            spawnExplosion(s, b.x, b.y, '#ff00ff', 12);
+            spawnExplosion(s, b.x, b.y, '#ffd6ff', 8);
+            s.particles.push({ x: b.x, y: b.y, vx: 0, vy: 0, r: 8, alpha: 0.85, color: '#ff66ff', shockwave: true, shockwaveR: 5 });
+            b.hit = true;
+          }
           else if (b.type === 'bounce' && (b.bouncesLeft || 0) > 0) {
             b.vy *= -1;
             b.y += Math.sign(b.vy) * 3;
@@ -3819,6 +4262,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         });
 
         s.piledCells.forEach(cell => {
+          if (cell.invulnerable) return;
           const cx = cell.x + BLOCK_SIZE / 2;
           const cy = cell.y + BLOCK_SIZE / 2;
           const d = Math.hypot(cx - harvester.x, cy - harvester.y);
@@ -4195,22 +4639,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       }
     });
     
-    // Draw boss health bars at top of screen
-    s.enemies.filter(e => e.type === 'boss').forEach((boss, index) => {
-      const bw = 200, bh = 8;
-      const bx = (W - bw) / 2, by = 20 + index * 30;
-      ctx.fillStyle = '#000000aa'; ctx.fillRect(bx - 2, by - 2, bw + 4, bh + 4);
-      ctx.fillStyle = '#333'; ctx.fillRect(bx, by, bw, bh);
-      const bossBarColor = boss._variantHudColor || (['#ff0066','#ff6600','#aa00ff','#00ccff'][Math.min((boss.tier || 1) - 1, 3)]);
-      ctx.fillStyle = bossBarColor;
-      ctx.fillRect(bx, by, bw * (boss.hp / boss.maxHp), bh);
-      // Boss name
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 14px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(`${boss.name || 'Overlord'} (${boss.hp}/${boss.maxHp})`, W / 2, by - 5);
-    });
-    
     s.bullets.forEach(b => drawBullet(ctx, b, false));
     s.enemyBullets.forEach(b => drawBullet(ctx, b, true));
     const supportUpgrades = shopUpgradesRef.current || {};
@@ -4304,6 +4732,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         ctx.stroke(); ctx.restore();
       }
     }
+
+    // Boss HUD — HP bars and names for actual bosses only (not eaters/gluttons)
+    const activeBosses = s.enemies.filter(e => e && !e.dead && e.type === 'boss');
+    if (activeBosses.length > 0) drawBossHUD(ctx, W, activeBosses);
 
     if (chainedStepsRemaining > 0) {
       loop(timestamp, false, true, chainedStepsRemaining - 1);

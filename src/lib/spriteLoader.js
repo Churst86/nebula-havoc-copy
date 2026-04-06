@@ -51,6 +51,7 @@ const SPRITE_NAMES = [
   'EliteEnemy',
   'GluttonHead',
   'GluttonTail',
+  'GluttonBinder',
   'Eater',
   'EaterChomp',
   'Mine',
@@ -83,7 +84,7 @@ const SPRITE_NAMES = [
 const NEEDS_BG_REMOVAL = new Set([
   'Drone', 'Harvester', 'Dropper',
   'Shotgun Powerup', 'BounceshotPowerup', 'Missile Powerup', 'ReverseShot Powerup',
-  'GluttonHead', 'GluttonTail',
+  'GluttonHead', 'GluttonTail', 'GluttonBinder',
   'Eater', 'EaterChomp',
 ]);
 
@@ -94,6 +95,7 @@ const NEEDS_DARK_BG_REMOVAL = new Set([
 const SPRITE_NAME_ALIASES = {
   GluttonHead: ['GluttonChompingSpritesheet-table-162-240', 'GluttonChompingSpritesheet-table', 'GluttonHead'],
   GluttonTail: ['GluttonTailSpritesheet-table-240-240', 'GluttonTailSpritesheet-table', 'GluttonTail'],
+  GluttonBinder: ['GluttonBinderv2', 'GluttonBinder'],
   Eater: ['Eater', 'EaterEnemy'],
   EaterChomp: ['EaterChomp', 'Eater Chomp', 'EaterChomping', 'Eater_Chomp'],
   BeholderBlink: ['BeholderBlink2', 'BeholderBlink'],

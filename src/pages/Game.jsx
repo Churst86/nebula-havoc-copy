@@ -340,6 +340,25 @@ export default function Game() {
     setGameState('gameover');
   }, [bossMode]);
 
+  const handleSettingsChange = useCallback((next) => {
+    const prevDifficulty = settings.difficulty;
+    const unlockedDifficulty = next.unlockedDifficulty || settings.unlockedDifficulty || 'easy';
+    const requestedDifficulty = next.difficulty || 'easy';
+    const safeDifficulty = clampDifficultyToUnlocked(requestedDifficulty, unlockedDifficulty);
+    const safeNext = { ...next, unlockedDifficulty, difficulty: safeDifficulty };
+    setSettings(safeNext);
+    saveSettings(safeNext);
+    // If difficulty changed during gameplay, reload current wave with new config
+    if (safeNext.difficulty !== prevDifficulty && (gameState === 'playing' || gameState === 'resuming')) {
+      setStartWave(waveRef.current);
+      setCarryOverPowerups({ ...activePowerup });
+      setShowPauseOptions(false);
+      setIsPaused(false);
+      setShowLaunch(true);
+      setLoadProgress(isSpritesLoaded() ? 1 : 0);
+    }
+  }, [settings.difficulty, settings.unlockedDifficulty, gameState, activePowerup]);
+
   const handleProgressToDifficulty = useCallback(() => {
     const nextDifficulty = NEXT_DIFFICULTY[settings.difficulty];
     if (nextDifficulty) {
@@ -402,25 +421,6 @@ export default function Game() {
     if (![1, 2, 3].includes(next)) return;
     setHudSpeedMultiplier(next);
   }, []);
-
-  const handleSettingsChange = useCallback((next) => {
-    const prevDifficulty = settings.difficulty;
-    const unlockedDifficulty = next.unlockedDifficulty || settings.unlockedDifficulty || 'easy';
-    const requestedDifficulty = next.difficulty || 'easy';
-    const safeDifficulty = clampDifficultyToUnlocked(requestedDifficulty, unlockedDifficulty);
-    const safeNext = { ...next, unlockedDifficulty, difficulty: safeDifficulty };
-    setSettings(safeNext);
-    saveSettings(safeNext);
-    // If difficulty changed during gameplay, reload current wave with new config
-    if (safeNext.difficulty !== prevDifficulty && (gameState === 'playing' || gameState === 'resuming')) {
-      setStartWave(waveRef.current);
-      setCarryOverPowerups({ ...activePowerup });
-      setShowPauseOptions(false);
-      setIsPaused(false);
-      setShowLaunch(true);
-      setLoadProgress(isSpritesLoaded() ? 1 : 0);
-    }
-  }, [settings.difficulty, settings.unlockedDifficulty, gameState, activePowerup]);
 
   const handleSaveGame = useCallback((slot = 'slot1') => {
     if (bossMode) return false;
