@@ -43,7 +43,10 @@ export default function IntroCrawl({ onDone }) {
 
   // Interaction: skip crawl and finish immediately
   useEffect(() => {
-    const handler = () => finish();
+    const handler = () => {
+      sounds.unlockAudio?.();
+      finish();
+    };
     window.addEventListener('keydown', handler);
     window.addEventListener('pointerdown', handler);
     return () => {

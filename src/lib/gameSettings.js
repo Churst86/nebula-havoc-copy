@@ -17,10 +17,12 @@ const DEFAULTS = {
   musicVolume: 0.3,
   sfxVolume: 0.8,
   musicEnabled: true,
-  brightness: 1.0,
+  brightness: 1.5,
   difficulty: 'easy', // 'easy' | 'normal' | 'hell'
   unlockedDifficulty: 'easy', // progression lock: easy -> normal -> hell
   gameSpeed: 120, // fps: 15–120
+  hudSpeedBoostsUnlocked: false,
+  bossModeUnlocked: false,
   mobileSpeed: 1.0, // joystick sensitivity multiplier: 0.5–2.0
   joystickVisible: true,
   joystickSize: 1.0,
@@ -197,6 +199,88 @@ function readSaveState() {
   return normalizeSaveState(payload);
 }
 
+// ── Cross-platform save portability ──────────────────────────────────────────
+
+/**
+ * Export all save slots to a JSON string for download.
+ */
+export function exportSavesAsJson() {
+  try {
+    return JSON.stringify(readSaveState(), null, 2);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Export a single save slot to JSON.
+ */
+export function exportSaveSlotAsJson(slot = 'slot1') {
+  const validSlots = ['auto', ...SAVE_SLOTS];
+  if (!validSlots.includes(slot)) return null;
+
+  try {
+    const state = readSaveState();
+    const slotData = slot === 'auto' ? state.auto : state.slots[slot];
+    if (!slotData) return null;
+
+    return JSON.stringify(
+      {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        slot,
+        save: slotData,
+      },
+      null,
+      2,
+    );
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Import saves from a JSON string (e.g. from a file upload).
+ * Merge mode (default): only overwrite slots that have data in the import.
+ * Replace mode: take every slot from the import, including clearing non-empty ones.
+ */
+export function importSavesFromJson(jsonString, { replace = false } = {}) {
+  if (!jsonString || typeof jsonString !== 'string') {
+    return { ok: false, message: 'No data provided.' };
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonString);
+  } catch {
+    return { ok: false, message: 'File is not valid JSON.' };
+  }
+
+  if (!parsed || typeof parsed !== 'object') {
+    return { ok: false, message: 'Save file format is unrecognised.' };
+  }
+
+  const incoming = normalizeSaveState(parsed);
+  let current = readSaveState();
+
+  if (replace) {
+    current = incoming;
+  } else {
+    // Merge: only import slots that have data in the incoming file.
+    if (incoming.auto) current.auto = incoming.auto;
+    SAVE_SLOTS.forEach((slot) => {
+      if (incoming.slots[slot]) current.slots[slot] = incoming.slots[slot];
+    });
+  }
+
+  try {
+    writeSaveState(current);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, message: err?.message || 'Write failed.' };
+  }
+}
+
 function writeSaveState(state) {
   const success = writeRawSavePayload(normalizeSaveState(state));
   return success;
@@ -217,7 +301,13 @@ export function loadSettings() {
     const difficulty = order[requestedDifficulty] <= order[unlockedDifficulty]
       ? requestedDifficulty
       : unlockedDifficulty;
-    return { ...merged, unlockedDifficulty, difficulty };
+    return {
+      ...merged,
+      unlockedDifficulty,
+      difficulty,
+      hudSpeedBoostsUnlocked: merged.hudSpeedBoostsUnlocked === true,
+      bossModeUnlocked: merged.bossModeUnlocked === true,
+    };
   } catch {
     return { ...DEFAULTS };
   }
@@ -237,6 +327,7 @@ export const DIFFICULTY_CONFIG = {
     maxWave: 25,
     blockSpeedMult: 1,
     blockSpin: false,
+    blockSpinMult: 0,
   },
   normal: {
     label: 'Challenging',
@@ -247,6 +338,7 @@ export const DIFFICULTY_CONFIG = {
     blockSpeedMult: 1.8,
     blockSpawnMult: 1.6,
     blockSpin: true,
+    blockSpinMult: 1,
   },
   hell: {
     label: 'Hell',
@@ -257,5 +349,6 @@ export const DIFFICULTY_CONFIG = {
     blockSpeedMult: 2.8,
     blockSpawnMult: 2.2,
     blockSpin: true,
+    blockSpinMult: 2.2,
   },
 };

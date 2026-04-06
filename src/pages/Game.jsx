@@ -107,6 +107,7 @@ export default function Game() {
   const [loadProgress, setLoadProgress] = useState(0);
   const [lastSaveAt, setLastSaveAt] = useState(null);
   const [liveFps, setLiveFps] = useState(0);
+  const [hudSpeedMultiplier, setHudSpeedMultiplier] = useState(1);
   const scoreRef = useRef(0);
   const lastAutoSaveWaveRef = useRef(null);
 
@@ -189,6 +190,7 @@ export default function Game() {
       }
     }
     setContinuesLeft(0);
+    setHudSpeedMultiplier(1);
     setIsPaused(false);
     setShowPauseOptions(false);
     setShowDocking(false);
@@ -235,6 +237,7 @@ export default function Game() {
     const save = loadSaveFile(slot);
     if (!save) return;
     setBossMode(false);
+    setHudSpeedMultiplier(1);
     const savedWave = save.wave || 1;
     const savedDifficulty = normalizeDifficultyForWave(save.difficulty, savedWave);
     const unlockedByWave = difficultyForWave(savedWave);
@@ -331,6 +334,7 @@ export default function Game() {
 
   const handleDecline = useCallback(() => {
     if (!bossMode) sounds.stopAllMusic();
+    setHudSpeedMultiplier(1);
     setGameState('gameover');
   }, [bossMode]);
 
@@ -356,6 +360,12 @@ export default function Game() {
       setShowPauseOptions(true);
     }
   }, [isPaused, showPauseOptions]);
+
+  const handleHudSpeedMultiplierChange = useCallback((multiplier) => {
+    const next = Number(multiplier);
+    if (![1, 2, 3].includes(next)) return;
+    setHudSpeedMultiplier(next);
+  }, []);
 
   const handleSettingsChange = useCallback((next) => {
     const prevDifficulty = settings.difficulty;
@@ -543,6 +553,7 @@ export default function Game() {
   }, [settings.sfxVolume, settings.soundVolume]);
 
   const difficultyConfig = DIFFICULTY_CONFIG[settings.difficulty] || DIFFICULTY_CONFIG.normal;
+  const hudSpeedControlsUnlocked = settings.hudSpeedBoostsUnlocked === true;
 
   if (showIntro) {
     return <IntroCrawl onDone={() => setShowIntro(false)} />;
@@ -583,6 +594,7 @@ export default function Game() {
         isPaused={isPaused || showDocking || showShop || showBossMiniShop}
         difficultyConfig={difficultyConfig}
         gameSpeed={settings.gameSpeed ?? 30}
+        speedBoostMultiplier={hudSpeedMultiplier}
         autoFireEnabled={settings.autoFireEnabled !== false}
         carryOverPowerups={carryOverPowerups}
         livePowerups={bossMode ? activePowerup : null}
@@ -611,6 +623,9 @@ export default function Game() {
           liveFps={liveFps}
           activePowerup={activePowerup}
           blockScore={blockScore}
+          speedMultiplier={hudSpeedMultiplier}
+          speedControlsUnlocked={hudSpeedControlsUnlocked}
+          onSpeedMultiplierChange={handleHudSpeedMultiplierChange}
           autoFireEnabled={settings.autoFireEnabled !== false}
           lastSaveAt={lastSaveAt}
           continuesLeft={continuesLeft}
@@ -736,6 +751,7 @@ export default function Game() {
           bossMode={bossMode}
           onReturnToTitle={() => {
             const resetUpgrades = { ...EMPTY_SHOP_UPGRADES };
+            setHudSpeedMultiplier(1);
             if (bossMode) {
               setBossShopUpgrades(resetUpgrades);
             } else {

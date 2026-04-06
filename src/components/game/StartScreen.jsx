@@ -9,6 +9,9 @@ import { sounds } from '../../hooks/useSound.js';
 import { loadAllSaveFiles } from '../../lib/gameSettings';
 
 export const GAME_VERSION = import.meta.env.VITE_APP_VERSION || 'v1.3.0';
+const BUILD_HASH = import.meta.env.VITE_BUILD_HASH || 'dev';
+const BUILD_TIME = import.meta.env.VITE_BUILD_TIME || '';
+const IS_WEB_DEV = !!import.meta.env.DEV;
 
 export default function StartScreen({ onStart, onContinue, settings, onSettingsChange }) {
   const [showScores, setShowScores] = useState(false);
@@ -26,10 +29,27 @@ export default function StartScreen({ onStart, onContinue, settings, onSettingsC
     configured: true,
     patch: null,
     error: '',
+    isDevBuild: false,
   });
   const isDesktop = !!window?.desktopApp?.isElectron;
+  const displayCurrentVersion = !isDesktop && IS_WEB_DEV
+    ? `dev-${BUILD_HASH}`
+    : (patchState.currentVersion || GAME_VERSION);
+  const buildModeBadge = (() => {
+    if (!isDesktop && IS_WEB_DEV) {
+      return { label: 'WEB DEV BUILD', className: 'bg-sky-700/70 text-sky-100 border-sky-400/60' };
+    }
+    if (!isDesktop) {
+      return { label: 'WEB RELEASE', className: 'bg-indigo-700/70 text-indigo-100 border-indigo-400/60' };
+    }
+    if (patchState.isDevBuild) {
+      return { label: 'DESKTOP LOCAL BUILD', className: 'bg-violet-700/60 text-violet-100 border-violet-400/70' };
+    }
+    return { label: 'DESKTOP RELEASE', className: 'bg-emerald-700/60 text-emerald-100 border-emerald-400/70' };
+  })();
+
   const updaterBadge = (() => {
-    if (!isDesktop) return { label: 'WEB MODE', className: 'bg-slate-700/70 text-slate-200 border-slate-500/60' };
+    if (!isDesktop) return { label: 'UPDATER DISABLED (WEB)', className: 'bg-slate-700/70 text-slate-200 border-slate-500/60' };
     if (patchState.checking) return { label: 'CHECKING...', className: 'bg-cyan-700/55 text-cyan-100 border-cyan-400/70' };
     if (patchState.error) return { label: 'CHECK FAILED', className: 'bg-red-700/60 text-red-100 border-red-400/70' };
     if (patchState.available) return { label: 'UPDATE AVAILABLE', className: 'bg-amber-700/60 text-amber-100 border-amber-400/70' };
@@ -37,6 +57,7 @@ export default function StartScreen({ onStart, onContinue, settings, onSettingsC
     return { label: 'UP TO DATE', className: 'bg-emerald-700/60 text-emerald-100 border-emerald-400/70' };
   })();
   const musicEnabled = settings.musicEnabled !== false;
+  const bossModeUnlocked = settings.bossModeUnlocked === true;
   const hasAnySave = Object.values(saves || {}).some(Boolean);
 
   // Stop game music and start title music immediately on mount.
@@ -65,6 +86,20 @@ export default function StartScreen({ onStart, onContinue, settings, onSettingsC
     let cancelled = false;
     setPatchState(prev => ({ ...prev, checking: true, error: '' }));
 
+    if (typeof desktopApi.getAppVersion === 'function') {
+      desktopApi.getAppVersion().then((result) => {
+        if (cancelled) return;
+        if (result?.ok) {
+          const updates = {};
+          if (result.version) updates.currentVersion = result.version;
+          if (result.isDevBuild !== undefined) updates.isDevBuild = result.isDevBuild;
+          if (Object.keys(updates).length) setPatchState(prev => ({ ...prev, ...updates }));
+        }
+      }).catch(() => {
+        // Keep existing fallback when version bridge fails.
+      });
+    }
+
     const detachProgress = typeof desktopApi.onPatchProgress === 'function'
       ? desktopApi.onPatchProgress((progress) => {
           if (cancelled) return;
@@ -82,7 +117,6 @@ export default function StartScreen({ onStart, onContinue, settings, onSettingsC
     const githubRepo = import.meta.env.VITE_GITHUB_REPO || 'Churst86/nebula-havoc-copy';
     const githubAssetPattern = import.meta.env.VITE_GITHUB_ASSET_REGEX || 'Nebula-Havoc-.*\\.exe$';
     desktopApi.checkForPatch({
-      currentVersion: GAME_VERSION,
       manifestUrl,
       githubRepo,
       githubAssetPattern,
@@ -105,6 +139,7 @@ export default function StartScreen({ onStart, onContinue, settings, onSettingsC
         source: result.patch?.source || (githubRepo ? 'github' : manifestUrl ? 'manifest' : 'none'),
         configured: result.configured !== false,
         available: !!result.updateAvailable,
+        isDevBuild: result.isDevBuild || prev.isDevBuild,
         patch: result.patch || null,
         error: '',
       }));
@@ -144,7 +179,7 @@ export default function StartScreen({ onStart, onContinue, settings, onSettingsC
       }
 
       setPatchState(prev => ({ ...prev, progress: 100 }));
-      const applied = await desktopApi.applyPatchAndRestart({ patchPath: download.patchPath });
+      const applied = await desktopApi.applyPatchAndRestart({ patchPath: download.patchPath, version: patchState.latestVersion });
       if (!applied?.ok) {
         setPatchState(prev => ({ ...prev, patching: false, error: applied?.error || 'Could not apply patch.' }));
       }
@@ -200,24 +235,24 @@ export default function StartScreen({ onStart, onContinue, settings, onSettingsC
             NEW GAME
           </Button>
 
-          <Button
-            onClick={() => onStart(false, true)}
-            size="lg"
-            variant="outline"
-            className="font-bold text-base md:text-lg px-8 md:px-10 py-4 md:py-6 rounded-xl w-full border-red-500/60 text-red-400 hover:bg-red-950/30">
-            ⚔ BOSS MODE
-          </Button>
+          {bossModeUnlocked && (
+            <Button
+              onClick={() => onStart(false, true)}
+              size="lg"
+              variant="outline"
+              className="font-bold text-base md:text-lg px-8 md:px-10 py-4 md:py-6 rounded-xl w-full border-red-500/60 text-red-400 hover:bg-red-950/30">
+              ⚔ BOSS MODE
+            </Button>
+          )}
 
-          {hasAnySave &&
           <Button
             onClick={() => setShowSavedGames(true)}
             size="lg"
             variant="outline"
             className="font-bold text-sm md:text-lg px-6 md:px-10 py-4 md:py-6 rounded-xl w-full gap-2 border-cyan-500 text-cyan-300 hover:bg-cyan-900/30">
               <Play className="w-4 h-4 md:w-5 md:h-5" />
-              LOAD GAME
+              {hasAnySave ? 'LOAD GAME' : 'SAVED GAMES'}
             </Button>
-          }
 
           <div className="flex gap-2 md:gap-3">
             <Button
@@ -247,13 +282,29 @@ export default function StartScreen({ onStart, onContinue, settings, onSettingsC
           )}
 
           <div className="text-[11px] text-cyan-200/80 font-mono pt-1">
-            Updater source: {isDesktop ? (patchState.source || 'github') : 'disabled (web)'}
-            {' '}| Current: {patchState.currentVersion || GAME_VERSION}
-            {' '}| Latest: {patchState.latestVersion || (patchState.checking ? 'checking...' : 'n/a')}
-            {isDesktop && !patchState.checking && patchState.configured === false ? ' | Not configured' : ''}
+            Runtime: {isDesktop ? 'desktop' : 'web'}
+            {' '}| Build: {isDesktop ? (patchState.isDevBuild ? `local·${BUILD_HASH}` : 'release') : (IS_WEB_DEV ? `dev·${BUILD_HASH}` : 'release')}
+            {' '}| Version: {displayCurrentVersion}
+            {isDesktop ? ` | Latest: ${patchState.latestVersion || (patchState.checking ? 'checking...' : 'n/a')}` : ''}
+            {isDesktop && !patchState.checking && patchState.configured === false ? ' | Updater not configured' : ''}
           </div>
+          {!isDesktop && IS_WEB_DEV && (
+            <div className="text-[10px] text-sky-300/80 font-mono">
+              ⚡ Web dev server build — local preview only
+              {BUILD_TIME ? ` · started ${new Date(BUILD_TIME).toLocaleString()}` : ''}
+            </div>
+          )}
+          {isDesktop && patchState.isDevBuild && !patchState.checking && (
+            <div className="text-[10px] text-violet-300/80 font-mono">
+              ⚡ Local build — changes not yet in a release
+              {BUILD_TIME ? ` · built ${new Date(BUILD_TIME).toLocaleDateString()}` : ''}
+            </div>
+          )}
 
-          <div className="pt-1">
+          <div className="pt-1 flex items-center justify-center gap-2 flex-wrap">
+            <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold tracking-wide ${buildModeBadge.className}`}>
+              {buildModeBadge.label}
+            </span>
             <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold tracking-wide ${updaterBadge.className}`}>
               {updaterBadge.label}
             </span>

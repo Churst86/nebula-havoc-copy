@@ -60,6 +60,37 @@ const AUDIO_URLS = {
 let currentAudio = null;
 let fadeOutInterval = null;
 let fadeInInterval = null;
+let pendingGestureRetryDetach = null;
+
+function clearPendingGestureRetry() {
+  if (typeof pendingGestureRetryDetach === 'function') {
+    pendingGestureRetryDetach();
+    pendingGestureRetryDetach = null;
+  }
+}
+
+function isAutoplayGestureError(err) {
+  const name = err?.name || '';
+  const message = String(err?.message || '').toLowerCase();
+  return name === 'NotAllowedError' || message.includes('user gesture') || message.includes('not allowed');
+}
+
+function attachGestureRetry(audio) {
+  clearPendingGestureRetry();
+  const retry = () => {
+    try {
+      getCtx().resume().catch(() => {});
+    } catch {}
+    audio.play().catch(() => {});
+    clearPendingGestureRetry();
+  };
+
+  const events = ['pointerdown', 'keydown', 'touchstart', 'click'];
+  events.forEach((eventName) => window.addEventListener(eventName, retry, { once: true, capture: true }));
+  pendingGestureRetryDetach = () => {
+    events.forEach((eventName) => window.removeEventListener(eventName, retry, { capture: true }));
+  };
+}
 
 function clearFades() {
   if (fadeOutInterval) { clearInterval(fadeOutInterval); fadeOutInterval = null; }
@@ -68,6 +99,7 @@ function clearFades() {
 
 function stopExternalAudio() {
   clearFades();
+  clearPendingGestureRetry();
   if (currentAudio) {
     currentAudio.pause();
     currentAudio.currentTime = 0;
@@ -105,13 +137,20 @@ function playExternalAudio(key, loop = true) {
 
 function startNewTrack(url, loop, targetVol) {
   clearFades();
+  clearPendingGestureRetry();
   const audio = new Audio(url);
   audio.loop = loop;
   audio.volume = 0;
   currentAudio = audio;
   // Skip first 5 seconds for title track
   if (url.includes('Brave%20Pilots')) audio.currentTime = 5;
-  audio.play().catch(err => console.warn('[Music] play failed:', err));
+  audio.play().catch((err) => {
+    if (isAutoplayGestureError(err)) {
+      attachGestureRetry(audio);
+      return;
+    }
+    console.warn('[Music] play failed:', err);
+  });
   // Fade in
   const step = targetVol / 35;
   fadeInInterval = setInterval(() => {
@@ -433,6 +472,15 @@ function playNoiseSfx({ duration = 0.1, gain = 0.2, filterFreq = 1000 }) {
 }
 
 export const sounds = {
+  unlockAudio() {
+    try {
+      const ctx = getCtx();
+      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    } catch {}
+    if (currentAudio && currentAudio.paused) {
+      currentAudio.play().catch(() => {});
+    }
+  },
   setMusicVolume(vol) {
     musicVolume = Math.max(0, Math.min(1, vol));
     if (currentAudio) currentAudio.volume = musicEnabled ? musicVolume : 0;

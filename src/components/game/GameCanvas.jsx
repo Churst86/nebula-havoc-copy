@@ -5,9 +5,10 @@ import { spawnBerserk, spawnEater } from '../../lib/enemySpawners.js';
 import { drawBerserk } from '../../lib/berserkUtils.js';
 import { fireReverseShot, drawReverseFlame } from '../../lib/reverseGunUtils.js';
 import { initBulletPool, acquireBullet, releaseBullet } from '../../lib/bulletPool.js';
-import { loadSprites, getSprite, drawSprite, isSpritesLoaded, getBossSpriteKey } from '../../lib/spriteLoader.js';
+import { loadSprites, getSprite, drawSprite, isSpritesLoaded, getBossSpriteKey, hasDrawableSprite } from '../../lib/spriteLoader.js';
 import { updateBeholderMovement, updateBeholderShield, updateBeholderFire, getBeholderShieldRadius } from '../../lib/beholderLogic.js';
 import { drawBeholderShield, drawBeholderLasers } from '../../lib/beholderDrawing.js';
+import { createBossWaveEnemies } from '../../lib/multiBossSpawner.js';
 
 // Laser beam constants
 const LASER_CHARGE_FRAMES = 90;      // frames to charge before firing (slower = fires less often)
@@ -153,7 +154,7 @@ function normalizePowerups(powerups = {}) {
   return normalized;
 }
 
-export default function GameCanvas({ gameState, setGameState, onScoreChange, onBlockScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, onBossWarning, onFpsChange, continuesLeft, onContinueUsed, isPaused, difficultyConfig, gameSpeed = 30, autoFireEnabled = true, carryOverPowerups = null, livePowerups = null, startWave = 1, shopUpgrades = {}, bossMode = false, skipBossSignal = 0 }) {
+export default function GameCanvas({ gameState, setGameState, onScoreChange, onBlockScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, onBossWarning, onFpsChange, continuesLeft, onContinueUsed, isPaused, difficultyConfig, gameSpeed = 30, speedBoostMultiplier = 1, autoFireEnabled = true, carryOverPowerups = null, livePowerups = null, startWave = 1, shopUpgrades = {}, bossMode = false, skipBossSignal = 0 }) {
   const canvasRef = useRef(null);
   const keysRef = useRef({});
   const stateRef = useRef(initState());
@@ -161,6 +162,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   const lastTimeRef = useRef(0);
   const isPausedRef = useRef(isPaused);
   const gameSpeedRef = useRef(gameSpeed);
+  const speedBoostMultiplierRef = useRef(speedBoostMultiplier);
   const autoFireEnabledRef = useRef(autoFireEnabled);
   const carryOverPowerupsRef = useRef(carryOverPowerups);
   const livePowerupsRef = useRef(livePowerups);
@@ -172,7 +174,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   const bossModeRef = useRef(bossMode);
   const skipBossSignalRef = useRef(skipBossSignal);
   const difficultyConfigRef = useRef(difficultyConfig);
-  const fpsTrackerRef = useRef({ lastTs: 0, frameCount: 0 });
+  const fpsTrackerRef = useRef({ lastTs: 0, frameCount: 0, lastReported: 60 });
 
   // Initialize bullet pool on component mount
   useEffect(() => {
@@ -182,6 +184,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   }, []);
 
   useEffect(() => { gameSpeedRef.current = gameSpeed; }, [gameSpeed]);
+  useEffect(() => { speedBoostMultiplierRef.current = Math.max(1, Math.min(3, Number(speedBoostMultiplier) || 1)); }, [speedBoostMultiplier]);
   useEffect(() => { autoFireEnabledRef.current = autoFireEnabled; }, [autoFireEnabled]);
   useEffect(() => { carryOverPowerupsRef.current = carryOverPowerups; }, [carryOverPowerups]);
   useEffect(() => { livePowerupsRef.current = livePowerups; }, [livePowerups]);
@@ -242,22 +245,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     const isBossWave = bossModeRef.current ? true : wave % 5 === 0;
 
     if (isBossWave) {
-      const bossHp = Math.round((20 + wave * 5) * hpMult);
-      const bossTier = Math.max(1, Math.floor(wave / 5));
-      const bossNames = ['Fang', 'Dreadnought', 'Beholder', 'Pirate', 'Final'];
-      const bossName = bossNames[Math.min(bossTier - 1, 4)] || 'Overlord';
-      const scriptedGun = wave === 5 ? 'spread' : wave === 10 ? 'missile' : wave === 15 ? 'laser' : wave === 20 ? 'bounce' : 'photon';
-      const isDreadnought = wave === 10;
-      enemies.push({
-        type: 'boss', x: W / 2, y: -60, w: isDreadnought ? 62 : 45, h: isDreadnought ? 62 : 45,
-        hp: bossHp, maxHp: bossHp, vx: 1.8, vy: 0.4, fireTimer: 20, phase: 0,
-        gun: scriptedGun, tier: bossTier, wave, name: bossName,
-      });
-      if (wave === 20) {
-        // Pirate uses a full-sprite collision box so hits match visible art.
-        enemies[enemies.length - 1].w = 180;
-        enemies[enemies.length - 1].h = 180;
-      }
+      enemies.push(...createBossWaveEnemies(W, wave, hpMult));
+
       sounds.startBossMusic();
       s.dropperSpawnTimer = DROPPER_SPAWN_INTERVAL;
       s.starDropperTimer = STAR_SPAWN_INTERVAL;
@@ -478,7 +467,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     }
 
     if (bounceTier > 0) {
-      const bounces = bounceTier * 2;
+      const bounces = bounceTier;
       const side = Math.floor(s.spiralAngle * 2) % 2 === 0 ? -1 : 1;
       s.spiralAngle += 0.1;
       acquireBullet(s, { x: p.x + side * 8, y: p.y - 14, vx: side * 3.5, vy: -10, type: 'bounce', bouncesLeft: bounces }, 'player');
@@ -548,10 +537,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     const cfg = difficultyConfigRef.current || {};
     const blockSpeedMult = cfg.blockSpeedMult || 1;
     const blockSpinEnabled = cfg.blockSpin !== false;
+    const blockSpinMult = cfg.blockSpinMult ?? (blockSpinEnabled ? 1 : 0);
     const tierBoost = cfg.maxWave >= 100 ? 2.1 : cfg.maxWave >= 50 ? 1.55 : 1;
     const baseVy = (0.8 + Math.random() * 0.55) * blockSpeedMult * tierBoost;
     const spinDir = Math.random() < 0.5 ? -1 : 1;
-    const spinSpeed = blockSpinEnabled ? (0.01 + Math.random() * 0.014) * tierBoost * spinDir : 0;
+    const spinSpeed = blockSpinEnabled ? (0.01 + Math.random() * 0.014) * tierBoost * blockSpinMult * spinDir : 0;
     return {
       shape,
       color,
@@ -1103,7 +1093,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const bt = e.tier || 1;
       // Tier color palette
       const tierIdx = Math.min(bt - 1, 3);
-      const tierColor = ['#ff0066','#ff6600','#aa00ff','#00ccff'][tierIdx];
+      const tierColor = e._variantHudColor || ['#ff0066','#ff6600','#aa00ff','#00ccff'][tierIdx];
       const tierFill = ['rgba(255,0,102,0.12)','rgba(255,100,0,0.12)','rgba(170,0,255,0.12)','rgba(0,200,255,0.12)'][tierIdx];
       const tierEmoji = ['☠','👁','💀','⬡'][tierIdx];
 
@@ -1172,6 +1162,18 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           }
         } else {
           drawSprite(ctx, bossSprite, -spriteHalf + jitterX, -spriteHalf + jitterY, spriteSize, spriteSize);
+
+          if (e._variantTintColor) {
+            drawSpriteTintFlash(
+              bossSprite,
+              -spriteHalf + jitterX,
+              -spriteHalf + jitterY,
+              spriteSize,
+              spriteSize,
+              0.28,
+              e._variantTintColor
+            );
+          }
 
           if (e._enraged) {
             const pulse = 0.28 + Math.sin(Date.now() * 0.02) * 0.2;
@@ -1359,9 +1361,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
 
       const eaterSprite = getSprite('Eater');
       const eaterChompSprite = getSprite('EaterChomp');
-      const hasSprite = eaterSprite && isSpritesLoaded();
+      const hasSprite = isSpritesLoaded() && hasDrawableSprite(eaterSprite);
+      const useSpriteRender = hasSprite && !isMini;
 
-      if (hasSprite) {
+      if (useSpriteRender) {
         const bob = Math.sin(t * 0.005 + (e._animPhase || 0)) * (isMini ? 1.2 : 2.5);
         const wobble = 1 + Math.sin(t * 0.006 + (e._animPhase || 0)) * 0.03;
         const targetChomp = (e._eating || isCharging) ? 1 : 0;
@@ -1400,6 +1403,23 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         ctx.arc(0, 0, 24 + pulse * 3, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
+
+        if (isMini) {
+          // Mini eaters use a crisp fallback look so they remain visible even when sprite loading fails.
+          const jawPulse = 0.6 + Math.sin(t * 0.03) * 0.4;
+          ctx.strokeStyle = '#d9ffd6';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(-8, -2);
+          ctx.lineTo(0, 7 + jawPulse * 2);
+          ctx.lineTo(8, -2);
+          ctx.stroke();
+          ctx.fillStyle = '#d9ffd6';
+          ctx.beginPath();
+          ctx.arc(-5, -5, 1.8, 0, Math.PI * 2);
+          ctx.arc(5, -5, 1.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
 
       if (!isMini) {
@@ -1411,9 +1431,40 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         ctx.fillStyle = eaterColor; ctx.font = 'bold 7px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(isSuper ? 'SUPER EATER' : 'EATER', 0, -52);
       }
+
+      // Visibility guard: keep eater outlined even during heavy post effects.
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#9effc9';
+      ctx.lineWidth = isMini ? 1.5 : 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, isMini ? 18 : 26, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Debug identity label inside the ring for tracking invisible entities.
+      ctx.fillStyle = '#eaffea';
+      ctx.font = `bold ${isMini ? 8 : 10}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(isMini ? 'MINI EATER' : 'EATER', 0, 0);
     } else if (e.type === 'berserk') {
        const t = Date.now();
        drawBerserk(ctx, e, t);
+       const berserkerRadius = Math.max(18, Math.max(e.w || 94, e.h || 94) * 0.5);
+
+       // Visibility guard: keep berserk outlined even during heavy post effects.
+       ctx.shadowBlur = 0;
+       ctx.strokeStyle = '#ffb380';
+       ctx.lineWidth = 2;
+       ctx.beginPath();
+       ctx.arc(0, 0, berserkerRadius, 0, Math.PI * 2);
+       ctx.stroke();
+
+       // Debug identity label inside the ring for tracking invisible entities.
+       ctx.fillStyle = '#fff3e6';
+       ctx.font = 'bold 10px monospace';
+       ctx.textAlign = 'center';
+       ctx.textBaseline = 'middle';
+       ctx.fillText('BERSERKER', 0, 0);
      } else if (e.type === 'elite') {
        ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14;
        
@@ -1703,21 +1754,31 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     if (s.lives <= 0) { sounds.stopAllMusic(); s.running = false; setGameState('continue'); }
   }
 
+  function grantBossLifeReward(s) {
+    s.maxLives += 1;
+    s.lives = s.maxLives;
+    onLivesChange(s.lives);
+    onMaxLivesChange(s.maxLives);
+  }
+
   // ── Main loop ────────────────────────────────────────────────
-  const loop = useCallback((timestamp) => {
+  const loop = useCallback((timestamp, scheduleNext = true, ignoreThrottle = false, chainedStepsRemaining = 0) => {
     const fpsTracker = fpsTrackerRef.current;
-    if (!fpsTracker.lastTs) fpsTracker.lastTs = timestamp;
-    fpsTracker.frameCount += 1;
-    const fpsElapsed = timestamp - fpsTracker.lastTs;
-    if (fpsElapsed >= 500) {
-      const fps = Math.max(1, Math.round((fpsTracker.frameCount * 1000) / fpsElapsed));
-      onFpsChangeRef.current?.(fps);
-      fpsTracker.lastTs = timestamp;
-      fpsTracker.frameCount = 0;
+    if (scheduleNext) {
+      if (!fpsTracker.lastTs) fpsTracker.lastTs = timestamp;
+      fpsTracker.frameCount += 1;
+      const fpsElapsed = timestamp - fpsTracker.lastTs;
+      if (fpsElapsed >= 500) {
+        const fps = Math.max(1, Math.round((fpsTracker.frameCount * 1000) / fpsElapsed));
+        onFpsChangeRef.current?.(fps);
+        fpsTracker.lastReported = fps;
+        fpsTracker.lastTs = timestamp;
+        fpsTracker.frameCount = 0;
+      }
     }
 
     if (!stateRef.current.running || isPausedRef.current) {
-      animRef.current = requestAnimationFrame(loop);
+      if (scheduleNext) animRef.current = requestAnimationFrame(loop);
       return;
     }
     // Frame-rate throttle based on gameSpeed setting.
@@ -1726,11 +1787,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ? Math.max(60, gameSpeedRef.current || 30)
       : (gameSpeedRef.current || 30);
     const targetInterval = 1000 / effectiveFps;
-    if (timestamp - lastTimeRef.current < targetInterval) {
-      animRef.current = requestAnimationFrame(loop);
+    if (!ignoreThrottle && timestamp - lastTimeRef.current < targetInterval) {
+      if (scheduleNext) animRef.current = requestAnimationFrame(loop);
       return;
     }
-    lastTimeRef.current = timestamp;
+    if (!ignoreThrottle) lastTimeRef.current = timestamp;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -1826,6 +1887,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           vx: 0,
           vy: 0,
           patrolPhase: Math.random() * Math.PI * 2,
+          autonomySeed: Math.random() * Math.PI * 2,
           targetRef: null,
           retargetTimer: 0,
           aimTarget: null,
@@ -1845,38 +1907,54 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           let bestScore = Infinity;
           liveCombatEnemies.forEach(enemy => {
             const dist = Math.hypot(enemy.x - sw.x, enemy.y - sw.y);
-            const hpWeight = (enemy.hp || 1) * 4;
-            const score = dist + hpWeight;
+            const playerDist = Math.hypot(enemy.x - p.x, enemy.y - p.y);
+            const hpWeight = (enemy.hp || 1) * 3;
+            const proximityBias = playerDist * 0.25;
+            const score = dist + hpWeight + proximityBias;
             if (score < bestScore) {
               bestScore = score;
               bestEnemy = enemy;
             }
           });
           sw.targetRef = bestEnemy;
-          sw.retargetTimer = 25 + Math.floor(Math.random() * 30);
+          sw.retargetTimer = 16 + Math.floor(Math.random() * 20);
         }
 
         let targetX = p.x;
-        let targetY = p.y - 50;
+        let targetY = p.y - 46;
         if (sw.targetRef) {
           const enemy = sw.targetRef;
-          const orbitAngle = s._swPatrolTime * 0.045 + i * Math.PI;
-          const escortRadius = 90 + i * 24;
-          targetX = enemy.x + Math.cos(orbitAngle) * escortRadius;
-          targetY = Math.max(60, enemy.y + 55 + Math.sin(orbitAngle * 1.2) * 35);
+          const orbitAngle = s._swPatrolTime * 0.055 + i * Math.PI + (sw.autonomySeed || 0);
+          const escortRadius = 62 + i * 14;
+          const strafeSway = Math.sin(s._swPatrolTime * 0.11 + (sw.autonomySeed || 0)) * 16;
+          const leadX = (enemy.vx || 0) * 14;
+          const leadY = (enemy.vy || 0) * 14;
+          targetX = enemy.x + leadX + Math.cos(orbitAngle) * escortRadius + strafeSway;
+          targetY = Math.max(60, enemy.y + leadY + 42 + Math.sin(orbitAngle * 1.3) * 24);
           sw.aimTarget = enemy;
         } else {
-          const patrolAngle = s._swPatrolTime * 0.022 + (sw.patrolPhase || 0);
-          targetX = p.x + Math.cos(patrolAngle) * (110 + i * 20);
-          targetY = p.y - 50 + Math.sin(patrolAngle * 1.35) * 30;
+          const patrolAngle = s._swPatrolTime * 0.03 + (sw.patrolPhase || 0);
+          targetX = p.x + Math.cos(patrolAngle) * (78 + i * 10);
+          targetY = p.y - 44 + Math.sin(patrolAngle * 1.35) * 22;
           sw.aimTarget = null;
+        }
+
+        // Keep super wingmen closer to the player while still autonomous.
+        const leashRadius = 170 + i * 14;
+        const toTargetFromPlayerX = targetX - p.x;
+        const toTargetFromPlayerY = targetY - p.y;
+        const targetFromPlayerDist = Math.hypot(toTargetFromPlayerX, toTargetFromPlayerY);
+        if (targetFromPlayerDist > leashRadius) {
+          const scale = leashRadius / (targetFromPlayerDist || 1);
+          targetX = p.x + toTargetFromPlayerX * scale;
+          targetY = p.y + toTargetFromPlayerY * scale;
         }
 
         const dx = targetX - sw.x;
         const dy = targetY - sw.y;
         const len = Math.hypot(dx, dy) || 1;
-        const accel = 0.19;
-        const maxSpeed = 2.7 + Math.min(wingmanTier, 10) * 0.1;
+        const accel = 0.22;
+        const maxSpeed = 3.0 + Math.min(wingmanTier, 10) * 0.1;
         sw.vx = (sw.vx || 0) + (dx / len) * accel;
         sw.vy = (sw.vy || 0) + (dy / len) * accel;
         const spdNow = Math.hypot(sw.vx, sw.vy) || 1;
@@ -2011,7 +2089,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           }
           if ((pw.bounce || 0) > 0) {
             const bounceSpeed = 10;
-            acquireBullet(s, { x: sw.x, y: sw.y - 14, vx: aimDirX * bounceSpeed, vy: aimDirY * bounceSpeed, type: 'bounce', bouncesLeft: (pw.bounce) * 2 }, 'player');
+            acquireBullet(s, { x: sw.x, y: sw.y - 14, vx: aimDirX * bounceSpeed, vy: aimDirY * bounceSpeed, type: 'bounce', bouncesLeft: pw.bounce }, 'player');
           }
           const normalSpeed = 7.2;
           acquireBullet(s, { x: sw.x, y: sw.y - 18, vx: aimDirX * normalSpeed, vy: aimDirY * normalSpeed, type: 'normal' }, 'player');
@@ -2098,7 +2176,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
                 s.score += pts; onScoreChange(s.score); sounds.kill();
                 spawnExplosion(s, e.x, e.y, e.type === 'boss' ? '#ff0066' : laserColor, e.type === 'boss' ? 40 : 14);
                 if (e.type === 'dropper') { sounds.killDropper(); spawnFloatingPowerup(s, e.x, e.y, e.dropType); }
-                if (e.type === 'boss') { sounds.stopBossMusic(); sounds.waveComplete(); s.maxLives++; s.lives = Math.min(s.lives + 1, s.maxLives); onLivesChange(s.lives); onMaxLivesChange(s.maxLives); }
+                if (e.type === 'boss') { sounds.stopBossMusic(); sounds.waveComplete(); grantBossLifeReward(s); }
               }
             });
             beamStopY = beamBlockY;
@@ -2119,7 +2197,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
                 s.score += pts; onScoreChange(s.score); sounds.kill();
                 spawnExplosion(s, firstEnemy.x, firstEnemy.y, firstEnemy.type === 'boss' ? '#ff0066' : laserColor, firstEnemy.type === 'boss' ? 40 : 14);
                 if (firstEnemy.type === 'dropper') { sounds.killDropper(); spawnFloatingPowerup(s, firstEnemy.x, firstEnemy.y, firstEnemy.dropType); }
-                if (firstEnemy.type === 'boss') { sounds.stopBossMusic(); sounds.waveComplete(); s.maxLives++; s.lives = Math.min(s.lives + 1, s.maxLives); onLivesChange(s.lives); onMaxLivesChange(s.maxLives); }
+                if (firstEnemy.type === 'boss') { sounds.stopBossMusic(); sounds.waveComplete(); grantBossLifeReward(s); }
               }
             }
           }
@@ -2261,6 +2339,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           }
         } else if (bossWave === 15) {
           // Beholder: dedicated movement, lasers, and shield logic.
+          const liveFps = fpsTrackerRef.current?.lastReported || 60;
+          e._performanceMode = liveFps <= 14 ? 'very-low' : liveFps <= 24 ? 'low' : 'normal';
           updateBeholderMovement(e, W, H);
           if (enraged) updateBeholderMovement(e, W, H);
           updateBeholderShield(e);
@@ -2269,7 +2349,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             e._laserDamageTick = (e._laserDamageTick || 0) - 1;
             if (e._laserDamageTick <= 0) {
               takeDamage(s);
-              e._laserDamageTick = enraged ? 5 : 8;
+              if (e._performanceMode === 'very-low') {
+                e._laserDamageTick = enraged ? 9 : 13;
+              } else if (e._performanceMode === 'low') {
+                e._laserDamageTick = enraged ? 7 : 10;
+              } else {
+                e._laserDamageTick = enraged ? 5 : 8;
+              }
             }
           } else {
             e._laserDamageTick = 0;
@@ -2369,6 +2455,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         e._eating = false;
         e._chargingPlayer = false;
         const bound = e._mini ? 15 : 25;
+        const isEnemyOnStage = e.x >= -80 && e.x <= W + 80 && e.y >= -80 && e.y <= H + 80;
         let targetX = null;
         let targetY = null;
         let distToTarget = Infinity;
@@ -2379,7 +2466,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         // Prioritize blocks farthest from the player.
         s.blocks.forEach(block => {
           if (block.dead) return;
-          if (e._mini && block.invulnerable) return;
+          if (block.invulnerable) return;
           getBlockCells(block).forEach(cell => {
             const cx = cell.x + BLOCK_SIZE / 2;
             const cy = cell.y + BLOCK_SIZE / 2;
@@ -2421,20 +2508,24 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             const eSpd = (e._mini ? 1.5 : 2.2) + (s.wave * 0.04);
             e.x += (dx2 / len2) * eSpd;
             e.y += (dy2 / len2) * eSpd;
-          } else {
+          } else if (isEnemyOnStage) {
             e._eating = true;
             let justAte = false;
             let ateInvuln = false;
             if (e._targetBlock && !e._targetBlock.dead) {
-              e._targetBlock.hp -= e._targetBlock.invulnerable ? 0.02 : 0.06;
-              if (e._targetBlock.hp <= 0) {
-                ateInvuln = !!e._targetBlock.invulnerable;
-                e._targetBlock.dead = true;
-                e.hp = Math.min(e.hp + 3, e.maxHp + 5);
-                e.maxHp = Math.max(e.maxHp, e.hp);
-                spawnExplosion(s, e.x, e.y, ateInvuln ? '#aaaacc' : '#44ff88', 10);
-                justAte = true;
-                e._blocksEaten = (e._blocksEaten || 0) + 1;
+              if (e._targetBlock.invulnerable) {
+                e._targetBlock = null;
+              } else {
+                e._targetBlock.hp -= 0.06;
+                if (e._targetBlock.hp <= 0) {
+                  ateInvuln = false;
+                  e._targetBlock.dead = true;
+                  e.hp = Math.min(e.hp + 3, e.maxHp + 5);
+                  e.maxHp = Math.max(e.maxHp, e.hp);
+                  spawnExplosion(s, e.x, e.y, '#44ff88', 10);
+                  justAte = true;
+                  e._blocksEaten = (e._blocksEaten || 0) + 1;
+                }
               }
             } else if (e._targetCellIdx !== undefined && s.piledCells[e._targetCellIdx]) {
               s.piledCells.splice(e._targetCellIdx, 1);
@@ -2513,7 +2604,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         };
 
         s.blocks.forEach(block => {
-          if (block.dead) return;
+          if (block.dead || block.invulnerable) return;
           const cells = getBlockCells(block);
           if (cells.length === 0) return;
           let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -2594,10 +2685,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         }
 
         const applyBerserkGrowth = (mass, sourceW, sourceH) => {
-          const sizeGainW = Math.max(2, sourceW * 0.35);
-          const sizeGainH = Math.max(2, sourceH * 0.35);
-          e.w = Math.min((e.w || e._baseW || 80) + sizeGainW, 260);
-          e.h = Math.min((e.h || e._baseH || 80) + sizeGainH, 260);
+          const maxGrowthPerConsume = 12;
+          const rawGainW = Math.max(2.4, sourceW * 0.42);
+          const rawGainH = Math.max(2.4, sourceH * 0.42);
+          const sizeGainW = Math.min(rawGainW, maxGrowthPerConsume);
+          const sizeGainH = Math.min(rawGainH, maxGrowthPerConsume);
+          e.w = Math.min((e.w || e._baseW || 94) + sizeGainW, 260);
+          e.h = Math.min((e.h || e._baseH || 94) + sizeGainH, 260);
 
           const hpGain = Math.ceil((sourceW + sourceH) * 1.2 + mass * 14 + (e._isHell ? 12 : 0));
           e.maxHp = Math.min((e.maxHp || e.hp || 1) + hpGain, 50000);
@@ -2678,7 +2772,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           e._chargingPlayer = false;
 
           const consumeRange = Math.max(26, ((e.w || 80) + (e.h || 80)) * 0.22);
-          if (len <= consumeRange && e._consumeCooldown <= 0) {
+          const isEnemyOnStageNow = e.x >= -80 && e.x <= W + 80 && e.y >= -80 && e.y <= H + 80;
+          if (len <= consumeRange && e._consumeCooldown <= 0 && isEnemyOnStageNow) {
             let consumed = false;
             if (e._consumeKind === 'block' && e._consumeTargetRef && !e._consumeTargetRef.dead) {
               e._consumeTargetRef.dead = true;
@@ -2717,7 +2812,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           e._chargingPlayer = false;
         }
 
-        const visualHalf = Math.max((e.w || e._baseW || 44) * 0.9, (e.h || e._baseH || 44) * 0.9, 36) + Math.min(e._absorbedUnits || 0, 36) * 1.4;
+        const visualHalf = Math.max((e.w || e._baseW || 94) * 0.9, (e.h || e._baseH || 94) * 0.9, 36) + Math.min(e._absorbedUnits || 0, 36) * 1.4;
         const margin = Math.max(20, visualHalf + 6);
         if (e.x < margin) e.x = margin;
         if (e.x > W - margin) e.x = W - margin;
@@ -2835,8 +2930,26 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       }
     });
 
+    const consumeBounceCharge = (b) => {
+      if (b.type !== 'bounce') return true;
+      if (b._bounceChargeSpent) return true;
+      const remaining = Number(b.bouncesLeft) || 0;
+      if (remaining <= 0) {
+        b.hit = true;
+        return false;
+      }
+      b.bouncesLeft = remaining - 1;
+      b._bounceChargeSpent = true;
+      if (b.bouncesLeft <= 0) {
+        b.hit = true;
+        return false;
+      }
+      return true;
+    };
+
     // Move bullets
     s.bullets = s.bullets.filter(b => {
+      b._bounceChargeSpent = false;
       b.x += b.vx; b.y += b.vy;
       if (b.type === 'photon') {
         b.orbitAngle = ((b.orbitAngle || 0) + 0.25);
@@ -2871,13 +2984,20 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         }
       }
       if (b.type === 'bounce') {
+        let bounced = false;
         if (b.x <= 0 || b.x >= W) {
-          if (b.bouncesLeft > 0) { b.vx *= -1; b.x = Math.max(1, Math.min(W - 1, b.x)); b.bouncesLeft--; }
-          else { releaseBullet(s, b); return false; }
+          b.vx *= -1;
+          b.x = Math.max(1, Math.min(W - 1, b.x));
+          bounced = true;
         }
         if (b.y <= 0) {
-          if (b.bouncesLeft > 0) { b.vy *= -1; b.y = Math.max(1, b.y); b.bouncesLeft--; }
-          else { releaseBullet(s, b); return false; }
+          b.vy *= -1;
+          b.y = Math.max(1, b.y);
+          bounced = true;
+        }
+        if (bounced && !consumeBounceCharge(b)) {
+          releaseBullet(s, b);
+          return false;
         }
       }
       const keep = b.y > -20 && b.y < H + 20 && b.x > -20 && b.x < W + 20;
@@ -3099,7 +3219,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const blockSpinEnabled = (difficultyConfigRef.current?.blockSpin) !== false;
       block.rot = blockSpinEnabled
         ? (block.rot || 0) + ((block.rotSpeed || 0) * (0.8 + block.vy * 0.12))
-        : 0;
+        : (block.rot || 0) * 0.85; // smoothly snap to 0 when spin is disabled
 
       // Check if any cell would land on bottom or on a piled cell
       const cells = getBlockCells(block);
@@ -3153,6 +3273,22 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         && enemy.y - halfH <= H;
     };
 
+    const isBulletHittingEnemy = (bullet, enemy) => {
+      const dx = bullet.x - enemy.x;
+      const dy = bullet.y - enemy.y;
+
+      if (enemy.type === 'berserk') {
+        // Berserker uses a circular collision area to match the sprite body
+        // and avoid oversized square clipping around transparent sprite edges.
+        const baseRadius = Math.max(16, Math.max(enemy.w || 94, enemy.h || 94) * 0.36);
+        const consumeBonus = Math.min(enemy._absorbedUnits || 0, 36) * 0.45;
+        const radius = baseRadius + consumeBonus;
+        return (dx * dx + dy * dy) <= radius * radius;
+      }
+
+      return Math.abs(dx) < (enemy.w || 18) && Math.abs(dy) < (enemy.h || 18);
+    };
+
     s.bullets.forEach(b => {
       if (b.hit) return;
       s.enemies.forEach(e => {
@@ -3167,8 +3303,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             return;
           }
         }
-        const dx = b.x - e.x, dy = b.y - e.y;
-        if (Math.abs(dx) < e.w && Math.abs(dy) < e.h) {
+        if (isBulletHittingEnemy(b, e)) {
           if (b.type === 'spread') { explodeSpread(b, newSpreadPellets); b.hit = true; return; }
           // Photon pierce: skip enemies already pierced, consume one pierce count.
           // Tier 10 photons are infinite-pierce and never consume this count.
@@ -3191,7 +3326,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
               spawnExplosion(s, e.x, e.y, e.type === 'boss' ? '#ff0066' : getProjectileImpactColor(b.type), e.type === 'boss' ? 40 : 14);
               if (e.type === 'dropper') { sounds.killDropper(); spawnFloatingPowerup(s, e.x, e.y, e.dropType); }
               if (e.type === 'boss') { 
-                sounds.stopBossMusic(); sounds.waveComplete(); s.maxLives++; s.lives = Math.min(s.lives + 1, s.maxLives); onLivesChange(s.lives); onMaxLivesChange(s.maxLives);
+                sounds.stopBossMusic(); sounds.waveComplete(); grantBossLifeReward(s);
                 // In boss mode, drop 3 random gun powerups after defeating a boss
                 if (bossModeRef.current) {
                   const guns = ['spread', 'laser', 'photon', 'bounce', 'missile'];
@@ -3223,8 +3358,15 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           }
           e.hp--;
           sounds.hit();
-          b.hit = true;
           spawnExplosion(s, b.x, b.y, getProjectileImpactColor(b.type), 3);
+          if (b.type === 'bounce' && (b.bouncesLeft || 0) > 0) {
+            b.vy *= -1;
+            b.vx += (Math.random() - 0.5) * 1.5; // slight angle variation
+            b.y += Math.sign(b.vy) * 4;
+            consumeBounceCharge(b);
+          } else {
+            b.hit = true;
+          }
           // Mine: immediately charge at player on first hit (hp goes from 3 to 2)
           if (e.type === 'mine' && e.hp === e.maxHp - 1 && !e._charging) {
             const dx = p.x - e.x, dy = p.y - e.y;
@@ -3275,10 +3417,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             if (e.type === 'boss') {
               sounds.stopBossMusic();
               sounds.waveComplete();
-              s.maxLives++;
-              s.lives = Math.min(s.lives + 1, s.maxLives);
-              onLivesChange(s.lives);
-              onMaxLivesChange(s.maxLives);
+              grantBossLifeReward(s);
             }
           }
         }
@@ -3316,8 +3455,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
                   b.y += Math.sign(b.vy || -1) * 2;
                 }
 
-                b.bouncesLeft = Math.max(0, (b.bouncesLeft || 0) - 1);
-                if (b.bouncesLeft <= 0) b.hit = true;
+                consumeBounceCharge(b);
                 spawnExplosion(s, b.x, b.y, getProjectileImpactColor(b.type), 4);
               } else {
                 spawnExplosion(s, b.x, b.y, getProjectileImpactColor(b.type), 3);
@@ -3328,7 +3466,23 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
               // Photon deals 2 damage to blocks; others deal 1
               block.hp -= b.type === 'photon' ? 2 : 1;
               spawnExplosion(s, b.x, b.y, getProjectileImpactColor(b.type), 3);
-              if (!piercingTypes.includes(b.type) && !(b.type === 'photon' && b.infinitePierce)) b.hit = true;
+              if (b.type === 'bounce' && (b.bouncesLeft || 0) > 0) {
+                const leftDist = Math.abs(b.x - cell.x);
+                const rightDist = Math.abs((cell.x + BLOCK_SIZE) - b.x);
+                const topDist = Math.abs(b.y - cell.y);
+                const bottomDist = Math.abs((cell.y + BLOCK_SIZE) - b.y);
+                const minSide = Math.min(leftDist, rightDist, topDist, bottomDist);
+                if (minSide === leftDist || minSide === rightDist) {
+                  b.vx *= -1;
+                  b.x += Math.sign(b.vx || 1) * 3;
+                } else {
+                  b.vy *= -1;
+                  b.y += Math.sign(b.vy || -1) * 3;
+                }
+                consumeBounceCharge(b);
+              } else if (!piercingTypes.includes(b.type) && !(b.type === 'photon' && b.infinitePierce)) {
+                b.hit = true;
+              }
               if (block.hp <= 0) {
                 block.dead = true;
                 s.score += 50;
@@ -3353,7 +3507,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         if (!isCellOnStage(cell, W, H)) return true;
         if (b.x >= cell.x && b.x <= cell.x + BLOCK_SIZE && b.y >= cell.y && b.y <= cell.y + BLOCK_SIZE) {
           if (b.type === 'spread') { explodeSpread(b, newSpreadPelletsFromPiled); b.hit = true; }
-          else if (!piercingTypes.includes(b.type) && !(b.type === 'photon' && b.infinitePierce)) b.hit = true;
+          else if (b.type === 'bounce' && (b.bouncesLeft || 0) > 0) {
+            b.vy *= -1;
+            b.y += Math.sign(b.vy) * 3;
+            consumeBounceCharge(b);
+          } else if (!piercingTypes.includes(b.type) && !(b.type === 'photon' && b.infinitePierce)) {
+            b.hit = true;
+          }
           spawnExplosion(s, b.x, b.y, getProjectileImpactColor(b.type), 4);
           return false;
         }
@@ -3899,7 +4059,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       s.waveTimer++;
       const nextWave = s.wave + (bossModeRef.current ? 5 : 1);
       const targetFps = Math.max(30, gameSpeedRef.current || 30);
-      const cleanupDelayFrames = Math.round(targetFps * 5); // ~5 seconds
+      const cleanupDelayFrames = Math.round(targetFps * 3); // ~3 seconds
       const isBossWaveClear = bossModeRef.current || (s.wave % 5 === 0);
       const waveAdvanceDelay = isBossWaveClear ? cleanupDelayFrames : 90;
       if (s.waveTimer === 1 && nextWave % 5 === 0) {
@@ -3973,7 +4133,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const bx = (W - bw) / 2, by = 20 + index * 30;
       ctx.fillStyle = '#000000aa'; ctx.fillRect(bx - 2, by - 2, bw + 4, bh + 4);
       ctx.fillStyle = '#333'; ctx.fillRect(bx, by, bw, bh);
-      const bossBarColor = (['#ff0066','#ff6600','#aa00ff','#00ccff'][Math.min((boss.tier || 1) - 1, 3)]);
+      const bossBarColor = boss._variantHudColor || (['#ff0066','#ff6600','#aa00ff','#00ccff'][Math.min((boss.tier || 1) - 1, 3)]);
       ctx.fillStyle = bossBarColor;
       ctx.fillRect(bx, by, bw * (boss.hp / boss.maxHp), bh);
       // Boss name
@@ -4077,7 +4237,17 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       }
     }
 
-    animRef.current = requestAnimationFrame(loop);
+    if (chainedStepsRemaining > 0) {
+      loop(timestamp, false, true, chainedStepsRemaining - 1);
+    }
+
+    if (scheduleNext) {
+      const extraSimulationSteps = Math.max(0, Math.floor(speedBoostMultiplierRef.current || 1) - 1);
+      if (extraSimulationSteps > 0) {
+        loop(timestamp, false, true, extraSimulationSteps - 1);
+      }
+      animRef.current = requestAnimationFrame(loop);
+    }
   }, [onScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, setGameState]);
 
   // ── Start / stop ─────────────────────────────────────────────

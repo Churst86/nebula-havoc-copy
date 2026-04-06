@@ -57,6 +57,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Stamp desktop app version
+        shell: pwsh
+        run: |
+          $tag = "${{ steps.version.outputs.tag }}"
+          $version = $tag -replace '^v', ''
+          npm version $version --no-git-tag-version
+
       - name: Build desktop portable exe
         env:
           VITE_APP_VERSION: ${{ steps.version.outputs.tag }}

@@ -5,7 +5,7 @@ const https = require('https');
 const http = require('http');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
-const { app, BrowserWindow, shell, ipcMain } = require('electron');
+const { app, BrowserWindow, shell, ipcMain, dialog } = require('electron');
 
 let mainWindow = null;
 
@@ -93,53 +93,84 @@ function buildPatchFromGithubRelease(release, repo, assetRegexText) {
 }
 
 function downloadFile(url, destinationPath, expectedSha256, onProgress) {
-  return new Promise((resolve, reject) => {
-    const client = url.startsWith('https:') ? https : http;
+  return new Promise(async (resolve, reject) => {
     const hash = crypto.createHash('sha256');
     const out = fs.createWriteStream(destinationPath);
 
-    const req = client.get(url, (res) => {
-      if (res.statusCode !== 200) {
-        reject(new Error(`Patch download failed with status ${res.statusCode}.`));
-        res.resume();
+    const fail = (err) => {
+      try {
+        if (!out.destroyed) out.destroy();
+        if (fs.existsSync(destinationPath)) fs.unlinkSync(destinationPath);
+      } catch {
+        // Ignore cleanup errors.
+      }
+      reject(err instanceof Error ? err : new Error(String(err || 'Patch download failed.')));
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        redirect: 'follow',
+        headers: {
+          'User-Agent': 'Nebula-Havoc-Updater',
+          'Accept': 'application/octet-stream,application/json;q=0.9,*/*;q=0.8',
+        },
+      });
+
+      const status = Number(response.status || 0);
+      if (!response.ok) {
+        fail(new Error(`Patch download failed with status ${status}.`));
         return;
       }
 
-      const total = Number.parseInt(res.headers['content-length'] || '0', 10) || 0;
+      const total = Number.parseInt(response.headers.get('content-length') || '0', 10) || 0;
       let received = 0;
 
-      res.on('data', (chunk) => {
-        received += chunk.length;
+      // Stream with progress when available.
+      if (response.body && typeof response.body.getReader === 'function') {
+        const reader = response.body.getReader();
+        const pump = async () => {
+          // eslint-disable-next-line no-constant-condition
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = Buffer.from(value);
+            received += chunk.length;
+            hash.update(chunk);
+            if (!out.write(chunk)) {
+              await new Promise((resume) => out.once('drain', resume));
+            }
+            if (onProgress) {
+              const percent = total > 0 ? Math.min(100, Math.round((received / total) * 100)) : 0;
+              onProgress({ received, total, percent });
+            }
+          }
+        };
+        await pump();
+      } else {
+        // Fallback for environments without readable stream support.
+        const arr = await response.arrayBuffer();
+        const chunk = Buffer.from(arr);
+        received = chunk.length;
         hash.update(chunk);
+        out.write(chunk);
         if (onProgress) {
-          const percent = total > 0 ? Math.min(100, Math.round((received / total) * 100)) : 0;
+          const percent = total > 0 ? Math.min(100, Math.round((received / total) * 100)) : 100;
           onProgress({ received, total, percent });
         }
+      }
+
+      out.end(() => {
+        const digest = hash.digest('hex');
+        if (expectedSha256 && String(expectedSha256).toLowerCase() !== digest.toLowerCase()) {
+          fail(new Error('Patch checksum validation failed.'));
+          return;
+        }
+        resolve({ path: destinationPath, sha256: digest });
       });
-
-      res.pipe(out);
-
-      out.on('finish', () => {
-        out.close(() => {
-          const digest = hash.digest('hex');
-          if (expectedSha256 && String(expectedSha256).toLowerCase() !== digest.toLowerCase()) {
-            reject(new Error('Patch checksum validation failed.'));
-            return;
-          }
-          resolve({ path: destinationPath, sha256: digest });
-        });
-      });
-    });
-
-    req.on('error', (err) => {
-      out.destroy();
-      reject(err);
-    });
-
-    out.on('error', (err) => {
-      req.destroy();
-      reject(err);
-    });
+    } catch (err) {
+      fail(err);
+    }
   });
 }
 
@@ -165,6 +196,42 @@ function buildApplyPatchScript(scriptPath, sourceExePath, destinationExePath) {
 
 function getDesktopSavePath() {
   return path.join(app.getPath('userData'), 'voidstorm-save.json');
+}
+
+function getDesktopExportDir() {
+  const exeDir = path.dirname(app.getPath('exe'));
+  return path.join(exeDir, 'save-exports');
+}
+
+function sanitizeExportFileName(fileName) {
+  const base = String(fileName || '')
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
+    .trim();
+  const withoutExt = base.replace(/\.json$/i, '');
+  return `${withoutExt || 'save-export'}.json`;
+}
+
+function getLastPatchedVersionPath() {
+  return path.join(app.getPath('userData'), 'last-patched-version.json');
+}
+
+function readLastPatchedVersion() {
+  try {
+    const p = getLastPatchedVersionPath();
+    if (!fs.existsSync(p)) return null;
+    return JSON.parse(fs.readFileSync(p, 'utf8'))?.version || null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLastPatchedVersion(version) {
+  try {
+    const p = getLastPatchedVersionPath();
+    fs.writeFileSync(p, JSON.stringify({ version, patchedAt: new Date().toISOString() }), 'utf8');
+  } catch {
+    // ignore
+  }
 }
 
 ipcMain.on('desktop:save:read', (event) => {
@@ -201,8 +268,64 @@ ipcMain.on('desktop:save:delete', (event) => {
   }
 });
 
+ipcMain.handle('desktop:save:export-slot', async (_event, payload = {}) => {
+  const json = payload?.json;
+  const fileName = payload?.fileName;
+
+  if (!json || typeof json !== 'string') {
+    return { ok: false, error: 'No export data provided.' };
+  }
+
+  try {
+    const exportDir = getDesktopExportDir();
+    fs.mkdirSync(exportDir, { recursive: true });
+    const finalName = sanitizeExportFileName(fileName);
+    const filePath = path.join(exportDir, finalName);
+    fs.writeFileSync(filePath, json, 'utf8');
+    return { ok: true, filePath };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error?.message || 'Failed to export save file.',
+    };
+  }
+});
+
+ipcMain.handle('desktop:save:pick-import', async () => {
+  try {
+    const exportDir = getDesktopExportDir();
+    fs.mkdirSync(exportDir, { recursive: true });
+
+    const result = await dialog.showOpenDialog(mainWindow || undefined, {
+      title: 'Import Save File',
+      defaultPath: exportDir,
+      properties: ['openFile'],
+      filters: [
+        { name: 'JSON Files', extensions: ['json'] },
+        { name: 'All Files', extensions: ['*'] },
+      ],
+    });
+
+    if (result.canceled || !result.filePaths?.length) {
+      return { ok: false, cancelled: true };
+    }
+
+    const filePath = result.filePaths[0];
+    const content = fs.readFileSync(filePath, 'utf8');
+    return { ok: true, filePath, content };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error?.message || 'Failed to open import dialog.',
+    };
+  }
+});
+
 ipcMain.handle('desktop:update:check', async (_event, payload = {}) => {
-  const currentVersion = payload.currentVersion || app.getVersion();
+  const rawVersion = app.getVersion();
+  const isDevBuild = rawVersion === '0.0.0';
+  const lastPatchedVersion = readLastPatchedVersion();
+  const currentVersion = (isDevBuild && lastPatchedVersion) ? lastPatchedVersion : rawVersion;
   const manifestUrl = payload.manifestUrl || DEFAULT_PATCH_MANIFEST_URL;
   const githubRepo = payload.githubRepo || DEFAULT_GITHUB_REPO;
   const githubAssetPattern = payload.githubAssetPattern || DEFAULT_GITHUB_ASSET_REGEX;
@@ -218,6 +341,19 @@ ipcMain.handle('desktop:update:check', async (_event, payload = {}) => {
     };
   }
 
+  // Dev build with no prior patch baseline — never show UPDATE AVAILABLE.
+  // Show LOCAL BUILD badge in UI instead.
+  if (isDevBuild && !lastPatchedVersion) {
+    return {
+      ok: true,
+      configured: true,
+      updateAvailable: false,
+      isDevBuild: true,
+      currentVersion,
+      latestVersion: currentVersion,
+      patch: null,
+    };
+  }
   try {
     let patch = null;
     let latestVersion = currentVersion;
@@ -265,6 +401,7 @@ ipcMain.handle('desktop:update:check', async (_event, payload = {}) => {
       ok: true,
       configured,
       updateAvailable,
+      isDevBuild,
       currentVersion,
       latestVersion,
       patch: updateAvailable ? patch : null,
@@ -327,6 +464,7 @@ ipcMain.handle('desktop:update:download', async (_event, patch = {}) => {
 
 ipcMain.handle('desktop:update:apply-and-restart', async (_event, payload = {}) => {
   const patchPath = payload?.patchPath;
+  const patchVersion = payload?.version || null;
   if (!patchPath || !fs.existsSync(patchPath)) {
     return { ok: false, error: 'Downloaded patch file was not found.' };
   }
@@ -343,6 +481,7 @@ ipcMain.handle('desktop:update:apply-and-restart', async (_event, payload = {}) 
     });
     child.unref();
 
+    if (patchVersion) writeLastPatchedVersion(patchVersion);
     setTimeout(() => app.quit(), 120);
     return { ok: true };
   } catch (error) {
@@ -395,4 +534,16 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+ipcMain.handle('desktop:app:version', async () => {
+  const rawVersion = app.getVersion();
+  const isDevBuild = rawVersion === '0.0.0';
+  const lastPatchedVersion = readLastPatchedVersion();
+  return {
+    ok: true,
+    version: (isDevBuild && lastPatchedVersion) ? lastPatchedVersion : rawVersion,
+    isDevBuild,
+    lastPatchedVersion,
+  };
 });

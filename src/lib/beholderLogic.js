@@ -81,6 +81,9 @@ export function updateBeholderShield(e) {
 // Tracking laser — lags behind player with a delayed angle, plus 2 random-burst side lasers
 export function updateBeholderFire(e, p, s, sounds) {
   const isStage2 = e._stage2Triggered && e.hp <= e.maxHp / 3;
+  const perfMode = e._performanceMode || 'normal';
+  const lowPerf = perfMode === 'low';
+  const veryLowPerf = perfMode === 'very-low';
   const BEAM_LENGTH = 1200;
   const EYE_OFFSET_X = 0;
   const EYE_OFFSET_Y = -16;
@@ -91,10 +94,10 @@ export function updateBeholderFire(e, p, s, sounds) {
   const mainChargeDuration = isStage2 ? 55 : 75;
   const mainActiveDuration = isStage2 ? 120 : 90;
   const mainCooldownDuration = isStage2 ? 180 : 260;
-  const sideChargeDuration = isStage2 ? 35 : 50;
-  const sideActiveDuration = isStage2 ? 75 : 55;
-  const sideCooldownDuration = isStage2 ? 170 : 240;
-  const photonCooldownDuration = isStage2 ? 120 : 180;
+  const sideChargeDuration = veryLowPerf ? 70 : (lowPerf ? 58 : (isStage2 ? 35 : 50));
+  const sideActiveDuration = veryLowPerf ? 28 : (lowPerf ? 42 : (isStage2 ? 75 : 55));
+  const sideCooldownDuration = veryLowPerf ? 420 : (lowPerf ? 300 : (isStage2 ? 170 : 240));
+  const photonCooldownDuration = veryLowPerf ? 270 : (lowPerf ? 210 : (isStage2 ? 120 : 180));
 
   // ── Init ──
   if (e._laserAngle === undefined) {
@@ -141,7 +144,7 @@ export function updateBeholderFire(e, p, s, sounds) {
   if (e._laserTargetUpdateTimer <= 0) {
     e._laserTargetAngle = Math.atan2(p.y - originY, p.x - originX);
     // Update target slowly — every 20 frames sample the player position
-    e._laserTargetUpdateTimer = 20;
+    e._laserTargetUpdateTimer = veryLowPerf ? 32 : (lowPerf ? 26 : 20);
   }
 
   // Rotate toward the lagged target angle slowly
@@ -205,7 +208,12 @@ export function updateBeholderFire(e, p, s, sounds) {
     const dy = p.y - e.y;
     const len = Math.hypot(dx, dy) || 1;
     const baseAngle = Math.atan2(dy, dx);
-    const photonCount = isStage2 ? 3 : 2;
+    const photonCount = veryLowPerf ? 1 : (lowPerf ? (isStage2 ? 2 : 1) : (isStage2 ? 3 : 2));
+    const bulletCap = veryLowPerf ? 120 : (lowPerf ? 160 : 240);
+    if ((s.enemyBullets?.length || 0) >= bulletCap) {
+      e._photonCooldown = photonCooldownDuration;
+      return;
+    }
     for (let i = 0; i < photonCount; i++) {
       const offset = photonCount === 1 ? 0 : (-0.18 + (0.36 / Math.max(1, photonCount - 1)) * i);
       const angle = baseAngle + offset;
@@ -224,8 +232,11 @@ export function updateBeholderFire(e, p, s, sounds) {
   }
 
   // ── Lasers 2 & 3: similar style, staggered timings ──
+  const allowSideLaser1 = !veryLowPerf;
+  const allowSideLaser2 = !(lowPerf || veryLowPerf);
+
   e._randLaser1Cooldown = (e._randLaser1Cooldown || 0) - 1;
-  if (!e._randLaser1 && e._randLaser1Cooldown <= 0) {
+  if (allowSideLaser1 && !e._randLaser1 && e._randLaser1Cooldown <= 0) {
     e._randLaser1 = {
       angle: Math.random() * Math.PI * 2,
       timer: sideChargeDuration,
@@ -236,7 +247,7 @@ export function updateBeholderFire(e, p, s, sounds) {
   }
 
   e._randLaser2Cooldown = (e._randLaser2Cooldown || 0) - 1;
-  if (!e._randLaser2 && e._randLaser2Cooldown <= 0) {
+  if (allowSideLaser2 && !e._randLaser2 && e._randLaser2Cooldown <= 0) {
     e._randLaser2 = {
       angle: Math.random() * Math.PI * 2,
       timer: sideChargeDuration,
@@ -244,6 +255,17 @@ export function updateBeholderFire(e, p, s, sounds) {
       chargeDuration: sideChargeDuration,
     };
     e._randLaser2Cooldown = sideCooldownDuration + 70 + Math.floor(Math.random() * 60);
+  }
+
+  if (!allowSideLaser1) {
+    e._randLaser1 = null;
+    e._randLaserEndX = undefined;
+    e._randLaserEndY = undefined;
+  }
+  if (!allowSideLaser2) {
+    e._randLaser2 = null;
+    e._randLaserEndX2 = undefined;
+    e._randLaserEndY2 = undefined;
   }
 
   const tickSideLaser = (rl, idx) => {

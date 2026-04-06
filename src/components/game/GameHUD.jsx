@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Zap, Shield, RefreshCw, Pause, Play } from 'lucide-react';
+import { Heart, Zap, Shield, RefreshCw, Pause, Play, FastForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const GUN_POWERUPS = ['spread', 'laser', 'photon', 'bounce', 'missile', 'reverse'];
@@ -48,7 +48,7 @@ const SHOP_ICONS = {
   armor: '🛡', repair: '🔧', drone: '🤖', harvester: '⛏',
 };
 
-export default function GameHUD({ score, lives, maxLives, wave, liveFps = 0, activePowerup, continuesLeft, isPaused, onPauseToggle, onOpenOptions, blockScore, shopUpgrades, armorHp, autoFireEnabled = true, lastSaveAt }) {
+export default function GameHUD({ score, lives, maxLives, wave, liveFps = 0, activePowerup, continuesLeft, isPaused, onPauseToggle, onOpenOptions, blockScore, shopUpgrades, armorHp, autoFireEnabled = true, lastSaveAt, speedMultiplier = 1, speedControlsUnlocked = false, onSpeedMultiplierChange }) {
   const [showSaveFlash, setShowSaveFlash] = React.useState(false);
   const [saveFlashLabel, setSaveFlashLabel] = React.useState('AUTOSAVED');
   const powerups = activePowerup || {};
@@ -209,12 +209,40 @@ export default function GameHUD({ score, lives, maxLives, wave, liveFps = 0, act
       )}
 
       {/* Pause button — desktop only, bottom-center */}
-      <div className="absolute hidden md:block bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto">
+      <div className="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 pointer-events-auto">
+        {speedControlsUnlocked && (
+          <div className="flex items-center gap-1 rounded-xl border border-amber-400/40 bg-black/70 px-2 py-2 backdrop-blur-sm">
+            <div className="flex items-center gap-1 px-1.5 text-[10px] font-black tracking-[0.24em] text-amber-200">
+              <FastForward className="h-3.5 w-3.5" />
+              SPEED
+            </div>
+            {[1, 2, 3].map((multiplier) => {
+              const active = speedMultiplier === multiplier;
+              return (
+                <button
+                  key={multiplier}
+                  type="button"
+                  onClick={() => onSpeedMultiplierChange?.(multiplier)}
+                  className="min-w-10 rounded-md border px-2 py-1 text-xs font-black tracking-wide transition-all"
+                  style={{
+                    color: active ? '#081018' : '#ffd47a',
+                    borderColor: active ? '#ffd47a' : '#7c5d1a',
+                    background: active ? '#ffd47a' : 'transparent',
+                  }}
+                  title={`Set HUD speed boost to x${multiplier}`}
+                >
+                  x{multiplier}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         <Button
           size="icon"
           variant="ghost"
           onClick={onPauseToggle}
-          className="text-primary hover:bg-primary/10 w-12 h-12"
+          className="hidden md:inline-flex text-primary hover:bg-primary/10 w-12 h-12"
           title="Pause / Options [Enter]"
         >
           {isPaused ? <Play className="w-6 h-6" /> : <Pause className="w-6 h-6" />}

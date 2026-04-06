@@ -215,10 +215,22 @@ export function getSpritesProgress() {
   return _loadComplete ? 1 : 0;
 }
 
+export function hasDrawableSprite(sprite) {
+  if (!sprite) return false;
+  const width = Number(sprite.naturalWidth || sprite.videoWidth || sprite.width || 0);
+  const height = Number(sprite.naturalHeight || sprite.videoHeight || sprite.height || 0);
+  return Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0;
+}
+
 /**
  * Draw a sprite onto ctx.
  */
 export function drawSprite(ctx, sprite, x, y, w, h) {
-  if (!sprite) return;
-  ctx.drawImage(sprite, x, y, w, h);
+  if (!hasDrawableSprite(sprite)) return false;
+  try {
+    ctx.drawImage(sprite, x, y, w, h);
+    return true;
+  } catch {
+    return false;
+  }
 }

@@ -1,5 +1,5 @@
 // Berserk enemy utilities
-import { getSprite, drawSprite, isSpritesLoaded } from './spriteLoader.js';
+import { getSprite, drawSprite, isSpritesLoaded, hasDrawableSprite } from './spriteLoader.js';
 
 export function updateBerserkMovement(e, p, W, H) {
   // Jerky, aggressive burst movement:
@@ -81,18 +81,18 @@ export function updateBerserkLaser(e, s, p, W, H) {
 
 export function drawBerserk(ctx, e, t) {
   ctx.save();
-  ctx.translate(e.x, e.y);
   
   const isMini = e._mini;
-  const absorbScale = 1 + Math.min(e._absorbedUnits || 0, 30) * 0.025;
-  const scale = (isMini ? 0.55 : 1.3) * absorbScale;
+  const baseSize = isMini ? 40 : 94;
+  const hitboxSize = Math.max(1, Number(e.w || e.h || baseSize));
+  const spriteSize = isMini ? baseSize : hitboxSize;
+  const scale = Math.max(0.35, spriteSize / 72);
   const berserkColor = e._isHell ? `hsl(${(t * 0.3) % 360},100%,65%)` : '#ff4400';
   const berserkSprite = getSprite('Berskerker');
   const eaterChompSprite = getSprite('EaterChomp');
-  const hasSprite = !!berserkSprite && isSpritesLoaded();
+  const hasSprite = isSpritesLoaded() && hasDrawableSprite(berserkSprite);
 
   if (hasSprite) {
-    const spriteSize = (isMini ? 40 : 94) * absorbScale;
     ctx.shadowColor = berserkColor;
     ctx.shadowBlur = isMini ? 8 : 14;
     drawSprite(ctx, berserkSprite, -spriteSize / 2, -spriteSize / 2, spriteSize, spriteSize);

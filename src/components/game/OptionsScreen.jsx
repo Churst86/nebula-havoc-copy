@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Music, Volume2, VolumeX, Sun, Skull, Gauge, Save, LogOut, CheckCircle, Smartphone, Wrench } from 'lucide-react';
+import { ArrowLeft, Music, Volume2, VolumeX, Sun, Skull, Gauge, Save, LogOut, CheckCircle, Smartphone, Wrench, Lock, Keyboard } from 'lucide-react';
 import { DIFFICULTY_CONFIG, saveSettings, loadAllSaveFiles } from '../../lib/gameSettings';
 import { sounds } from '../../hooks/useSound.js';
 import ControllerOptionsScreen from './ControllerOptionsScreen';
@@ -50,6 +50,9 @@ export default function OptionsScreen({ settings, onSettingsChange, onBack, game
   const [savedLabel, setSavedLabel] = useState('Saved!');
   const [showSaveSlots, setShowSaveSlots] = useState(false);
   const [showControllerOptions, setShowControllerOptions] = useState(false);
+  const [showCodePanel, setShowCodePanel] = useState(false);
+  const [codeInput, setCodeInput] = useState('');
+  const [codeStatus, setCodeStatus] = useState('');
   const [saves, setSaves] = useState({});
   const [confirmOverwrite, setConfirmOverwrite] = useState(null);
 
@@ -110,7 +113,30 @@ export default function OptionsScreen({ settings, onSettingsChange, onBack, game
   const gameSpeed = settings.gameSpeed ?? 30;
   const musicEnabled = settings.musicEnabled !== false;
   const unlockedDifficulty = settings.unlockedDifficulty || 'easy';
+  const godModeUnlocked = settings.hudSpeedBoostsUnlocked === true && settings.bossModeUnlocked === true;
   const difficultyRank = { easy: 1, normal: 2, hell: 3 };
+
+  function handleCodeSubmit(event) {
+    event.preventDefault();
+    const normalized = codeInput.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!normalized) {
+      setCodeStatus('Enter a code first.');
+      return;
+    }
+    if (normalized === 'GODMODE') {
+      const next = {
+        ...settings,
+        hudSpeedBoostsUnlocked: true,
+        bossModeUnlocked: true,
+      };
+      onSettingsChange(next);
+      saveSettings(next);
+      setCodeStatus(godModeUnlocked ? 'GODMODE already active. Boss Mode is on the title screen and x2/x3 are on the in-game HUD.' : 'GODMODE accepted. Boss Mode is now on the title screen and x2/x3 are on the in-game HUD.');
+      setCodeInput('');
+      return;
+    }
+    setCodeStatus('Code not recognized.');
+  }
 
   if (showControllerOptions) {
     return (
@@ -216,6 +242,51 @@ export default function OptionsScreen({ settings, onSettingsChange, onBack, game
           <Smartphone className="w-4 h-4" />
           Controller Settings
         </Button>
+
+        <div className="space-y-2 rounded-xl border border-cyan-900/60 bg-slate-950/50 p-3 md:p-4">
+          <Button onClick={() => setShowCodePanel(v => !v)} variant="outline" className="w-full gap-2">
+            <Keyboard className="w-4 h-4" />
+            {showCodePanel ? 'Hide Codes' : 'Codes'}
+          </Button>
+
+          {showCodePanel && (
+            <form onSubmit={handleCodeSubmit} className="space-y-3">
+              <div className="flex items-center gap-2 text-sm font-bold text-amber-300 uppercase tracking-widest">
+                <Lock className="w-4 h-4" />
+                Unlock Codes
+              </div>
+              <input
+                type="text"
+                value={codeInput}
+                onChange={(e) => {
+                  setCodeInput(e.target.value);
+                  if (codeStatus) setCodeStatus('');
+                }}
+                placeholder="Enter code"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+                className="w-full rounded-lg border border-cyan-500/40 bg-slate-900/90 px-3 py-2 text-center font-mono text-sm tracking-[0.35em] text-cyan-100 outline-none transition focus:border-cyan-300"
+              />
+              <Button type="submit" className="w-full bg-amber-500 text-slate-950 hover:bg-amber-400">
+                Submit Code
+              </Button>
+              <div className="rounded-lg border border-slate-700/80 bg-slate-950/70 px-3 py-2 text-xs text-slate-300">
+                Hidden features: HUD speed boosts and Boss Mode title option.
+              </div>
+              {godModeUnlocked && (
+                <div className="rounded-lg border border-emerald-500/40 bg-emerald-950/30 px-3 py-2 text-xs font-semibold text-emerald-300">
+                  GODMODE is active. Start or resume a run to use the x2 and x3 HUD speed buttons.
+                </div>
+              )}
+              {codeStatus && (
+                <div className={`text-xs font-semibold ${codeStatus.includes('accepted') || codeStatus.includes('already') ? 'text-emerald-300' : 'text-red-300'}`}>
+                  {codeStatus}
+                </div>
+              )}
+            </form>
+          )}
+        </div>
 
         {/* Difficulty */}
         <div className="space-y-2">
