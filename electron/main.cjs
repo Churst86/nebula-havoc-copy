@@ -12,6 +12,8 @@ let mainWindow = null;
 const DEFAULT_PATCH_MANIFEST_URL = process.env.NEBULA_PATCH_MANIFEST_URL || '';
 const DEFAULT_GITHUB_REPO = process.env.NEBULA_GITHUB_REPO || 'Churst86/nebula-havoc-copy';
 const DEFAULT_GITHUB_ASSET_REGEX = process.env.NEBULA_GITHUB_ASSET_REGEX || 'Nebula-Havoc-.*\\.exe$';
+const SHARED_SAVE_ROOT_DIR = 'Nebula Havoc';
+const SHARED_EXPORTS_DIR = 'save-exports';
 
 function parseVersionNumber(version) {
   return String(version || '')
@@ -34,19 +36,37 @@ function isVersionGreater(a, b) {
   return false;
 }
 
-function fetchJson(url, headers = {}) {
+function fetchJson(url, headers = {}, redirectCount = 0) {
   return new Promise((resolve, reject) => {
     if (!url) {
       reject(new Error('Patch manifest URL is not configured.'));
       return;
     }
+
+    const MAX_REDIRECTS = 5;
     const client = url.startsWith('https:') ? https : http;
     const req = client.get(url, { headers }, (res) => {
-      if (res.statusCode !== 200) {
-        reject(new Error(`Patch manifest request failed with status ${res.statusCode}.`));
+      const status = Number(res.statusCode || 0);
+
+      if (status >= 300 && status < 400 && res.headers.location) {
+        if (redirectCount >= MAX_REDIRECTS) {
+          reject(new Error(`Patch manifest request failed: too many redirects (${MAX_REDIRECTS}).`));
+          res.resume();
+          return;
+        }
+
+        const redirectUrl = new URL(res.headers.location, url).toString();
+        res.resume();
+        fetchJson(redirectUrl, headers, redirectCount + 1).then(resolve).catch(reject);
+        return;
+      }
+
+      if (status !== 200) {
+        reject(new Error(`Patch manifest request failed with status ${status}.`));
         res.resume();
         return;
       }
+
       let body = '';
       res.setEncoding('utf8');
       res.on('data', (chunk) => { body += chunk; });
@@ -195,12 +215,33 @@ function buildApplyPatchScript(scriptPath, sourceExePath, destinationExePath) {
 }
 
 function getDesktopSavePath() {
-  return path.join(app.getPath('userData'), 'voidstorm-save.json');
+  return path.join(getSharedSaveRoot(), 'voidstorm-save.json');
 }
 
 function getDesktopExportDir() {
+  return path.join(getSharedSaveRoot(), SHARED_EXPORTS_DIR);
+}
+
+function getSharedSaveRoot() {
+  // Check if running from release folder (portable/standalone)
+  const appPath = app.getAppPath();
+  const releasePattern = /Nebula Havoc-win32-x64[/\\]resources[/\\]app/i;
+  if (releasePattern.test(appPath)) {
+    // Running from release folder: store saves locally
+    const releasePath = appPath.replace(/[/\\]resources[/\\]app.*/, '');
+    return releasePath;
+  }
+  // Otherwise use Documents for portable installations
+  return path.join(app.getPath('documents'), SHARED_SAVE_ROOT_DIR);
+}
+
+function getLegacyDesktopSavePath() {
+  return path.join(app.getPath('userData'), 'voidstorm-save.json');
+}
+
+function getLegacyDesktopExportDir() {
   const exeDir = path.dirname(app.getPath('exe'));
-  return path.join(exeDir, 'save-exports');
+  return path.join(exeDir, SHARED_EXPORTS_DIR);
 }
 
 function sanitizeExportFileName(fileName) {
@@ -237,11 +278,26 @@ function writeLastPatchedVersion(version) {
 ipcMain.on('desktop:save:read', (event) => {
   try {
     const savePath = getDesktopSavePath();
-    if (!fs.existsSync(savePath)) {
+    if (fs.existsSync(savePath)) {
+      event.returnValue = fs.readFileSync(savePath, 'utf8');
+      return;
+    }
+
+    // Backward compatibility: read from legacy userData location and migrate.
+    const legacySavePath = getLegacyDesktopSavePath();
+    if (!fs.existsSync(legacySavePath)) {
       event.returnValue = null;
       return;
     }
-    event.returnValue = fs.readFileSync(savePath, 'utf8');
+
+    const legacyRaw = fs.readFileSync(legacySavePath, 'utf8');
+    try {
+      fs.mkdirSync(path.dirname(savePath), { recursive: true });
+      fs.writeFileSync(savePath, legacyRaw, 'utf8');
+    } catch {
+      // Migration failure should not block reads.
+    }
+    event.returnValue = legacyRaw;
   } catch {
     event.returnValue = null;
   }
@@ -296,9 +352,24 @@ ipcMain.handle('desktop:save:pick-import', async () => {
     const exportDir = getDesktopExportDir();
     fs.mkdirSync(exportDir, { recursive: true });
 
+    // If users upgraded from an old build, keep import convenient by opening
+    // whichever folder has files.
+    let defaultPath = exportDir;
+    try {
+      const hasSharedExports = fs.readdirSync(exportDir).length > 0;
+      if (!hasSharedExports) {
+        const legacyDir = getLegacyDesktopExportDir();
+        if (fs.existsSync(legacyDir) && fs.readdirSync(legacyDir).length > 0) {
+          defaultPath = legacyDir;
+        }
+      }
+    } catch {
+      defaultPath = exportDir;
+    }
+
     const result = await dialog.showOpenDialog(mainWindow || undefined, {
       title: 'Import Save File',
-      defaultPath: exportDir,
+      defaultPath,
       properties: ['openFile'],
       filters: [
         { name: 'JSON Files', extensions: ['json'] },

@@ -706,6 +706,8 @@ export default function Game() {
       {gameState === 'congratulations' && (
         <CongratulationsScreen
           wave={wave}
+          completedWave={DIFFICULTY_MILESTONES[settings.difficulty] || Math.max(1, wave - 1)}
+          nextWave={(DIFFICULTY_MILESTONES[settings.difficulty] || Math.max(1, wave - 1)) + 1}
           score={score}
           currentDifficulty={settings.difficulty}
           nextDifficulty={NEXT_DIFFICULTY[settings.difficulty]}

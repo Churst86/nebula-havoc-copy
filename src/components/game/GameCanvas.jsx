@@ -292,8 +292,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     }
 
     const isHell = cfg.maxWave === 100;
-    if (wave > 10 && (wave % 2 === 0 || (isHell && wave > 25))) {
+    if (wave > 8) {
       spawnEater(enemies, W, wave, hpMult);
+      const shouldSpawnExtraEater =
+        wave >= 20 && (wave % 3 === 0 || Math.random() < 0.35)
+        || (isHell && wave >= 25 && Math.random() < 0.5);
+      if (shouldSpawnExtraEater) {
+        spawnEater(enemies, W, wave, hpMult);
+      }
     }
     if (wave > 15 && (wave % 2 === 1 || (isHell && wave > 25))) {
       spawnBerserk(enemies, W, wave, hpMult, isHell);
@@ -372,14 +378,15 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
 
   function spawnMiniEaters(W, s, parent) {
     for (let i = 0; i < 2; i++) {
+      const miniHp = Math.max(3, Math.floor((parent.maxHp || parent.hp || 10) * 0.7));
       const mini = {
         type: 'eater',
         _mini: true,
         x: parent.x + (i === 0 ? -30 : 30),
         y: parent.y,
         w: 15, h: 15,
-        hp: Math.max(1, Math.floor(parent.maxHp / 2)),
-        maxHp: Math.max(1, Math.floor(parent.maxHp / 2)),
+        hp: miniHp,
+        maxHp: miniHp,
         vx: randomBetween(-0.6, 0.6),
         vy: randomBetween(-0.4, 0.4),
         fireTimer: 9999,
@@ -1449,22 +1456,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     } else if (e.type === 'berserk') {
        const t = Date.now();
        drawBerserk(ctx, e, t);
-       const berserkerRadius = Math.max(18, Math.max(e.w || 94, e.h || 94) * 0.5);
-
-       // Visibility guard: keep berserk outlined even during heavy post effects.
-       ctx.shadowBlur = 0;
-       ctx.strokeStyle = '#ffb380';
-       ctx.lineWidth = 2;
-       ctx.beginPath();
-       ctx.arc(0, 0, berserkerRadius, 0, Math.PI * 2);
-       ctx.stroke();
-
-       // Debug identity label inside the ring for tracking invisible entities.
-       ctx.fillStyle = '#fff3e6';
-       ctx.font = 'bold 10px monospace';
-       ctx.textAlign = 'center';
-       ctx.textBaseline = 'middle';
-       ctx.fillText('BERSERKER', 0, 0);
      } else if (e.type === 'elite') {
        ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14;
        
@@ -2685,17 +2676,26 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         }
 
         const applyBerserkGrowth = (mass, sourceW, sourceH) => {
-          const maxGrowthPerConsume = 12;
-          const rawGainW = Math.max(2.4, sourceW * 0.42);
-          const rawGainH = Math.max(2.4, sourceH * 0.42);
+          const maxGrowthPerConsume = 15;
+          const rawGainW = Math.max(3, sourceW * 0.52);
+          const rawGainH = Math.max(3, sourceH * 0.52);
           const sizeGainW = Math.min(rawGainW, maxGrowthPerConsume);
           const sizeGainH = Math.min(rawGainH, maxGrowthPerConsume);
           e.w = Math.min((e.w || e._baseW || 94) + sizeGainW, 260);
           e.h = Math.min((e.h || e._baseH || 94) + sizeGainH, 260);
 
-          const hpGain = Math.ceil((sourceW + sourceH) * 1.2 + mass * 14 + (e._isHell ? 12 : 0));
-          e.maxHp = Math.min((e.maxHp || e.hp || 1) + hpGain, 50000);
-          e.hp = Math.min((e.hp || 1) + hpGain, e.maxHp);
+          // Diminishing HP growth so late-game Berserker remains killable.
+          const currentMax = e.maxHp || e.hp || 1;
+          const cap = e._isHell ? 1050 : 900;
+          const growthScale = Math.max(0.22, 1 - (currentMax / cap) * 0.78);
+          const absorbedPressure = Math.min(e._absorbedUnits || 0, 24) * 0.28;
+          const rawHpGain = (4 + (sourceW + sourceH) * 0.18 + mass * 2.1 + absorbedPressure + (e._isHell ? 3 : 0)) * growthScale;
+          const hpGain = Math.max(2, Math.ceil(rawHpGain));
+          e.maxHp = Math.min(currentMax + hpGain, cap);
+
+          // Eating restores some HP, but never a full refill loop.
+          const heal = Math.max(1, Math.ceil(hpGain * 0.45));
+          e.hp = Math.min((e.hp || 1) + heal, e.maxHp);
 
           e._absorbedUnits = Math.min((e._absorbedUnits || 0) + mass, 36);
         };
@@ -3358,13 +3358,21 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           }
           e.hp--;
           sounds.hit();
-          spawnExplosion(s, b.x, b.y, getProjectileImpactColor(b.type), 3);
+          if (b.type === 'missile') {
+            // Missile impact: brighter, larger burst so the hit reads as intentional.
+            spawnExplosion(s, b.x, b.y, '#ff00ff', 12);
+            spawnExplosion(s, b.x, b.y, '#ffd6ff', 8);
+            s.particles.push({ x: b.x, y: b.y, vx: 0, vy: 0, r: 8, alpha: 0.85, color: '#ff66ff', shockwave: true, shockwaveR: 5 });
+            b.hit = true;
+          } else {
+            spawnExplosion(s, b.x, b.y, getProjectileImpactColor(b.type), 3);
+          }
           if (b.type === 'bounce' && (b.bouncesLeft || 0) > 0) {
             b.vy *= -1;
             b.vx += (Math.random() - 0.5) * 1.5; // slight angle variation
             b.y += Math.sign(b.vy) * 4;
             consumeBounceCharge(b);
-          } else {
+          } else if (b.type !== 'missile') {
             b.hit = true;
           }
           // Mine: immediately charge at player on first hit (hp goes from 3 to 2)
@@ -3431,6 +3439,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     const newSpreadPelletsFromBlocks = [];
     s.bullets.forEach(b => {
       if (b.hit) return;
+      if (b.type === 'missile') return;
       s.blocks.forEach(block => {
         if (block.dead) return;
         const cells = getBlockCells(block);
@@ -3503,6 +3512,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     const newSpreadPelletsFromPiled = [];
     s.bullets.forEach(b => {
       if (b.hit) return;
+      if (b.type === 'missile') return;
       s.piledCells = s.piledCells.filter(cell => {
         if (!isCellOnStage(cell, W, H)) return true;
         if (b.x >= cell.x && b.x <= cell.x + BLOCK_SIZE && b.y >= cell.y && b.y <= cell.y + BLOCK_SIZE) {

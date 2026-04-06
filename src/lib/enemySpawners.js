@@ -20,7 +20,7 @@ export function spawnBerserk(enemies, W, wave, hpMult, isHell) {
 }
 
 export function spawnEater(enemies, W, wave, hpMult) {
-  const eaterHp = Math.round((11 + wave * 2.25) * hpMult); // reduced ~25%
+  const eaterHp = Math.round((15 + wave * 2.8) * hpMult);
   enemies.push({
     type: 'eater',
     x: Math.random() * (W - 160) + 80,

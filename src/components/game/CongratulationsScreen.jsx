@@ -2,10 +2,13 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Trophy, Zap } from 'lucide-react';
 
-export default function CongratulationsScreen({ wave, score, currentDifficulty, nextDifficulty, onProgressToDifficulty, onReturnToTitle }) {
+export default function CongratulationsScreen({ wave, completedWave, nextWave, score, currentDifficulty, nextDifficulty, onProgressToDifficulty, onReturnToTitle }) {
   const difficultyNames = { easy: 'Easy', normal: 'Challenging', hell: 'Hell' };
   const difficultyEmojis = { easy: '⭐', normal: '🔥', hell: '💀' };
-  const nextWave = Number.isFinite(wave) ? wave + 1 : null;
+  const displayedCompletedWave = Number.isFinite(completedWave) ? completedWave : wave;
+  const displayedNextWave = Number.isFinite(nextWave)
+    ? nextWave
+    : (Number.isFinite(displayedCompletedWave) ? displayedCompletedWave + 1 : null);
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto"
@@ -27,7 +30,7 @@ export default function CongratulationsScreen({ wave, score, currentDifficulty, 
         {/* Congratulations */}
         <div className="space-y-2">
           <h1 className="text-5xl font-black text-white mb-2">CONGRATULATIONS!</h1>
-          <p className="text-xl text-primary">You've completed Wave {wave}</p>
+          <p className="text-xl text-primary">You've completed Wave {displayedCompletedWave}</p>
           <p className="text-lg text-muted-foreground">
             {difficultyEmojis[currentDifficulty]} {difficultyNames[currentDifficulty]} Mode
           </p>
@@ -66,7 +69,7 @@ export default function CongratulationsScreen({ wave, score, currentDifficulty, 
               onClick={onProgressToDifficulty}
               className="bg-primary hover:bg-primary/90 text-lg py-6"
             >
-              {difficultyEmojis[nextDifficulty]} Continue to Wave {nextWave} ({difficultyNames[nextDifficulty]})
+              {difficultyEmojis[nextDifficulty]} Continue to Wave {displayedNextWave} ({difficultyNames[nextDifficulty]})
             </Button>
           )}
           <Button

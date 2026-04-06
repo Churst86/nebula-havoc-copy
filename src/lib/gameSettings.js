@@ -240,11 +240,45 @@ export function exportSaveSlotAsJson(slot = 'slot1') {
 }
 
 /**
- * Import saves from a JSON string (e.g. from a file upload).
- * Merge mode (default): only overwrite slots that have data in the import.
- * Replace mode: take every slot from the import, including clearing non-empty ones.
+ * Extract which slots have saves in a JSON import file with preview data.
+ * Returns { auto: {data, empty}, slot1: {data, empty}, ... }
  */
-export function importSavesFromJson(jsonString, { replace = false } = {}) {
+export function getAvailableSlotsInJson(jsonString) {
+  if (!jsonString || typeof jsonString !== 'string') {
+    return { auto: null, slot1: null, slot2: null, slot3: null };
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonString);
+  } catch {
+    return { auto: null, slot1: null, slot2: null, slot3: null };
+  }
+
+  const normalized = normalizeSaveState(parsed);
+  const DIFFICULTY_LABELS = { easy: 'Easy', normal: 'Challenging', hell: 'Hell' };
+
+  const formatSlotPreview = (save) => {
+    if (!save) return null;
+    const difficulty = DIFFICULTY_LABELS[save.difficulty] || 'Easy';
+    const wave = save.wave || 1;
+    return `${difficulty} · Wave ${wave}`;
+  };
+
+  return {
+    auto: normalized.auto ? formatSlotPreview(normalized.auto) : null,
+    slot1: normalized.slots.slot1 ? formatSlotPreview(normalized.slots.slot1) : null,
+    slot2: normalized.slots.slot2 ? formatSlotPreview(normalized.slots.slot2) : null,
+    slot3: normalized.slots.slot3 ? formatSlotPreview(normalized.slots.slot3) : null,
+  };
+}
+
+/**
+ * Import saves from a JSON string with optional slot mapping.
+ * slotMapping: object like { sourceSlot: targetSlot } e.g. { slot1: 'slot3', auto: 'slot1' }
+ * If not provided, imports all available slots to their matching slots (merge behavior).
+ */
+export function importSavesFromJson(jsonString, { slotMapping = null } = {}) {
   if (!jsonString || typeof jsonString !== 'string') {
     return { ok: false, message: 'No data provided.' };
   }
@@ -263,15 +297,36 @@ export function importSavesFromJson(jsonString, { replace = false } = {}) {
   const incoming = normalizeSaveState(parsed);
   let current = readSaveState();
 
-  if (replace) {
-    current = incoming;
+  // Build import mapping
+  let importMap = {};
+  if (slotMapping && typeof slotMapping === 'object') {
+    // Use provided mapping
+    importMap = slotMapping;
   } else {
-    // Merge: only import slots that have data in the incoming file.
-    if (incoming.auto) current.auto = incoming.auto;
+    // Default: import all available slots to matching slots
+    if (incoming.auto !== null) importMap.auto = 'auto';
     SAVE_SLOTS.forEach((slot) => {
-      if (incoming.slots[slot]) current.slots[slot] = incoming.slots[slot];
+      if (incoming.slots[slot] !== null) importMap[slot] = slot;
     });
   }
+
+  // Apply the mapping
+  Object.entries(importMap).forEach(([sourceSlot, targetSlot]) => {
+    let sourceData = null;
+    if (sourceSlot === 'auto') {
+      sourceData = incoming.auto;
+    } else if (SAVE_SLOTS.includes(sourceSlot)) {
+      sourceData = incoming.slots[sourceSlot];
+    }
+
+    if (sourceData) {
+      if (targetSlot === 'auto') {
+        current.auto = sourceData;
+      } else if (SAVE_SLOTS.includes(targetSlot)) {
+        current.slots[targetSlot] = sourceData;
+      }
+    }
+  });
 
   try {
     writeSaveState(current);

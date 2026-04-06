@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Play, Download, Upload, CheckCircle, AlertCircle } from 'lucide-react';
-import { loadAllSaveFiles, exportSaveSlotAsJson, importSavesFromJson } from '../../lib/gameSettings';
+import { ArrowLeft, Play, Download, Upload, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { loadAllSaveFiles, exportSaveSlotAsJson, importSavesFromJson, getAvailableSlotsInJson } from '../../lib/gameSettings';
 
 const DIFFICULTY_LABELS = {
   easy: 'Easy',
@@ -33,10 +33,13 @@ export default function SavedGamesScreen({ saves: initialSaves, onLoad, onBack }
   const [importStatus, setImportStatus] = useState(null); // null | { ok, message }
   const [exportStatus, setExportStatus] = useState(null); // null | { ok, message }
   const [exportSlot, setExportSlot] = useState('slot1');
+  const [importSlotSelection, setImportSlotSelection] = useState(null); // null | { auto, slot1, slot2, slot3 } with preview strings
+  const [importFileContent, setImportFileContent] = useState(null); // raw JSON content
+  const [slotMapping, setSlotMapping] = useState({}); // { sourceSlot: targetSlot }
   const fileInputRef = useRef(null);
 
-  const applyImportJson = (jsonString) => {
-    const result = importSavesFromJson(jsonString);
+  const applyImportJson = (jsonString, mapping = null) => {
+    const result = importSavesFromJson(jsonString, { slotMapping: mapping });
     setImportStatus(result);
     if (result.ok) {
       setSaves(loadAllSaveFiles());
@@ -64,13 +67,15 @@ export default function SavedGamesScreen({ saves: initialSaves, onLoad, onBack }
     const fileName = makeExportFileName(exportSlot);
     const desktopApi = window?.desktopApp;
 
+    // Try Electron first
     if (desktopApi?.isElectron && typeof desktopApi.exportSaveSlot === 'function') {
       try {
         const result = await desktopApi.exportSaveSlot({ json, fileName, slot: exportSlot });
         if (!result?.ok) {
           setExportStatus({ ok: false, message: result?.error || 'Export failed.' });
         } else {
-          setExportStatus({ ok: true, message: `Exported to ${result.filePath}` });
+          const path = result.filePath || 'save folder';
+          setExportStatus({ ok: true, message: `Exported to:\n${path}` });
         }
       } catch (err) {
         setExportStatus({ ok: false, message: err?.message || 'Export failed.' });
@@ -79,6 +84,32 @@ export default function SavedGamesScreen({ saves: initialSaves, onLoad, onBack }
       return;
     }
 
+    // Try dev API endpoint (localhost development)
+    try {
+      const devResult = await fetch('/api/dev/export-save-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: fileName, content: json }),
+      });
+      if (devResult.ok) {
+        const data = await devResult.json();
+        if (data.ok) {
+          const path = data.filePath || 'save folder';
+          setExportStatus({ ok: true, message: `Exported to:\n${path}` });
+          setTimeout(() => setExportStatus(null), 5000);
+          return;
+        } else if (data.error) {
+          console.warn('[Dev API] Export error:', data.error);
+        }
+      } else {
+        console.warn('[Dev API] Export request failed with status:', devResult.status);
+      }
+    } catch (err) {
+      console.warn('[Dev API] Export failed:', err?.message);
+      // Dev API not available, fall through to browser download
+    }
+
+    // Fallback: browser download (web version only)
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -98,7 +129,16 @@ export default function SavedGamesScreen({ saves: initialSaves, onLoad, onBack }
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      applyImportJson(ev.target.result);
+      const content = ev.target.result;
+      const available = getAvailableSlotsInJson(content);
+      setImportFileContent(content);
+      setImportSlotSelection(available);
+      // Pre-map all available source slots to themselves
+      const initialMapping = {};
+      Object.entries(available).forEach(([slot, preview]) => {
+        if (preview !== null) initialMapping[slot] = slot;
+      });
+      setSlotMapping(initialMapping);
     };
     reader.readAsText(file);
   };
@@ -115,7 +155,16 @@ export default function SavedGamesScreen({ saves: initialSaves, onLoad, onBack }
           }
           return;
         }
-        applyImportJson(result.content);
+        const content = result.content;
+        const available = getAvailableSlotsInJson(content);
+        setImportFileContent(content);
+        setImportSlotSelection(available);
+        // Pre-map all available source slots to themselves
+        const initialMapping = {};
+        Object.entries(available).forEach(([slot, preview]) => {
+          if (preview !== null) initialMapping[slot] = slot;
+        });
+        setSlotMapping(initialMapping);
       } catch (err) {
         setImportStatus({ ok: false, message: err?.message || 'Failed to import save file.' });
         setTimeout(() => setImportStatus(null), 4000);
@@ -217,10 +266,10 @@ export default function SavedGamesScreen({ saves: initialSaves, onLoad, onBack }
             />
           </div>
           {exportStatus && (
-            <div className={`flex items-center gap-2 text-xs rounded-lg px-3 py-2 font-mono ${exportStatus.ok ? 'bg-cyan-950/60 text-cyan-200 border border-cyan-500/40' : 'bg-red-950/60 text-red-300 border border-red-500/40'}`}>
+            <div className={`flex items-start gap-2 text-xs rounded-lg px-3 py-2 font-mono whitespace-pre-wrap ${exportStatus.ok ? 'bg-cyan-950/60 text-cyan-200 border border-cyan-500/40' : 'bg-red-950/60 text-red-300 border border-red-500/40'}`}>
               {exportStatus.ok
-                ? <><CheckCircle className="w-3.5 h-3.5 shrink-0" /> {exportStatus.message}</>
-                : <><AlertCircle className="w-3.5 h-3.5 shrink-0" /> {exportStatus.message}</>
+                ? <><CheckCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" /> {exportStatus.message}</>
+                : <><AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" /> {exportStatus.message}</>
               }
             </div>
           )}
@@ -240,6 +289,101 @@ export default function SavedGamesScreen({ saves: initialSaves, onLoad, onBack }
         </Button>
       </motion.div>
       </div>
+
+      {/* ── Import Slot Selection Dialog ── */}
+      {importSlotSelection && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70"
+        >
+          <motion.div
+            initial={{ scale: 0.92, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 210, damping: 20 }}
+            className="relative bg-slate-900 border border-slate-600/60 rounded-xl p-6 max-w-md w-full mx-4 space-y-4"
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-black text-cyan-300">Select Slots to Import</h2>
+              <button
+                onClick={() => {
+                  setImportSlotSelection(null);
+                  setImportFileContent(null);
+                  setSlotMapping({});
+                }}
+                className="text-slate-400 hover:text-slate-200 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-400">
+              Choose where to import each save slot:
+            </p>
+
+            <div className="space-y-2">
+              {['auto', 'slot1', 'slot2', 'slot3'].map((sourceSlot) => {
+                const preview = importSlotSelection?.[sourceSlot];
+                if (!preview) return null; // Skip empty slots
+                const sourceLabel = sourceSlot === 'auto' ? 'Autosave' : `Save Slot ${sourceSlot.slice(4)}`;
+                
+                return (
+                  <div key={sourceSlot} className="flex items-center gap-2 p-3 rounded-lg bg-slate-800/40 border border-slate-600/40">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-slate-200">{sourceLabel}</div>
+                      <div className="text-xs text-slate-400">{preview}</div>
+                    </div>
+                    <div className="text-slate-400">→</div>
+                    <select
+                      value={slotMapping[sourceSlot] || sourceSlot}
+                      onChange={(e) => {
+                        setSlotMapping((prev) => ({
+                          ...prev,
+                          [sourceSlot]: e.target.value,
+                        }));
+                      }}
+                      className="px-2 py-1 rounded bg-slate-950/60 border border-slate-600/70 text-xs text-slate-200 outline-none focus:border-cyan-400"
+                    >
+                      <option value="auto">Autosave</option>
+                      <option value="slot1">Slot 1</option>
+                      <option value="slot2">Slot 2</option>
+                      <option value="slot3">Slot 3</option>
+                    </select>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                onClick={() => {
+                  if (importFileContent && Object.keys(slotMapping).length > 0) {
+                    applyImportJson(importFileContent, slotMapping);
+                    setImportSlotSelection(null);
+                    setImportFileContent(null);
+                    setSlotMapping({});
+                  }
+                }}
+                className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-semibold"
+              >
+                Import Now
+              </Button>
+              <Button
+                onClick={() => {
+                  setImportSlotSelection(null);
+                  setImportFileContent(null);
+                  setSlotMapping({});
+                }}
+                variant="outline"
+                className="flex-1 text-sm"
+              >
+                Cancel
+              </Button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </motion.div>
   );
 }
