@@ -2947,7 +2947,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             e._gluttonGrowthMeter = Math.max(0, e._gluttonGrowthMeter - segmentThreshold);
             // Give the new segment its own HP pool — tougher as the Glutton grows.
             if (!Array.isArray(e._segmentHp)) e._segmentHp = [];
-            const segHp = Math.max(18, Math.round((e.maxHp || e.hp || 80) * 0.32));
+            const segHp = Math.max(8, Math.min(28, Math.round((e.maxHp || e.hp || 80) * 0.12)));
             e._segmentHp[newSegIndex] = segHp;
           }
         };
@@ -3631,6 +3631,17 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       }
     }
 
+    // Consume one photon pierce charge on non-enemy impacts.
+    // Returns true when the projectile should continue traveling.
+    function consumePhotonPierce(b) {
+      if (b.type !== 'photon') return false;
+      if (b.infinitePierce) return true;
+      const remaining = Number(b.pierceCount) || 0;
+      if (remaining <= 0) return false;
+      b.pierceCount = remaining - 1;
+      return true;
+    }
+
     function segmentHitsCell(x1, y1, x2, y2, cell) {
       const left = cell.x;
       const right = cell.x + BLOCK_SIZE;
@@ -3862,11 +3873,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           const sdy = b.y - seg.y;
           if (sdx * sdx + sdy * sdy > segRadiusSq) continue;
           // Initialise HP lazily in case the segment pre-dates this feature.
-          if (!(e._segmentHp[si] > 0)) e._segmentHp[si] = Math.max(18, Math.round((e.maxHp || 80) * 0.32));
+          if (!(e._segmentHp[si] > 0)) e._segmentHp[si] = Math.max(8, Math.min(28, Math.round((e.maxHp || 80) * 0.12)));
           e._segmentHp[si] -= 1;
           sounds.hit();
           spawnExplosion(s, b.x, b.y, '#7cff6a', 5);
-          if (b.type === 'bounce' && (b.bouncesLeft || 0) > 0) {
+          if (b.type === 'photon') {
+            if (!consumePhotonPierce(b)) b.hit = true;
+          } else if (b.type === 'bounce' && (b.bouncesLeft || 0) > 0) {
             b.vy *= -1;
             b.vx += (Math.random() - 0.5) * 1.5;
             b.y += Math.sign(b.vy) * 4;
@@ -3935,7 +3948,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
                 spawnExplosion(s, b.x, b.y, getProjectileImpactColor(b.type), 4);
               } else {
                 spawnExplosion(s, b.x, b.y, getProjectileImpactColor(b.type), 3);
-                if (!(b.type === 'photon' && b.infinitePierce)) b.hit = true;
+                if (b.type === 'photon') {
+                  if (!consumePhotonPierce(b)) b.hit = true;
+                } else {
+                  b.hit = true;
+                }
               }
               return;
             } else {
@@ -3964,7 +3981,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
                   b.y += Math.sign(b.vy || -1) * 3;
                 }
                 consumeBounceCharge(b);
-              } else if (b.type !== 'missile' && !piercingTypes.includes(b.type) && !(b.type === 'photon' && b.infinitePierce)) {
+              } else if (b.type === 'photon') {
+                if (!consumePhotonPierce(b)) b.hit = true;
+              } else if (b.type !== 'missile' && !piercingTypes.includes(b.type)) {
                 b.hit = true;
               }
               if (block.hp <= 0) {
@@ -3997,7 +4016,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
               b.vy *= -1;
               b.y += Math.sign(b.vy || -1) * 3;
               consumeBounceCharge(b);
-            } else if (!(b.type === 'photon' && b.infinitePierce)) {
+            } else if (b.type === 'photon') {
+              if (!consumePhotonPierce(b)) b.hit = true;
+            } else {
               b.hit = true;
             }
             spawnExplosion(s, b.x, b.y, getProjectileImpactColor(b.type), 4);
@@ -4014,7 +4035,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             b.vy *= -1;
             b.y += Math.sign(b.vy) * 3;
             consumeBounceCharge(b);
-          } else if (!piercingTypes.includes(b.type) && !(b.type === 'photon' && b.infinitePierce)) {
+          } else if (b.type === 'photon') {
+            if (!consumePhotonPierce(b)) b.hit = true;
+          } else if (!piercingTypes.includes(b.type)) {
             b.hit = true;
           }
           spawnExplosion(s, b.x, b.y, getProjectileImpactColor(b.type), 4);

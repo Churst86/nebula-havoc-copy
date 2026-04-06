@@ -105,11 +105,13 @@ export function drawGlutton(ctx, e, t) {
   const idleFrame = 0;
   const getSegmentFrame = (segmentIndex) => {
     if (gluttonFrameCount <= 0) return idleFrame;
-    const burstWindow = 20 + ((segmentIndex * 11) % 35);
-    const burstCycle = 260 + ((segmentIndex * 37) % 90);
+    // Keep follower chomps occasional and slower so they read as ambient behavior.
+    if (segmentIndex <= 0) return idleFrame;
+    const burstWindow = 8 + ((segmentIndex * 5) % 7);
+    const burstCycle = 720 + ((segmentIndex * 83) % 220);
     const burstPhase = (t + segmentIndex * 173) % burstCycle;
     if (burstPhase > burstWindow) return idleFrame;
-    return Math.floor(((t / 55) + segmentIndex * 1.7) % gluttonFrameCount);
+    return Math.floor(((t / 95) + segmentIndex * 0.9) % gluttonFrameCount);
   };
   const tailFrame = tailFrameCount > 0
     ? Math.floor((t / 90) % tailFrameCount)
@@ -201,11 +203,13 @@ export function drawGlutton(ctx, e, t) {
       const anchorY = lastSegment ? (lastSegment.y || e.y) : e.y;
       // Always aim the tail away from the last segment using actual chain geometry.
       const tailDir = Math.atan2((tailPosition.y || e.y) - anchorY, (tailPosition.x || e.x) - anchorX);
-      // Push the tail center far enough back that most of the long end clears the
-      // last segment while the connected nub still remains tucked under the binder.
-      const tailPinDistance = Math.max(tailSize * 0.68, spriteSize * 0.52);
+      // Push the tail farther out while preserving a connected base near the segment.
+      const tailPinDistance = Math.max(tailSize * 0.82, spriteSize * 0.62);
       const tailX = anchorX + Math.cos(tailDir) * tailPinDistance;
       const tailY = anchorY + Math.sin(tailDir) * tailPinDistance;
+      const tailBaseOffset = Math.max(tailSize * 0.38, spriteSize * 0.3);
+      const tailBaseX = tailX - Math.cos(tailDir) * tailBaseOffset;
+      const tailBaseY = tailY - Math.sin(tailDir) * tailBaseOffset;
       const tailFacing = tailDir + Math.PI / 2 + Math.PI;
       ctx.save();
       ctx.translate(tailX - e.x, tailY - e.y);
@@ -221,8 +225,8 @@ export function drawGlutton(ctx, e, t) {
         drawBinder(
           lastSegmentForTailBinder.x || e.x,
           lastSegmentForTailBinder.y || e.y,
-          tailPosition.x || e.x,
-          tailPosition.y || e.y
+          tailBaseX,
+          tailBaseY
         );
       }
     }

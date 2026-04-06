@@ -9,7 +9,7 @@ export function spawnGlutton(enemies, W, wave, hpMult, isHell) {
   const spawnGap = 88;
   const trailDx = Math.cos(spawnAngle);
   const trailDy = Math.sin(spawnAngle);
-  const starterSegmentHp = Math.max(18, Math.round(gluttonHp * 0.32));
+  const starterSegmentHp = Math.max(8, Math.min(28, Math.round(gluttonHp * 0.12)));
   
   enemies.push({
     type: 'glutton',
