@@ -227,6 +227,7 @@ export default function Game() {
       difficulty: settings.difficulty,
       powerups: activePowerup,
       shopUpgrades: shopUpgrades,
+      score: scoreRef.current,
       blockScore: blockScore,
     }, 'auto');
     setLastSaveAt(Date.now());
@@ -260,12 +261,13 @@ export default function Game() {
     if (savedPowerups.armorHp !== undefined) setArmorHp(savedPowerups.armorHp);
     // Restore block score so player keeps their currency
     setBlockScore(save.blockScore || 0);
+    // Restore score
+    scoreRef.current = Math.max(0, Number(save.score) || 0);
+    setScore(scoreRef.current);
     // Resume at the saved wave
     waveRef.current = savedWave;
     setWave(savedWave);
     setStartWave(savedWave);
-    scoreRef.current = 0;
-    setScore(0);
     setLives(3);
     setMaxLives(3);
     setContinuesLeft(0);
@@ -341,13 +343,47 @@ export default function Game() {
   const handleProgressToDifficulty = useCallback(() => {
     const nextDifficulty = NEXT_DIFFICULTY[settings.difficulty];
     if (nextDifficulty) {
+      const completedMilestone = DIFFICULTY_MILESTONES[settings.difficulty];
+      const nextWave = completedMilestone + 1;
+
       const newSettings = { ...settings, difficulty: nextDifficulty };
       handleSettingsChange(newSettings);
-      // Snapshot current powerups to carry over
-      setCarryOverPowerups(normalizePowerups({ ...activePowerup }));
-      handleStart(true);
+
+      // Carry over powerups, shop upgrades, block score, wave count, and score
+      const carriedPowerups = normalizePowerups({ ...activePowerup });
+      setCarryOverPowerups(carriedPowerups);
+      setActivePowerup(carriedPowerups);
+
+      waveRef.current = nextWave;
+      setWave(nextWave);
+      setStartWave(nextWave);
+      // score, blockScore, and shop upgrades all carry over unchanged
+      setLives(3);
+      setMaxLives(3);
+      setContinuesLeft(0);
+      setIsPaused(false);
+      setShowPauseOptions(false);
+      setShowDocking(false);
+      setShowShop(false);
+      setShowBossMiniShop(false);
+      setSkipBossSignal(0);
+      setLastDockingWave(-1);
+
+      // Persist the carry-over state so autosave reflects the new difficulty leg
+      writeSaveFile({
+        wave: nextWave,
+        difficulty: nextDifficulty,
+        powerups: carriedPowerups,
+        shopUpgrades: shopUpgrades,
+        score: scoreRef.current,
+        blockScore: blockScore,
+      }, 'auto');
+      lastAutoSaveWaveRef.current = nextWave;
+
+      setShowLaunch(true);
+      setLoadProgress(isSpritesLoaded() ? 1 : 0);
     }
-  }, [settings, handleStart, activePowerup]);
+  }, [settings, handleSettingsChange, activePowerup, shopUpgrades, blockScore]);
 
   const handlePauseToggle = useCallback(() => {
     if (isPaused && showPauseOptions) {
@@ -393,6 +429,7 @@ export default function Game() {
       difficulty: settings.difficulty,
       powerups: activePowerup,
       shopUpgrades: shopUpgrades,
+      score: scoreRef.current,
       blockScore: blockScore,
     }, slot);
     if (ok) setLastSaveAt(Date.now());
@@ -406,6 +443,7 @@ export default function Game() {
       difficulty: settings.difficulty,
       powerups: activePowerup,
       shopUpgrades: shopUpgrades,
+      score: scoreRef.current,
       blockScore: blockScore,
     }, 'auto');
     setLastSaveAt(Date.now());

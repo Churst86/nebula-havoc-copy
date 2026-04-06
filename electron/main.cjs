@@ -12,6 +12,8 @@ let mainWindow = null;
 const DEFAULT_PATCH_MANIFEST_URL = process.env.NEBULA_PATCH_MANIFEST_URL || '';
 const DEFAULT_GITHUB_REPO = process.env.NEBULA_GITHUB_REPO || 'Churst86/nebula-havoc-copy';
 const DEFAULT_GITHUB_ASSET_REGEX = process.env.NEBULA_GITHUB_ASSET_REGEX || 'Nebula-Havoc-.*\\.exe$';
+const DEFAULT_DESKTOP_RELEASE_DIR = path.join('release', 'desktop', 'Nebula Havoc-win32-x64');
+const EXPLICIT_EXPORT_ROOT = process.env.NEBULA_EXPORT_ROOT || '';
 const SHARED_SAVE_ROOT_DIR = 'Nebula Havoc';
 const SHARED_EXPORTS_DIR = 'save-exports';
 
@@ -219,7 +221,42 @@ function getDesktopSavePath() {
 }
 
 function getDesktopExportDir() {
+  if (EXPLICIT_EXPORT_ROOT) {
+    return path.resolve(EXPLICIT_EXPORT_ROOT);
+  }
+
+  const preferredReleaseDir = resolvePreferredDesktopReleaseDir();
+  if (preferredReleaseDir) {
+    return path.join(preferredReleaseDir, SHARED_EXPORTS_DIR);
+  }
+
   return path.join(getSharedSaveRoot(), SHARED_EXPORTS_DIR);
+}
+
+function resolvePreferredDesktopReleaseDir() {
+  const candidates = [];
+
+  // Dev launch from project root.
+  candidates.push(path.resolve(app.getAppPath(), DEFAULT_DESKTOP_RELEASE_DIR));
+
+  // Launcher-initiated runs usually have cwd at project root.
+  candidates.push(path.resolve(process.cwd(), DEFAULT_DESKTOP_RELEASE_DIR));
+
+  // Packaged desktop runs write next to their current executable.
+  candidates.push(path.dirname(app.getPath('exe')));
+
+  for (const candidate of candidates) {
+    try {
+      if (!candidate) continue;
+      if (!fs.existsSync(candidate)) continue;
+      if (!fs.statSync(candidate).isDirectory()) continue;
+      return candidate;
+    } catch {
+      // Ignore invalid candidate paths and continue scanning.
+    }
+  }
+
+  return null;
 }
 
 function getSharedSaveRoot() {
@@ -352,24 +389,9 @@ ipcMain.handle('desktop:save:pick-import', async () => {
     const exportDir = getDesktopExportDir();
     fs.mkdirSync(exportDir, { recursive: true });
 
-    // If users upgraded from an old build, keep import convenient by opening
-    // whichever folder has files.
-    let defaultPath = exportDir;
-    try {
-      const hasSharedExports = fs.readdirSync(exportDir).length > 0;
-      if (!hasSharedExports) {
-        const legacyDir = getLegacyDesktopExportDir();
-        if (fs.existsSync(legacyDir) && fs.readdirSync(legacyDir).length > 0) {
-          defaultPath = legacyDir;
-        }
-      }
-    } catch {
-      defaultPath = exportDir;
-    }
-
     const result = await dialog.showOpenDialog(mainWindow || undefined, {
       title: 'Import Save File',
-      defaultPath,
+      defaultPath: exportDir,
       properties: ['openFile'],
       filters: [
         { name: 'JSON Files', extensions: ['json'] },
@@ -592,6 +614,7 @@ function createMainWindow() {
 }
 
 app.whenReady().then(() => {
+  console.log('[Desktop Save Exports] Using export directory:', getDesktopExportDir());
   createMainWindow();
 
   app.on('activate', () => {

@@ -165,6 +165,7 @@ function normalizeSaveEntry(entry) {
     difficulty: typeof entry.difficulty === 'string' ? entry.difficulty : 'easy',
     powerups: entry.powerups && typeof entry.powerups === 'object' ? entry.powerups : {},
     shopUpgrades: entry.shopUpgrades && typeof entry.shopUpgrades === 'object' ? entry.shopUpgrades : {},
+    score: Math.max(0, Number(entry.score) || 0),
     blockScore: Math.max(0, Number(entry.blockScore) || 0),
     savedAt: Number(entry.savedAt) || Date.now(),
   };
@@ -173,6 +174,19 @@ function normalizeSaveEntry(entry) {
 function normalizeSaveState(payload) {
   const base = { ...EMPTY_SAVE_STATE, slots: { ...EMPTY_SAVE_STATE.slots } };
   if (!payload || typeof payload !== 'object') return base;
+
+  // Single-slot export format: { version: 1, slot: "slot1", save: {...} }
+  if (payload.version === 1 && typeof payload.slot === 'string' && payload.save && typeof payload.save === 'object') {
+    const validSlots = ['auto', 'slot1', 'slot2', 'slot3'];
+    if (validSlots.includes(payload.slot)) {
+      if (payload.slot === 'auto') {
+        base.auto = normalizeSaveEntry(payload.save);
+      } else {
+        base.slots[payload.slot] = normalizeSaveEntry(payload.save);
+      }
+    }
+    return base;
+  }
 
   // Legacy migration: old single-save format becomes autosave slot.
   if (Object.prototype.hasOwnProperty.call(payload, 'wave')) {
