@@ -1,8 +1,8 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import MobileControls from './MobileControls';
 import { sounds } from '../../hooks/useSound.js';
-import { spawnBerserk, spawnEater } from '../../lib/enemySpawners.js';
-import { drawBerserk } from '../../lib/berserkUtils.js';
+import { spawnGlutton, spawnEater } from '../../lib/enemySpawners.js';
+import { drawGlutton } from '../../lib/gluttonUtils.js';
 import { fireReverseShot, drawReverseFlame } from '../../lib/reverseGunUtils.js';
 import { initBulletPool, acquireBullet, releaseBullet } from '../../lib/bulletPool.js';
 import { loadSprites, getSprite, drawSprite, isSpritesLoaded, getBossSpriteKey, hasDrawableSprite } from '../../lib/spriteLoader.js';
@@ -292,17 +292,17 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     }
 
     const isHell = cfg.maxWave === 100;
-    if (wave > 8) {
+    if (wave > 10 && wave % 2 === 0) {
       spawnEater(enemies, W, wave, hpMult);
       const shouldSpawnExtraEater =
-        wave >= 20 && (wave % 3 === 0 || Math.random() < 0.35)
-        || (isHell && wave >= 25 && Math.random() < 0.5);
+        (wave >= 18 && wave % 4 === 0)
+        || (isHell && wave >= 30 && Math.random() < 0.25);
       if (shouldSpawnExtraEater) {
         spawnEater(enemies, W, wave, hpMult);
       }
     }
-    if (wave > 15 && (wave % 2 === 1 || (isHell && wave > 25))) {
-      spawnBerserk(enemies, W, wave, hpMult, isHell);
+    if (wave > 18 && (wave % 3 === 0 || (isHell && wave > 35 && wave % 2 === 0))) {
+      spawnGlutton(enemies, W, wave, hpMult, isHell);
     }
 
     s.enemies = enemies;
@@ -377,11 +377,23 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   }
 
   function spawnMiniEaters(W, s, parent) {
-    for (let i = 0; i < 2; i++) {
-      const miniHp = Math.max(3, Math.floor((parent.maxHp || parent.hp || 10) * 0.7));
+    const totalEaters = s.enemies.filter((enemy) => enemy && !enemy.dead && enemy.type === 'eater').length;
+    const maxEaters = Math.min(18, 6 + Math.floor((s.wave || 1) / 3) + Math.floor((s.wave || 1) / 5));
+    const remainingSlots = Math.max(0, maxEaters - totalEaters);
+    const parentSpawnCap = Math.max(0, Number(parent?._offspringCap) || 0);
+    const parentSpawned = Math.max(0, Number(parent?._offspringCount) || 0);
+    const parentRemaining = Math.max(0, parentSpawnCap - parentSpawned);
+    const spawnCount = Math.min(2, remainingSlots, parentRemaining);
+    if (spawnCount <= 0) return 0;
+
+    let created = 0;
+    for (let i = 0; i < spawnCount; i++) {
+      const miniHp = Math.max(3, Math.floor((parent.maxHp || parent.hp || 10) * 0.45));
       const mini = {
         type: 'eater',
         _mini: true,
+        _growthStage: 0,
+        _growthMeter: 0,
         x: parent.x + (i === 0 ? -30 : 30),
         y: parent.y,
         w: 15, h: 15,
@@ -392,10 +404,18 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         fireTimer: 9999,
         _chargePlayerTimer: 0,
         _blocksEaten: 0,
+        _offspringCount: 0,
+        _offspringCap: parent?._lineageDepth >= 1 ? 1 : 2,
+        _lineageDepth: Math.min(2, (parent?._lineageDepth || 0) + 1),
+        _spawnCooldown: 540,
+        _passiveRoamPhase: Math.random() * Math.PI * 2,
       };
       s.enemies.push(mini);
       spawnExplosion(s, mini.x, mini.y, '#44ff88', 8);
+      created += 1;
     }
+    parent._offspringCount = parentSpawned + created;
+    return created;
   }
 
   function spawnDropper(W, s, forcedType) {
@@ -1350,44 +1370,36 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       }
     } else if (e.type === 'eater') {
       const t = Date.now();
-      const isCharging = e._chargingPlayer;
-      const isHuntingPlayer = !!e._huntBuffed;
+      const stage = e._growthStage === undefined ? (e._mini ? 0 : 1) : e._growthStage;
       const isMini = e._mini;
-      const isSuper = e._superEater;
-      const baseScale = isMini ? 0.5 : 1;
-      const huntFlash = 0.45 + Math.sin(t * 0.03) * 0.55;
-      const eaterColor = isHuntingPlayer
-        ? `rgba(255,40,40,${0.5 + huntFlash * 0.5})`
-        : isSuper
-          ? `hsl(${(t * 0.2) % 360},100%,65%)`
-          : isCharging
-            ? '#ff4400'
-            : e._eating
-              ? '#00ff44'
-              : '#33cc77';
+      const isBreeder = stage >= 2;
+      const baseScale = stage === 0 ? 0.42 : stage === 1 ? 1 : 1.18;
+      const eaterColor = isBreeder
+        ? '#d3ff8a'
+        : e._eating
+          ? '#00ff44'
+          : stage === 0
+            ? '#78ffb0'
+            : '#33cc77';
 
       const eaterSprite = getSprite('Eater');
       const eaterChompSprite = getSprite('EaterChomp');
-      const hasSprite = isSpritesLoaded() && hasDrawableSprite(eaterSprite);
-      const useSpriteRender = hasSprite && !isMini;
+  const useSpriteRender = isSpritesLoaded() && hasDrawableSprite(eaterSprite);
 
       if (useSpriteRender) {
-        const bob = Math.sin(t * 0.005 + (e._animPhase || 0)) * (isMini ? 1.2 : 2.5);
+        const bob = Math.sin(t * 0.005 + (e._animPhase || 0)) * (stage === 0 ? 1.2 : 2.5);
         const wobble = 1 + Math.sin(t * 0.006 + (e._animPhase || 0)) * 0.03;
-        const targetChomp = (e._eating || isCharging) ? 1 : 0;
+        const targetChomp = e._eating ? 1 : 0;
         e._chompBlend = (e._chompBlend || 0) + (targetChomp - (e._chompBlend || 0)) * 0.15;
         const pulse = 0.55 + Math.sin(t * 0.02) * 0.45;
         const chompAlpha = eaterChompSprite ? Math.max(0, Math.min(1, e._chompBlend * (0.35 + pulse * 0.65))) : 0;
 
         ctx.translate(0, bob);
         ctx.scale(baseScale * wobble, baseScale * wobble);
-        ctx.shadowColor = isHuntingPlayer ? 'transparent' : eaterColor;
-        ctx.shadowBlur = isHuntingPlayer ? 0 : (isSuper ? 34 : 20);
+        ctx.shadowColor = eaterColor;
+        ctx.shadowBlur = isBreeder ? 34 : 20;
 
         drawSprite(ctx, eaterSprite, -135, -135, 270, 270);
-        if (isHuntingPlayer) {
-          drawSpriteTintFlash(eaterSprite, -135, -135, 270, 270, 0.22 + huntFlash * 0.2, '#ff2020');
-        }
         if (eaterChompSprite && chompAlpha > 0.02) {
           ctx.save();
           ctx.globalAlpha = chompAlpha;
@@ -1397,13 +1409,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       } else {
         const pulse = 0.7 + Math.sin(t * 0.012) * 0.3;
         ctx.scale(baseScale, baseScale);
-        ctx.shadowColor = isHuntingPlayer ? 'transparent' : eaterColor;
-        ctx.shadowBlur = isHuntingPlayer ? 0 : (isSuper ? 35 : 20) + pulse * 12;
-        ctx.fillStyle = isHuntingPlayer
-          ? `rgba(255,40,40,${0.2 + huntFlash * 0.25})`
-          : isCharging
-            ? 'rgba(255,80,0,0.35)'
-            : 'rgba(51,204,119,0.24)';
+        ctx.shadowColor = eaterColor;
+        ctx.shadowBlur = (isBreeder ? 35 : 20) + pulse * 12;
+        ctx.fillStyle = isBreeder ? 'rgba(211,255,138,0.26)' : 'rgba(51,204,119,0.24)';
         ctx.strokeStyle = eaterColor;
         ctx.lineWidth = 2.5;
         ctx.beginPath();
@@ -1436,7 +1444,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         ctx.fillRect(-bw / 2, -44, bw * (e.hp / e.maxHp), bh);
         ctx.strokeStyle = eaterColor; ctx.lineWidth = 1; ctx.strokeRect(-bw / 2, -44, bw, bh);
         ctx.fillStyle = eaterColor; ctx.font = 'bold 7px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(isSuper ? 'SUPER EATER' : 'EATER', 0, -52);
+        ctx.fillText(isBreeder ? 'BROOD EATER' : 'EATER', 0, -52);
       }
 
       // Visibility guard: keep eater outlined even during heavy post effects.
@@ -1447,15 +1455,17 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.arc(0, 0, isMini ? 18 : 26, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Debug identity label inside the ring for tracking invisible entities.
-      ctx.fillStyle = '#eaffea';
-      ctx.font = `bold ${isMini ? 8 : 10}px monospace`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(isMini ? 'MINI EATER' : 'EATER', 0, 0);
-    } else if (e.type === 'berserk') {
+      if (import.meta.env.DEV) {
+        // Debug identity label for visibility troubleshooting during local tuning.
+        ctx.fillStyle = '#eaffea';
+        ctx.font = `bold ${isMini ? 8 : 10}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(stage === 0 ? 'MINI EATER' : isBreeder ? 'BROOD' : 'EATER', 0, 0);
+      }
+     } else if (e.type === 'glutton') {
        const t = Date.now();
-       drawBerserk(ctx, e, t);
+       drawGlutton(ctx, e, t);
      } else if (e.type === 'elite') {
        ctx.shadowColor = '#ff44ff'; ctx.shadowBlur = 14;
        
@@ -2445,7 +2455,22 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       } else if (e.type === 'eater') {
         e._eating = false;
         e._chargingPlayer = false;
-        const bound = e._mini ? 15 : 25;
+        if (e._growthStage === undefined) e._growthStage = e._mini ? 0 : 1;
+        if (e._growthMeter === undefined) e._growthMeter = 0;
+        if (e._blocksEaten === undefined) e._blocksEaten = 0;
+        if (e._offspringCount === undefined) e._offspringCount = 0;
+        if (e._offspringCap === undefined) e._offspringCap = e._lineageDepth >= 1 ? 1 : 2;
+        if (e._lineageDepth === undefined) e._lineageDepth = e._mini ? 1 : 0;
+        if (e._spawnCooldown === undefined) e._spawnCooldown = 0;
+        e._spawnCooldown = Math.max(0, (e._spawnCooldown || 0) - 1);
+
+        const stageScale = e._growthStage === 0 ? 0.42 : e._growthStage === 1 ? 1 : 1.24;
+        const targetW = HITBOX_SIZES.eater.w * stageScale;
+        const targetH = HITBOX_SIZES.eater.h * stageScale;
+        e.w = Number.isFinite(e.w) ? e.w + (targetW - e.w) * 0.18 : targetW;
+        e.h = Number.isFinite(e.h) ? e.h + (targetH - e.h) * 0.18 : targetH;
+
+        const bound = Math.max(15, Math.round(Math.max(e.w || 0, e.h || 0) * 0.3));
         const isEnemyOnStage = e.x >= -80 && e.x <= W + 80 && e.y >= -80 && e.y <= H + 80;
         let targetX = null;
         let targetY = null;
@@ -2488,28 +2513,23 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         });
 
         if (targetX !== null && targetY !== null) {
-          // While blocks are present, stay in block-hunter mode.
-          e._huntBuffed = false;
-          e._huntRamp = 0;
-          // Always target blocks while any exist on screen.
+          // Passive ecosystem behavior: eat blocks first and grow through stages.
           if (distToTarget > 12) {
             const dx2 = targetX - e.x;
             const dy2 = targetY - e.y;
             const len2 = Math.hypot(dx2, dy2) || 1;
-            const eSpd = (e._mini ? 1.5 : 2.2) + (s.wave * 0.04);
+            const eSpd = (e._growthStage === 0 ? 1.35 : e._growthStage === 1 ? 2.05 : 1.85) + (s.wave * 0.03);
             e.x += (dx2 / len2) * eSpd;
             e.y += (dy2 / len2) * eSpd;
           } else if (isEnemyOnStage) {
             e._eating = true;
             let justAte = false;
-            let ateInvuln = false;
             if (e._targetBlock && !e._targetBlock.dead) {
               if (e._targetBlock.invulnerable) {
                 e._targetBlock = null;
               } else {
                 e._targetBlock.hp -= 0.06;
                 if (e._targetBlock.hp <= 0) {
-                  ateInvuln = false;
                   e._targetBlock.dead = true;
                   e.hp = Math.min(e.hp + 3, e.maxHp + 5);
                   e.maxHp = Math.max(e.maxHp, e.hp);
@@ -2527,40 +2547,55 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
               e._blocksEaten = (e._blocksEaten || 0) + 1;
             }
             if (justAte) {
-              if (ateInvuln && !e._mini && !e._superEater) {
-                e._superEater = true;
-                e._miniSpawnTimer = 300;
-                spawnExplosion(s, e.x, e.y, '#ffffff', 30);
+              e._growthMeter = (e._growthMeter || 0) + 1;
+
+              if (e._growthStage === 0 && e._growthMeter >= 2) {
+                e._growthStage = 1;
+                e._mini = false;
+                e.hp += 4;
+                e.maxHp += 6;
+                e._growthMeter = 0;
+                spawnExplosion(s, e.x, e.y, '#99ffbb', 16);
+              } else if (e._growthStage === 1 && e._growthMeter >= 4) {
+                e._growthStage = 2;
+                e.hp += 6;
+                e.maxHp += 8;
+                e._growthMeter = 0;
+                e._spawnCooldown = 240;
+                spawnExplosion(s, e.x, e.y, '#d2ffd9', 20);
               }
-              if (!e._mini && e._blocksEaten >= 2) {
-                e._blocksEaten = 0;
-                spawnMiniEaters(W, s, e);
+
+              if (e._growthStage >= 2 && e._spawnCooldown <= 0 && e._offspringCount < e._offspringCap) {
+                const spawned = spawnMiniEaters(W, s, e);
+                if (spawned > 0) e._spawnCooldown = 360;
+              } else if (e._growthStage === 1 && !e._mini && e._blocksEaten >= 3 && e._offspringCount < 1 && e._spawnCooldown <= 0) {
+                const spawned = spawnMiniEaters(W, s, e);
+                if (spawned > 0) e._spawnCooldown = 420;
               }
+
             }
           }
         } else {
-          // Only when no blocks remain: enter buffed hunt mode on the player.
-          if (!e._huntBuffed) {
-            e._huntBuffed = true;
-            e._huntRamp = 0;
+          // No blocks available: roam passively instead of hunting the player.
+          e._passiveRoamPhase = (e._passiveRoamPhase || Math.random() * Math.PI * 2) + 0.035;
+          if (!Number.isFinite(e._roamDirX) || !Number.isFinite(e._roamDirY) || (e._retargetRoamTimer || 0) <= 0) {
+            const roamAngle = Math.random() * Math.PI * 2;
+            e._roamDirX = Math.cos(roamAngle);
+            e._roamDirY = Math.sin(roamAngle);
+            e._retargetRoamTimer = randomBetween(30, 80);
           }
-
-          const dxp = p.x - e.x;
-          const dyp = p.y - e.y;
-          const lenp = Math.hypot(dxp, dyp) || 1;
-          e._huntRamp = Math.min(1, (e._huntRamp || 0) + 0.08);
-          const baseHuntSpd = (e._mini ? 1.9 : 2.8) + (s.wave * 0.03);
-          const buffedHuntSpd = baseHuntSpd * (e._mini ? 2.2 : 2.7);
-          const huntSpd = baseHuntSpd + (buffedHuntSpd - baseHuntSpd) * e._huntRamp;
-          e.x += (dxp / lenp) * huntSpd;
-          e.y += (dyp / lenp) * huntSpd;
+          e._retargetRoamTimer -= 1;
+          const roamSpeed = (e._growthStage === 0 ? 1.1 : e._growthStage === 1 ? 1.45 : 1.3) + (s.wave * 0.015);
+          const driftBiasX = Math.cos(e._passiveRoamPhase) * 0.35;
+          const driftBiasY = Math.sin(e._passiveRoamPhase * 1.2) * 0.28;
+          e.x += (e._roamDirX + driftBiasX) * roamSpeed;
+          e.y += (e._roamDirY + driftBiasY) * roamSpeed;
         }
 
         if (e.x < bound) { e.x = bound; }
         if (e.x > W - bound) { e.x = W - bound; }
         if (e.y < bound) { e.y = bound; }
         if (e.y > H - bound) { e.y = H - bound; }
-        if (e._superEater) { e._miniSpawnTimer=(e._miniSpawnTimer||300)-1; if(e._miniSpawnTimer<=0){spawnMiniEaters(W,s,e);e._miniSpawnTimer=300;} }
       } else if (e.type === 'dropper') {
         // Random wander — bounce off all walls, never leave screen
         e.dirTimer = (e.dirTimer || 60) - 1;
@@ -2574,9 +2609,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         if (e.x > W - 30) { e.x = W - 30; e.vx = -Math.abs(e.vx); }
         if (e.y < 30) { e.y = 30; e.vy = Math.abs(e.vy); }
         if (e.y > H * 0.7) { e.y = H * 0.7; e.vy = -Math.abs(e.vy); }
-      } else if (e.type === 'berserk') {
+      } else if (e.type === 'glutton') {
         if (e._baseW === undefined) e._baseW = e.w || 44;
         if (e._baseH === undefined) e._baseH = e.h || 44;
+        if (e._gluttonGrowthMeter === undefined) e._gluttonGrowthMeter = 0;
+        if (e._segmentCount === undefined) e._segmentCount = 0;
+        if (e._maxSegments === undefined) e._maxSegments = e._isHell ? 7 : 5;
+        if (!Array.isArray(e._trailPoints)) e._trailPoints = [{ x: e.x, y: e.y, angle: e._angle || Math.PI / 2 }];
+        if (!Array.isArray(e._segmentPositions)) e._segmentPositions = [];
         if (e._consumeCooldown === undefined) e._consumeCooldown = 0;
         if (e._targetRetargetTimer === undefined) e._targetRetargetTimer = 0;
         if (e._chargeCooldown === undefined) e._chargeCooldown = Math.floor(randomBetween(160, 280));
@@ -2588,11 +2628,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         e._eatingFrames = Math.max(0, (e._eatingFrames || 0) - 1);
 
         const consumeCandidates = [];
-        const canEatEnemy = (other) => {
-          if (!other || other === e || other.dead) return false;
-          if (other.type === 'boss' || other.type === 'berserk') return false;
-          return true;
-        };
 
         s.blocks.forEach(block => {
           if (block.dead || block.invulnerable) return;
@@ -2636,31 +2671,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           });
         });
 
-        const hasBlockTargets = consumeCandidates.length > 0;
-
-        if (!hasBlockTargets) {
-          s.enemies.forEach(other => {
-            if (!canEatEnemy(other)) return;
-            const sourceW = Math.max(12, other.w || 18);
-            const sourceH = Math.max(12, other.h || 18);
-            const unitMass = Math.max(1, (sourceW + sourceH) / 20 + (other.hp || 1) * 0.45);
-            consumeCandidates.push({
-              kind: 'enemy',
-              target: other,
-              x: other.x,
-              y: other.y,
-              sourceW,
-              sourceH,
-              mass: unitMass,
-              color: other.type === 'eater' ? '#44ff88' : '#ff6666',
-            });
-          });
-        }
-
         const isTargetStillValid = () => {
           if (e._consumeKind === 'block') return !!(e._consumeTargetRef && !e._consumeTargetRef.dead);
           if (e._consumeKind === 'piledCell') return !!(e._consumeTargetRef && s.piledCells.includes(e._consumeTargetRef));
-          if (e._consumeKind === 'enemy') return !!(e._consumeTargetRef && !e._consumeTargetRef.dead);
           return false;
         };
 
@@ -2675,7 +2688,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           e._targetColor = '#ff6666';
         }
 
-        const applyBerserkGrowth = (mass, sourceW, sourceH) => {
+        const applyGluttonGrowth = (mass, sourceW, sourceH) => {
           const maxGrowthPerConsume = 15;
           const rawGainW = Math.max(3, sourceW * 0.52);
           const rawGainH = Math.max(3, sourceH * 0.52);
@@ -2684,7 +2697,6 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           e.w = Math.min((e.w || e._baseW || 94) + sizeGainW, 260);
           e.h = Math.min((e.h || e._baseH || 94) + sizeGainH, 260);
 
-          // Diminishing HP growth so late-game Berserker remains killable.
           const currentMax = e.maxHp || e.hp || 1;
           const cap = e._isHell ? 1050 : 900;
           const growthScale = Math.max(0.22, 1 - (currentMax / cap) * 0.78);
@@ -2693,11 +2705,17 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           const hpGain = Math.max(2, Math.ceil(rawHpGain));
           e.maxHp = Math.min(currentMax + hpGain, cap);
 
-          // Eating restores some HP, but never a full refill loop.
           const heal = Math.max(1, Math.ceil(hpGain * 0.45));
           e.hp = Math.min((e.hp || 1) + heal, e.maxHp);
 
           e._absorbedUnits = Math.min((e._absorbedUnits || 0) + mass, 36);
+          e._gluttonGrowthMeter = (e._gluttonGrowthMeter || 0) + Math.max(1, mass * 0.9 + (sourceW + sourceH) / 42);
+
+          const segmentThreshold = 7 + (e._segmentCount || 0) * 3.5;
+          if ((e._segmentCount || 0) < (e._maxSegments || 0) && e._gluttonGrowthMeter >= segmentThreshold) {
+            e._segmentCount = Math.min((e._maxSegments || 0), (e._segmentCount || 0) + 1);
+            e._gluttonGrowthMeter = Math.max(0, e._gluttonGrowthMeter - segmentThreshold);
+          }
         };
 
         const needsNewTarget = !e._consumeKind || !isTargetStillValid() || e._targetRetargetTimer <= 0;
@@ -2724,34 +2742,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           }
         }
 
-        const canChasePlayer = !hasBlockTargets;
+        e._chargeFrames = 0;
+        e._chargingPlayer = false;
 
-        if (canChasePlayer) {
-          e._chargeCooldown--;
-          if (e._chargeFrames > 0) {
-            e._chargeFrames--;
-          } else if (e._chargeCooldown <= 0) {
-            e._chargeFrames = Math.floor(randomBetween(26, 42));
-            e._chargeCooldown = Math.floor(randomBetween(170, 310));
-          }
-        } else {
-          e._chargeFrames = 0;
-          e._chargingPlayer = false;
-        }
-
-        if (canChasePlayer && e._chargeFrames > 0) {
-          const dxp = p.x - e.x;
-          const dyp = p.y - e.y;
-          const lenp = Math.hypot(dxp, dyp) || 1;
-          const chargeSpd = e._isHell ? 7.4 : 6.2;
-          e.x += (dxp / lenp) * chargeSpd;
-          e.y += (dyp / lenp) * chargeSpd;
-          e._chargingPlayer = true;
-        } else if (e._consumeKind && isTargetStillValid()) {
-          if (e._consumeKind === 'enemy' && e._consumeTargetRef) {
-            e._targetX = e._consumeTargetRef.x;
-            e._targetY = e._consumeTargetRef.y;
-          } else if (e._consumeKind === 'block' && e._consumeTargetRef && !e._consumeTargetRef.dead) {
+        if (e._consumeKind && isTargetStillValid()) {
+          if (e._consumeKind === 'block' && e._consumeTargetRef && !e._consumeTargetRef.dead) {
             const cells = getBlockCells(e._consumeTargetRef);
             if (cells.length > 0) {
               e._targetX = cells.reduce((sum, c) => sum + c.x + BLOCK_SIZE / 2, 0) / cells.length;
@@ -2763,13 +2758,12 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             e._targetY = cell.y + BLOCK_SIZE / 2;
           }
 
-          const dx = (e._targetX ?? p.x) - e.x;
-          const dy = (e._targetY ?? p.y) - e.y;
+          const dx = (e._targetX ?? e.x) - e.x;
+          const dy = (e._targetY ?? e.y) - e.y;
           const len = Math.hypot(dx, dy) || 1;
           const feedSpd = (e._isHell ? 4.7 : 3.9) + Math.min((e._absorbedUnits || 0) * 0.03, 1.4);
           e.x += (dx / len) * feedSpd;
           e.y += (dy / len) * feedSpd;
-          e._chargingPlayer = false;
 
           const consumeRange = Math.max(26, ((e.w || 80) + (e.h || 80)) * 0.22);
           const isEnemyOnStageNow = e.x >= -80 && e.x <= W + 80 && e.y >= -80 && e.y <= H + 80;
@@ -2784,13 +2778,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
                 s.piledCells.splice(idx, 1);
                 consumed = true;
               }
-            } else if (e._consumeKind === 'enemy' && e._consumeTargetRef && !e._consumeTargetRef.dead) {
-              e._consumeTargetRef.dead = true;
-              consumed = true;
             }
 
             if (consumed) {
-              applyBerserkGrowth(e._targetMass || 1, e._targetSourceW || BLOCK_SIZE, e._targetSourceH || BLOCK_SIZE);
+              applyGluttonGrowth(e._targetMass || 1, e._targetSourceW || BLOCK_SIZE, e._targetSourceH || BLOCK_SIZE);
               spawnExplosion(s, e._targetX || e.x, e._targetY || e.y, e._targetColor || '#ff6666', 14);
               e._consumeCooldown = 8;
               e._eatingFrames = 14;
@@ -2800,16 +2791,20 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             e._consumeKind = null;
             e._targetRetargetTimer = 0;
           }
-        } else if (canChasePlayer) {
-          const dx = p.x - e.x;
-          const dy = p.y - e.y;
-          const len = Math.hypot(dx, dy) || 1;
-          const driftSpd = 2.6;
-          e.x += (dx / len) * driftSpd;
-          e.y += (dy / len) * driftSpd;
-          e._chargingPlayer = false;
         } else {
-          e._chargingPlayer = false;
+          e._roamPhase = (e._roamPhase || Math.random() * Math.PI * 2) + 0.04;
+          const roamSpeed = (e._isHell ? 2.1 : 1.7) + Math.min((e._segmentCount || 0) * 0.08, 0.55);
+          if (!Number.isFinite(e._roamDirX) || !Number.isFinite(e._roamDirY) || (e._retargetRoamTimer || 0) <= 0) {
+            const roamAngle = Math.random() * Math.PI * 2;
+            e._roamDirX = Math.cos(roamAngle);
+            e._roamDirY = Math.sin(roamAngle);
+            e._retargetRoamTimer = Math.floor(randomBetween(40, 90));
+          }
+          e._retargetRoamTimer -= 1;
+          const wobbleX = Math.cos(e._roamPhase) * 0.45;
+          const wobbleY = Math.sin(e._roamPhase * 1.3) * 0.35;
+          e.x += (e._roamDirX + wobbleX) * roamSpeed;
+          e.y += (e._roamDirY + wobbleY) * roamSpeed;
         }
 
         const visualHalf = Math.max((e.w || e._baseW || 94) * 0.9, (e.h || e._baseH || 94) * 0.9, 36) + Math.min(e._absorbedUnits || 0, 36) * 1.4;
@@ -2822,6 +2817,61 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           e.x = Math.min(W - margin, Math.max(margin, W * 0.5));
           e.y = Math.min(H - margin, Math.max(margin, H * 0.25));
         }
+        const headingX = Number(e.x) - Number(e._prevX ?? e.x - (e.vx || 0));
+        const headingY = Number(e.y) - Number(e._prevY ?? e.y - (e.vy || 1));
+        if (Math.hypot(headingX, headingY) > 0.001) {
+          e._angle = Math.atan2(headingY, headingX);
+        }
+
+        const segmentGap = Math.max(34, Number(e._gluttonSegmentGap) || Math.max(e.w || 0, e.h || 0) * 0.58 || 56);
+        const sampleStride = Math.max(6, Math.round(segmentGap * 0.2));
+        e._gluttonSegmentGap = segmentGap;
+        e._trailPoints.unshift({ x: e.x, y: e.y, angle: e._angle || Math.PI / 2 });
+
+        const requiredTrailLength = Math.max(18, Math.ceil(((e._segmentCount || 0) + 2) * segmentGap / sampleStride) + 6);
+        if (e._trailPoints.length > requiredTrailLength) {
+          e._trailPoints.length = requiredTrailLength;
+        }
+
+        const sampleTrailPoint = (distance, out = {}) => {
+          const trail = e._trailPoints;
+          if (!trail.length) {
+            out.x = e.x;
+            out.y = e.y;
+            out.angle = e._angle || Math.PI / 2;
+            return out;
+          }
+          const rawIndex = Math.max(0, distance / sampleStride);
+          const lowerIndex = Math.min(trail.length - 1, Math.floor(rawIndex));
+          const upperIndex = Math.min(trail.length - 1, lowerIndex + 1);
+          const lower = trail[lowerIndex] || trail[trail.length - 1];
+          const upper = trail[upperIndex] || lower;
+          const mix = Math.max(0, Math.min(1, rawIndex - lowerIndex));
+          out.x = lower.x + (upper.x - lower.x) * mix;
+          out.y = lower.y + (upper.y - lower.y) * mix;
+          out.angle = lower.angle + ((upper.angle || lower.angle) - lower.angle) * mix;
+          return out;
+        };
+
+        const segmentCount = e._segmentCount || 0;
+        if (!Array.isArray(e._segmentPositions)) e._segmentPositions = [];
+        e._segmentPositions.length = segmentCount;
+        for (let index = 0; index < segmentCount; index += 1) {
+          const existing = e._segmentPositions[index] || {};
+          sampleTrailPoint(segmentGap * (index + 1), existing);
+          existing.sizeScale = Math.max(0.68, 0.88 - index * 0.04);
+          e._segmentPositions[index] = existing;
+        }
+
+        if (segmentCount > 0) {
+          const tail = e._tailPosition || {};
+          e._tailPosition = sampleTrailPoint(segmentGap * (segmentCount + 1), tail);
+        } else {
+          e._tailPosition = null;
+        }
+
+        e._prevX = e.x;
+        e._prevY = e.y;
       } else if (e.type === 'elite') {
         // Elite: aggressive sine-wave weaving, periodic dash — fixed speed (no wall acceleration)
         e.movePhase = (e.movePhase || 0) + 0.07;
@@ -3005,9 +3055,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       return keep;
     });
 
-    // Enemy fire — dropper, mine, eater, and berserk do NOT fire.
+    // Enemy fire — dropper, mine, eater, and glutton do NOT fire.
     s.enemies.forEach(e => {
-      if (e.type === 'dropper' || e.type === 'mine' || e.type === 'eater' || e.type === 'berserk') return;
+      if (e.type === 'dropper' || e.type === 'mine' || e.type === 'eater' || e.type === 'glutton') return;
       e.fireTimer--;
       if (e.fireTimer <= 0) {
         const dx = p.x - e.x, dy = p.y - e.y;
@@ -3277,8 +3327,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const dx = bullet.x - enemy.x;
       const dy = bullet.y - enemy.y;
 
-      if (enemy.type === 'berserk') {
-        // Berserker uses a circular collision area to match the sprite body
+      if (enemy.type === 'glutton') {
+        // Glutton uses a circular collision area to match the sprite body
         // and avoid oversized square clipping around transparent sprite edges.
         const baseRadius = Math.max(16, Math.max(enemy.w || 94, enemy.h || 94) * 0.36);
         const consumeBonus = Math.min(enemy._absorbedUnits || 0, 36) * 0.45;
@@ -3963,8 +4013,16 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     s.enemies.forEach(e => {
       if (e.dead) return;
       const dx = e.x - p.x, dy = e.y - p.y;
-      const hitRangeX = e.type === 'berserk' ? Math.max(20, (e.w || 80) * 0.34) : 18;
-      const hitRangeY = e.type === 'berserk' ? Math.max(20, (e.h || 80) * 0.34) : 18;
+      const hitRangeX = e.type === 'glutton'
+        ? Math.max(18, (e.w || 80) * 0.27)
+        : e.type === 'eater'
+          ? Math.max(14, (e.w || 50) * 0.2)
+          : 18;
+      const hitRangeY = e.type === 'glutton'
+        ? Math.max(18, (e.h || 80) * 0.27)
+        : e.type === 'eater'
+          ? Math.max(14, (e.h || 50) * 0.2)
+          : 18;
       if (Math.abs(dx) < hitRangeX && Math.abs(dy) < hitRangeY) {
         // Star invincibility: don't kill bosses on contact, just push them away
         if (s.starInvincibleTimer > 0 && e.type === 'boss') {
@@ -4002,27 +4060,27 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           spawnExplosion(s, p.x, p.y, '#ff8800', 12);
           e.dead = true;
         } else if (e.type === 'eater') {
-          // Eater bites player — mini-boss doesn't die on contact
+          // Eaters are passive hazards: contact still hurts, then they recoil.
           spawnExplosion(s, p.x, p.y, '#44ff88', 12);
           takeDamage(s);
-          // Push eater away
           const edx = e.x - p.x, edy = e.y - p.y;
           const elen = Math.hypot(edx, edy) || 1;
-          e.x += (edx / elen) * 30;
-          e.y += (edy / elen) * 30;
+          const eaterShove = e._growthStage >= 2 ? 36 : e._growthStage === 0 ? 24 : 30;
+          e.x += (edx / elen) * eaterShove;
+          e.y += (edy / elen) * eaterShove;
           e._chargingPlayer = false;
-        } else if (e.type === 'berserk') {
-          // Berserker collides for heavy body damage, then keeps hunting/charging.
+        } else if (e.type === 'glutton') {
+          // Glutton body contact: moderate shove to avoid unfair overlap chains.
           spawnExplosion(s, p.x, p.y, '#ff6644', 14);
           takeDamage(s);
           const bdx = e.x - p.x, bdy = e.y - p.y;
           const blen = Math.hypot(bdx, bdy) || 1;
-          const shove = e._chargingPlayer ? 34 : 18;
+          const shove = 16 + Math.min(12, (e._segmentCount || 0) * 2);
           e.x += (bdx / blen) * shove;
           e.y += (bdy / blen) * shove;
-          const berserkMargin = Math.max(18, ((e.w || 44) + (e.h || 44)) * 0.28);
-          e.x = Math.min(W - berserkMargin, Math.max(berserkMargin, e.x));
-          e.y = Math.min(H - berserkMargin, Math.max(berserkMargin, e.y));
+          const gluttonMargin = Math.max(18, ((e.w || 44) + (e.h || 44)) * 0.24);
+          e.x = Math.min(W - gluttonMargin, Math.max(gluttonMargin, e.x));
+          e.y = Math.min(H - gluttonMargin, Math.max(gluttonMargin, e.y));
         } else {
           e.dead = true;
           spawnExplosion(s, e.x, e.y, '#ff4444', 12);

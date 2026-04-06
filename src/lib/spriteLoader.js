@@ -49,7 +49,8 @@ const SPRITE_NAMES = [
   'PlayerShip',
   'BasicEnemy',
   'EliteEnemy',
-  'Berskerker',   // note: typo in repo filename
+  'GluttonHead',
+  'GluttonTail',
   'Eater',
   'EaterChomp',
   'Mine',
@@ -82,6 +83,7 @@ const SPRITE_NAMES = [
 const NEEDS_BG_REMOVAL = new Set([
   'Drone', 'Harvester', 'Dropper',
   'Shotgun Powerup', 'BounceshotPowerup', 'Missile Powerup', 'ReverseShot Powerup',
+  'GluttonHead', 'GluttonTail',
   'Eater', 'EaterChomp',
 ]);
 
@@ -90,7 +92,8 @@ const NEEDS_DARK_BG_REMOVAL = new Set([
 ]);
 
 const SPRITE_NAME_ALIASES = {
-  Berskerker: ['Berskerker', 'Berserker', 'Berserk'],
+  GluttonHead: ['GluttonChompingSpritesheet-table-162-240', 'GluttonChompingSpritesheet-table', 'GluttonHead'],
+  GluttonTail: ['GluttonTailSpritesheet-table-240-240', 'GluttonTailSpritesheet-table', 'GluttonTail'],
   Eater: ['Eater', 'EaterEnemy'],
   EaterChomp: ['EaterChomp', 'Eater Chomp', 'EaterChomping', 'Eater_Chomp'],
   BeholderBlink: ['BeholderBlink2', 'BeholderBlink'],
@@ -229,6 +232,39 @@ export function drawSprite(ctx, sprite, x, y, w, h) {
   if (!hasDrawableSprite(sprite)) return false;
   try {
     ctx.drawImage(sprite, x, y, w, h);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function getSpriteFrameCount(sprite, frameWidth, frameHeight) {
+  if (!hasDrawableSprite(sprite)) return 0;
+  const width = Number(sprite.naturalWidth || sprite.videoWidth || sprite.width || 0);
+  const height = Number(sprite.naturalHeight || sprite.videoHeight || sprite.height || 0);
+  const safeFrameWidth = Math.max(1, Number(frameWidth) || width || 1);
+  const safeFrameHeight = Math.max(1, Number(frameHeight) || height || 1);
+  const columns = Math.max(1, Math.floor(width / safeFrameWidth));
+  const rows = Math.max(1, Math.floor(height / safeFrameHeight));
+  return columns * rows;
+}
+
+export function drawSpriteFrame(ctx, sprite, frameWidth, frameHeight, frameIndex, x, y, w, h) {
+  if (!hasDrawableSprite(sprite)) return false;
+
+  const width = Number(sprite.naturalWidth || sprite.videoWidth || sprite.width || 0);
+  const height = Number(sprite.naturalHeight || sprite.videoHeight || sprite.height || 0);
+  const safeFrameWidth = Math.max(1, Number(frameWidth) || width || 1);
+  const safeFrameHeight = Math.max(1, Number(frameHeight) || height || 1);
+  const columns = Math.max(1, Math.floor(width / safeFrameWidth));
+  const rows = Math.max(1, Math.floor(height / safeFrameHeight));
+  const totalFrames = Math.max(1, columns * rows);
+  const normalizedIndex = ((Math.floor(frameIndex || 0) % totalFrames) + totalFrames) % totalFrames;
+  const sx = (normalizedIndex % columns) * safeFrameWidth;
+  const sy = Math.floor(normalizedIndex / columns) * safeFrameHeight;
+
+  try {
+    ctx.drawImage(sprite, sx, sy, safeFrameWidth, safeFrameHeight, x, y, w, h);
     return true;
   } catch {
     return false;
