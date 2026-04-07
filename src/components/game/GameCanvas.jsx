@@ -1,3 +1,12 @@
+// Helper to get global attack bonuses from shop upgrades
+function getGlobalAttackBonuses(shopUpgrades) {
+  const atkDmg = shopUpgrades?.atkDmg || 0;
+  const atkSpd = shopUpgrades?.atkSpd || 0;
+  return {
+    atkDmgMult: 1 + atkDmg * 0.01,
+    atkSpdMult: 1 + atkSpd * 0.01,
+  };
+}
 import React, { useRef, useEffect, useCallback } from 'react';
 import MobileControls from './MobileControls';
 import { sounds } from '../../hooks/useSound.js';
@@ -105,7 +114,7 @@ const WEAPON_COLORS = {
   photon: '#44ffaa',
   bounce: '#aaff00',
   missile: '#ff00ff',
-  reverse: '#cc44ff',
+  reverse: '#ffffff', // White core for reverse shot (glow handled in drawing)
   wingman: '#44aaff',
   normal: '#00f0ff',
 };
@@ -125,7 +134,7 @@ function getProjectileImpactColor(type) {
 const DROPPER_COLORS = {
   spread: WEAPON_COLORS.spread, laser: WEAPON_COLORS.laser, photon: WEAPON_COLORS.photon,
   wingman: WEAPON_COLORS.wingman, shield: '#00ccff', bounce: WEAPON_COLORS.bounce,
-  speed: '#ff8800', rapidfire: '#ff4488', missile: '#ff00ff', reverse: '#cc44ff', star: '#ffffff',
+  speed: '#ff8800', rapidfire: '#ff4488', missile: '#ff00ff', reverse: '#ffffff', star: '#ffffff',
 };
 const DROPPER_LABELS = {
   spread: 'S', laser: 'L', photon: 'P', wingman: 'W',
@@ -181,6 +190,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   const skipBossSignalRef = useRef(skipBossSignal);
   const difficultyConfigRef = useRef(difficultyConfig);
   const fpsTrackerRef = useRef({ lastTs: 0, frameCount: 0, lastReported: 60 });
+  const aimModeRef = useRef(false);
 
   // Initialize bullet pool on component mount
   useEffect(() => {
@@ -221,7 +231,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     });
 
     s.powerups = nextPowerups;
-    onPowerupChangeRef.current?.({ ...s.powerups, shieldHp: s.shieldHp, armorHp: s.armorHp, starInvincible: s.starInvincibleTimer > 0 });
+    // livePowerups is parent-driven state in boss mode, so do not echo it back
+    // through onPowerupChange or React will enter an update feedback loop.
   }, [livePowerups]);
 
   function initStars(W, H) {
@@ -239,7 +250,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     const cfg = difficultyConfigRef.current || { hpMult: 1, maxWave: 100, blockSpeedMult: 1 };
     const hpMult = cfg.hpMult || 1;
 
-    // Check max wave cap — trigger difficulty completion state.
+    // Check max wave cap — trigger congratulations state (Challenger shop will be shown after continue)
     if (cfg.maxWave && wave > cfg.maxWave) {
       sounds.stopAllMusic();
       s.running = false;
@@ -457,6 +468,84 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     });
   }
 
+  function getNearestAimTarget(originX, originY, enemies) {
+    let bestTarget = null;
+    let bestDist = Infinity;
+    (enemies || []).forEach((enemy) => {
+      if (!enemy || enemy.dead) return;
+      const dist = Math.hypot(enemy.x - originX, enemy.y - originY);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestTarget = enemy;
+      }
+    });
+    return bestTarget;
+  }
+
+  function normalizeAngle(angle) {
+    let next = angle;
+    while (next <= -Math.PI) next += Math.PI * 2;
+    while (next > Math.PI) next -= Math.PI * 2;
+    return next;
+  }
+
+  function rotateAngleTowards(current, target, maxStep) {
+    const delta = normalizeAngle(target - current);
+    if (Math.abs(delta) <= maxStep) return target;
+    return current + Math.sign(delta) * maxStep;
+  }
+
+  function getAimTransformFromRotation(originX, originY, rotation) {
+    const facingAngle = rotation - Math.PI / 2;
+    const dirX = Math.cos(facingAngle);
+    const dirY = Math.sin(facingAngle);
+    const rightX = -dirY;
+    const rightY = dirX;
+    return {
+      dirX,
+      dirY,
+      rightX,
+      rightY,
+      rotation,
+      noseX: originX + dirX * 18,
+      noseY: originY + dirY * 18,
+    };
+  }
+
+  function getAimTransform(originX, originY, enemies, aimMode = false) {
+    const target = aimMode ? getNearestAimTarget(originX, originY, enemies) : null;
+    let dirX = 0;
+    let dirY = -1;
+    if (target) {
+      const dx = target.x - originX;
+      const dy = target.y - originY;
+      const len = Math.hypot(dx, dy) || 1;
+      dirX = dx / len;
+      dirY = dy / len;
+    }
+    const rightX = -dirY;
+    const rightY = dirX;
+    return {
+      dirX,
+      dirY,
+      rightX,
+      rightY,
+      rotation: Math.atan2(dirY, dirX) + Math.PI / 2,
+      noseX: originX + dirX * 18,
+      noseY: originY + dirY * 18,
+    };
+  }
+
+  function getBeamHitDistance(originX, originY, dirX, dirY, targetX, targetY, radius, maxDistance) {
+    const dx = targetX - originX;
+    const dy = targetY - originY;
+    const projection = dx * dirX + dy * dirY;
+    if (projection < 0 || projection > maxDistance) return null;
+    const perpendicular = Math.abs(dx * (-dirY) + dy * dirX);
+    if (perpendicular > radius) return null;
+    return projection;
+  }
+
   // ── Fire logic ───────────────────────────────────────────────
   function fireSpreadShot(s) {
     const p = s.player;
@@ -464,20 +553,26 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     if (spreadTier === 0) return;
     if (s.spreadReloadTimer > 0) return;
     if (s.spreadShotsLeft <= 0) return;
+    const aim = aimModeRef.current
+      ? getAimTransformFromRotation(p.x, p.y, Number.isFinite(p._aimRotation) ? p._aimRotation : 0)
+      : getAimTransform(p.x, p.y, s.enemies, false);
+    const baseAngle = Math.atan2(aim.dirY, aim.dirX);
 
     // Fire an immediate forward cone; starts at 2 shots and scales with tier.
     const pelletCount = Math.min(11, 1 + spreadTier);
     const spreadDeg = Math.min(150, 16 + spreadTier * 10);
+    let { atkDmgMult } = getGlobalAttackBonuses(shopUpgradesRef.current);
+    if (spreadTier >= 10) atkDmgMult *= 2;
     for (let i = 0; i < pelletCount; i++) {
       const t = pelletCount === 1 ? 0.5 : i / (pelletCount - 1);
-      const angle = -spreadDeg / 2 + spreadDeg * t;
-      const rad = (angle * Math.PI) / 180;
+      const angle = baseAngle - (spreadDeg * Math.PI / 180) / 2 + (spreadDeg * Math.PI / 180) * t;
       acquireBullet(s, {
-        x: p.x,
-        y: p.y - 18,
-        vx: Math.sin(rad) * 5.8,
-        vy: -Math.cos(rad) * 8.4,
+        x: aim.noseX,
+        y: aim.noseY,
+        vx: Math.cos(angle) * 5.8,
+        vy: Math.sin(angle) * 8.4,
         type: 'spreadPellet',
+        atkDmgMult,
       }, 'player');
     }
 
@@ -488,6 +583,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   function playerFire(s) {
     const p = s.player;
     const pw = s.powerups;
+    const aim = aimModeRef.current
+      ? getAimTransformFromRotation(p.x, p.y, Number.isFinite(p._aimRotation) ? p._aimRotation : 0)
+      : getAimTransform(p.x, p.y, s.enemies, false);
     const laserTier  = pw.laser  || 0;
     const photonTier = pw.photon || 0;
     const bounceTier = pw.bounce || 0;
@@ -501,35 +599,69 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const shotOffsets = isTier10Photon ? [0] : (photonTier >= 5 ? [-26, 26] : [0]);
       const photonSpeed = isTier10Photon ? -12 : -11;
       const photonSize = isTier10Photon ? 18 : 10;
-
+      let photonDmgMult = 1;
+      if (photonTier >= 10) photonDmgMult = 2;
       for (let i = 0; i < shotOffsets.length; i++) {
         const xOffset = shotOffsets[i];
         acquireBullet(s, {
-          x: p.x + xOffset, y: p.y - 14, vx: 0, vy: photonSpeed,
+          x: aim.noseX + aim.rightX * xOffset,
+          y: aim.noseY + aim.rightY * xOffset,
+          vx: aim.dirX * Math.abs(photonSpeed),
+          vy: aim.dirY * Math.abs(photonSpeed),
           type: 'photon', size: photonSize, orbitAngle: 0,
           pierceCount: isTier10Photon ? Number.POSITIVE_INFINITY : photonTier,
           infinitePierce: isTier10Photon,
           piercedEnemies: [],
           isSuperOrbit: false,
           orbitPhase: 0,
+          atkDmgMult: photonDmgMult,
         }, 'player');
       }
     }
 
     if (bounceTier > 0) {
-      const bounces = bounceTier;
+      // Bounce shot should survive level + 1 impacts.
+      const bounces = bounceTier + 1;
       const side = Math.floor(s.spiralAngle * 2) % 2 === 0 ? -1 : 1;
       s.spiralAngle += 0.1;
-      acquireBullet(s, { x: p.x + side * 8, y: p.y - 14, vx: side * 3.5, vy: -10, type: 'bounce', bouncesLeft: bounces }, 'player');
+      const bounceShotCount = bounceTier >= 10 ? 3 : bounceTier >= 6 ? 2 : 1;
+      let bounceDmgMult = 1;
+      if (bounceTier >= 10) bounceDmgMult = 2;
+      for (let i = 0; i < bounceShotCount; i++) {
+        const lane = i - (bounceShotCount - 1) / 2;
+        const lateralOffset = side * 8 + lane * 9;
+        const lateralSpeed = side * 3.5 + lane * 1.35;
+        const forwardSpeed = 10 + Math.abs(lane) * 0.15;
+        acquireBullet(s, {
+          x: aim.noseX + aim.rightX * lateralOffset,
+          y: aim.noseY + aim.rightY * lateralOffset,
+          vx: aim.dirX * forwardSpeed + aim.rightX * lateralSpeed,
+          vy: aim.dirY * forwardSpeed + aim.rightY * lateralSpeed,
+          type: 'bounce',
+          bouncesLeft: bounces,
+          atkDmgMult: bounceDmgMult,
+        }, 'player');
+      }
     }
 
     // Always keep the base blue shot active alongside other weapon powerups.
-    acquireBullet(s, { x: p.x, y: p.y - 18, vx: 0, vy: -7, type: 'normal' }, 'player');
+    const { atkDmgMult } = getGlobalAttackBonuses(shopUpgradesRef.current);
+    acquireBullet(s, {
+      x: aim.noseX,
+      y: aim.noseY,
+      vx: aim.dirX * 7,
+      vy: aim.dirY * 7,
+      type: 'normal',
+      atkDmgMult,
+    }, 'player');
   }
 
   function fireMissileVolleyShot(s, missileTier) {
     if (!missileTier || missileTier <= 0) return;
     const p = s.player;
+    const aim = aimModeRef.current
+      ? getAimTransformFromRotation(p.x, p.y, Number.isFinite(p._aimRotation) ? p._aimRotation : 0)
+      : getAimTransform(p.x, p.y, s.enemies, false);
     const shotIndex = Math.max(0, s.missileVolleyIndex || 0);
     const baseSpeed = 7.4 + Math.min(missileTier, 10) * 0.22;
     const maxTurnRate = 0.085 + Math.min(missileTier, 10) * 0.011;
@@ -540,12 +672,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     const yOffset = row * 5;
     const laneJitter = ((shotIndex % hardpoints.length) - (hardpoints.length - 1) / 2) * 0.03;
     const lateralBias = (hardpoint / maxHardpointAbs) * 0.48;
-    const startAngle = -Math.PI / 2 + lateralBias + laneJitter;
+    const startAngle = Math.atan2(aim.dirY, aim.dirX) + lateralBias + laneJitter;
     const homingDelay = 12 + Math.floor(Math.abs(hardpoint) / 8) + row * 2;
 
+    let { atkDmgMult } = getGlobalAttackBonuses(shopUpgradesRef.current);
+    if (missileTier >= 10) atkDmgMult *= 2;
     acquireBullet(s, {
-      x: p.x + hardpoint,
-      y: p.y - 14 - yOffset,
+      x: aim.noseX + aim.rightX * hardpoint - aim.dirX * yOffset,
+      y: aim.noseY + aim.rightY * hardpoint - aim.dirY * yOffset,
       vx: Math.cos(startAngle) * baseSpeed,
       vy: Math.sin(startAngle) * baseSpeed,
       type: 'missile',
@@ -554,6 +688,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       maxTurnRate,
       homingDelay,
       preferredTarget: null,
+      atkDmgMult,
     }, 'player');
 
     s.missileVolleyIndex = shotIndex + 1;
@@ -564,14 +699,17 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     const speedBonus = (pw.rapidfire || 0) === 1 ? 10 : (pw.rapidfire || 0) * 8;
     const photonTier = pw.photon || 0;
     const spreadTier = (pw.spread || 0) || (pw.shotgun || 0);
-    if (photonTier > 0) return Math.max(14, 50 - photonTier * 4 - speedBonus);
-    if (spreadTier > 0 && photonTier === 0 && (pw.bounce || 0) === 0) return Math.max(12, 50 - speedBonus);
-    if ((pw.bounce || 0) > 0) return Math.max(10, 35 - speedBonus);
-    return Math.max(10, 35 - speedBonus);
+    const bounceTier = pw.bounce || 0;
+    const { atkSpdMult } = getGlobalAttackBonuses(shopUpgradesRef.current);
+    if (photonTier > 0) return Math.max(14, (50 - photonTier * 4 - speedBonus) / atkSpdMult);
+    if (spreadTier > 0 && photonTier === 0 && bounceTier === 0) return Math.max(12, (50 - speedBonus) / atkSpdMult);
+    if (bounceTier >= 10) return Math.max(7, (24 - speedBonus) / atkSpdMult);
+    if (bounceTier > 0) return Math.max(10, (35 - speedBonus) / atkSpdMult);
+    return Math.max(10, (35 - speedBonus) / atkSpdMult);
   }
 
   // ── Tetris block helpers ─────────────────────────────────────
-  function spawnBlock(W) {
+  function spawnBlock(W, wave = 1) {
     const shapeIdx = Math.floor(Math.random() * TETRIS_SHAPES.length);
     const shape = TETRIS_SHAPES[shapeIdx];
     // 8% chance of invulnerable steel block
@@ -580,10 +718,17 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     const cols = shape.map(c => c[0]);
     const maxCol = Math.max(...cols);
     const startX = randomBetween(BLOCK_SIZE, W - (maxCol + 1) * BLOCK_SIZE);
-    // HP scales with number of cells: 2 cells=1hp, 3 cells=2hp, 4 cells=3hp
+    // HP scales with number of cells, then follows the same difficulty hp ratio as enemies.
     const cellCount = shape.length;
-    const hp = cellCount <= 2 ? 1 : cellCount === 3 ? 2 : 3;
+    const baseHp = cellCount <= 2 ? 1 : cellCount === 3 ? 2 : 3;
     const cfg = difficultyConfigRef.current || {};
+    let hpMult = cfg.hpMult || 1;
+    // Mirror enemy over-cap scaling path so blocks keep pace in higher-difficulty progression.
+    if (cfg.maxWave && wave > cfg.maxWave) {
+      const over = wave - cfg.maxWave;
+      hpMult *= 1 + Math.floor(over / 5) * 0.1;
+    }
+    const hp = Math.max(1, Math.round(baseHp * hpMult));
     const blockSpeedMult = cfg.blockSpeedMult || 1;
     const blockSpinEnabled = cfg.blockSpin !== false;
     const blockSpinMult = cfg.blockSpinMult ?? (blockSpinEnabled ? 1 : 0);
@@ -922,7 +1067,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
   }
 
   // ── Drawing ──────────────────────────────────────────────────
-  function drawPlayer(ctx, p, wingmen, shieldHp, enemies, invincibleTimer, keys, starInvincibleTimer, superWingman, superWingmen, reverseTier = 0, droneLvl = 0, harvesterLvl = 0, harvesterUnit = null, droneUnit = null) {
+  function drawPlayer(ctx, p, wingmen, shieldHp, enemies, invincibleTimer, keys, starInvincibleTimer, superWingman, superWingmen, reverseTier = 0, droneLvl = 0, harvesterLvl = 0, harvesterUnit = null, droneUnit = null, aimMode = false) {
     wingmen.forEach(w => {
       let angle = -Math.PI / 2;
       let bestDist = Infinity;
@@ -951,8 +1096,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
 
     // Super wingmen — drawn as gold player clones
     (superWingmen || (superWingman ? [superWingman] : [])).forEach(sw => {
+      let swAngle = 0;
+      if (aimMode && (enemies || []).length > 0) {
+        swAngle = Number.isFinite(sw._aimRotation) ? sw._aimRotation : 0;
+      }
       ctx.save();
       ctx.translate(sw.x, sw.y);
+      ctx.rotate(swAngle);
       ctx.shadowColor = '#ffdd00'; ctx.shadowBlur = 22;
       
       // Try to load super wingman sprite
@@ -1067,6 +1217,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     ctx.save();
     ctx.translate(p.x, p.y);
     
+    // Aim-mode: rotate toward nearest enemy, else face up (default).
+    if (aimMode && (enemies || []).length > 0) {
+      ctx.rotate(Number.isFinite(p._aimRotation) ? p._aimRotation : 0);
+    }
     // Try to draw sprite, fall back to shape if not loaded
     const playerSprite = getSprite('PlayerShip');
     if (playerSprite && isSpritesLoaded()) {
@@ -1877,6 +2031,12 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     if (keys['ArrowRight'] || keys['d'] || keys['D']) p.x = Math.min(W - 16, p.x + spd);
     if (keys['ArrowUp'] || keys['w'] || keys['W']) p.y = Math.max(16, p.y - spd);
     if (keys['ArrowDown'] || keys['s'] || keys['S']) p.y = Math.min(H - 16, p.y + spd);
+    if (aimModeRef.current) {
+      const desiredPlayerAim = getAimTransform(p.x, p.y, s.enemies, true).rotation;
+      p._aimRotation = rotateAngleTowards(Number.isFinite(p._aimRotation) ? p._aimRotation : 0, desiredPlayerAim, 0.075);
+    } else {
+      p._aimRotation = 0;
+    }
 
     // Wingmen follow:
     // tier 1-4: basic wingmen only (1-4)
@@ -1972,6 +2132,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           targetY = p.y + toTargetFromPlayerY * scale;
         }
 
+        if (aimModeRef.current) {
+          const desiredSuperAim = getAimTransform(sw.x, sw.y, liveCombatEnemies, true).rotation;
+          sw._aimRotation = rotateAngleTowards(Number.isFinite(sw._aimRotation) ? sw._aimRotation : 0, desiredSuperAim, 0.09);
+        } else {
+          sw._aimRotation = 0;
+        }
+
         const dx = targetX - sw.x;
         const dy = targetY - sw.y;
         const len = Math.hypot(dx, dy) || 1;
@@ -2063,7 +2230,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     if (wantsToFire && (s.powerups.reverse || 0) > 0) {
       s.reverseFireTimer--;
       if (s.reverseFireTimer <= 0) {
-        fireReverseShot(s);
+        // Always use the same aim logic as other weapons
+        const aim = aimModeRef.current
+          ? getAimTransformFromRotation(p.x, p.y, Number.isFinite(p._aimRotation) ? p._aimRotation : 0)
+          : getAimTransform(p.x, p.y, s.enemies, false);
+        fireReverseShot(s, aim);
         const reverseTier = s.powerups.reverse || 0;
         const rapidfireBonus = (s.powerups.rapidfire || 0) === 1 ? 10 : (s.powerups.rapidfire || 0) * 8;
         const baseDelay = Math.max(12, 55 - (reverseTier > 3 ? (reverseTier - 3) * 3 : 0) - rapidfireBonus);
@@ -2138,9 +2309,11 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             });
             target = best;
           }
-          const aimAngle = target
-            ? Math.atan2(target.y - sw.y, target.x - sw.x) + randomBetween(-0.09, 0.09)
-            : -Math.PI / 2;
+          const aimAngle = aimModeRef.current && Number.isFinite(sw._aimRotation)
+            ? (sw._aimRotation - Math.PI / 2)
+            : (target
+                ? Math.atan2(target.y - sw.y, target.x - sw.x) + randomBetween(-0.09, 0.09)
+                : -Math.PI / 2);
           const aimDirX = Math.cos(aimAngle);
           const aimDirY = Math.sin(aimAngle);
 
@@ -2164,7 +2337,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
               vx: aimDirX * bounceSpeed,
               vy: aimDirY * bounceSpeed,
               type: 'bounce',
-              bouncesLeft: Math.max(1, Math.min(3, pw.bounce || 1)),
+              bouncesLeft: Math.max(1, (pw.bounce || 0) + 1),
             }, 'player');
           } else if (selectedGun === 'spread') {
             const pelletCount = Math.min(5, 2 + Math.floor(Math.max(1, spreadTier) / 3));
@@ -2241,12 +2414,21 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         s.laserCooldown--;
       } else if (s.laserBeamActive) {
         s.laserBeamTimer--;
+        const laserAim = aimModeRef.current
+          ? getAimTransformFromRotation(p.x, p.y, Number.isFinite(p._aimRotation) ? p._aimRotation : 0)
+          : getAimTransform(p.x, p.y, s.enemies, false);
+        const beamOriginX = laserAim.noseX;
+        const beamOriginY = laserAim.noseY;
+        const beamDirX = laserAim.dirX;
+        const beamDirY = laserAim.dirY;
+        const maxBeamDistance = Math.hypot(W, H) + 120;
         const laserTier = s.powerups.laser;
         const isPiercing = laserTier >= 10;
         const laserColor = isPiercing ? '#ffffff' : WEAPON_COLORS.laser;
         const beamW = laserTier >= 10 ? (4 + laserTier * 3) * 2 : 4 + laserTier * 3;
         s.enemyBullets = s.enemyBullets.filter(eb => {
-          if (Math.abs(eb.x - p.x) < beamW + 6 && eb.y < p.y) {
+          const hitDistance = getBeamHitDistance(beamOriginX, beamOriginY, beamDirX, beamDirY, eb.x, eb.y, beamW + 6, maxBeamDistance);
+          if (hitDistance !== null) {
             spawnExplosion(s, eb.x, eb.y, laserColor, 3);
             releaseBullet(s, eb);
             return false;
@@ -2257,18 +2439,26 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         if (s.laserFlareTimer > 0) s.laserFlareTimer--;
 
         if (s.laserBeamTimer % 4 === 0) { // damage tick every 4 frames
-          // Find the closest blocking tetris block in beam path
-          let beamBlockY = 0;
+          // Find the closest blocking tetris block in beam path.
+          let beamBlockDistance = maxBeamDistance;
           s.blocks.forEach(block => {
             if (block.dead) return;
             getBlockCells(block).forEach(cell => {
               const cx = cell.x + BLOCK_SIZE / 2;
-              if (Math.abs(cx - p.x) < beamW + BLOCK_SIZE / 2 && cell.y < p.y) {
-                const stopY = cell.y + BLOCK_SIZE;
-                if (stopY > beamBlockY) {
-                  beamBlockY = stopY;
-                  block._laserHit = true;
-                }
+              const cy = cell.y + BLOCK_SIZE / 2;
+              const hitDistance = getBeamHitDistance(
+                beamOriginX,
+                beamOriginY,
+                beamDirX,
+                beamDirY,
+                cx,
+                cy,
+                beamW + BLOCK_SIZE * 0.72,
+                maxBeamDistance
+              );
+              if (hitDistance !== null && hitDistance < beamBlockDistance) {
+                beamBlockDistance = hitDistance;
+                block._laserHit = true;
               }
             });
           });
@@ -2295,14 +2485,29 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           s.blocks = s.blocks.filter(b => !b.dead);
 
           // Beam hits enemies — piercing at tier 10 (hits all), otherwise first only
-          let beamStopY = beamBlockY;
+          let beamStopDistance = beamBlockDistance;
           const enemiesInBeam = s.enemies
-            .filter(e => !e.dead && Math.abs(e.x - p.x) < beamW + (e.w || 18) && e.y < p.y && e.y > beamBlockY)
-            .sort((a, b) => b.y - a.y); // closest to player first
+            .map(e => {
+              if (e.dead) return null;
+              const hitDistance = getBeamHitDistance(
+                beamOriginX,
+                beamOriginY,
+                beamDirX,
+                beamDirY,
+                e.x,
+                e.y,
+                beamW + Math.max(e.w || 18, e.h || 18),
+                beamBlockDistance
+              );
+              if (hitDistance === null) return null;
+              return { enemy: e, hitDistance };
+            })
+            .filter(Boolean)
+            .sort((a, b) => a.hitDistance - b.hitDistance); // closest to player first
 
           if (isPiercing) {
-            enemiesInBeam.forEach(e => {
-              if (consumePirateShieldPiece(s, e, p.x, e.y, laserColor)) return;
+            enemiesInBeam.forEach(({ enemy: e }) => {
+              if (consumePirateShieldPiece(s, e, beamOriginX, beamOriginY, laserColor)) return;
               e.hp -= 1;
               sounds.hit();
               spawnExplosion(s, e.x, e.y, laserColor, 3);
@@ -2315,30 +2520,32 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
                 if (e.type === 'boss') { sounds.stopBossMusic(); sounds.waveComplete(); grantBossLifeReward(s); }
               }
             });
-            beamStopY = beamBlockY;
+            beamStopDistance = beamBlockDistance;
           } else {
             const firstEnemy = enemiesInBeam[0] || null;
             if (firstEnemy) {
-              beamStopY = Math.max(beamBlockY, firstEnemy.y - (firstEnemy.h || 18));
-              if (consumePirateShieldPiece(s, firstEnemy, p.x, firstEnemy.y, laserColor)) {
-                s.laserBeamBlockY = beamStopY;
+              beamStopDistance = Math.min(beamBlockDistance, firstEnemy.hitDistance);
+              if (consumePirateShieldPiece(s, firstEnemy.enemy, beamOriginX, beamOriginY, laserColor)) {
+                s.laserBeamEndX = beamOriginX + beamDirX * beamStopDistance;
+                s.laserBeamEndY = beamOriginY + beamDirY * beamStopDistance;
                 return;
               }
-              firstEnemy.hp -= 1;
+              firstEnemy.enemy.hp -= 1;
               sounds.hit();
-              spawnExplosion(s, firstEnemy.x, firstEnemy.y, laserColor, 3);
-              if (firstEnemy.hp <= 0) {
-                firstEnemy.dead = true;
-                const pts = firstEnemy.type === 'boss' ? 5000 : firstEnemy.type === 'dropper' ? 500 : firstEnemy.type === 'elite' ? 300 : 100;
+              spawnExplosion(s, firstEnemy.enemy.x, firstEnemy.enemy.y, laserColor, 3);
+              if (firstEnemy.enemy.hp <= 0) {
+                firstEnemy.enemy.dead = true;
+                const pts = firstEnemy.enemy.type === 'boss' ? 5000 : firstEnemy.enemy.type === 'dropper' ? 500 : firstEnemy.enemy.type === 'elite' ? 300 : 100;
                 s.score += pts; onScoreChange(s.score); sounds.kill();
-                spawnExplosion(s, firstEnemy.x, firstEnemy.y, firstEnemy.type === 'boss' ? '#ff0066' : laserColor, firstEnemy.type === 'boss' ? 40 : 14);
-                if (firstEnemy.type === 'dropper') { sounds.killDropper(); spawnFloatingPowerup(s, firstEnemy.x, firstEnemy.y, firstEnemy.dropType); }
-                if (firstEnemy.type === 'boss') { sounds.stopBossMusic(); sounds.waveComplete(); grantBossLifeReward(s); }
+                spawnExplosion(s, firstEnemy.enemy.x, firstEnemy.enemy.y, firstEnemy.enemy.type === 'boss' ? '#ff0066' : laserColor, firstEnemy.enemy.type === 'boss' ? 40 : 14);
+                if (firstEnemy.enemy.type === 'dropper') { sounds.killDropper(); spawnFloatingPowerup(s, firstEnemy.enemy.x, firstEnemy.enemy.y, firstEnemy.enemy.dropType); }
+                if (firstEnemy.enemy.type === 'boss') { sounds.stopBossMusic(); sounds.waveComplete(); grantBossLifeReward(s); }
               }
             }
           }
           s.enemies = s.enemies.filter(e => !e.dead);
-          s.laserBeamBlockY = beamStopY;
+          s.laserBeamEndX = beamOriginX + beamDirX * beamStopDistance;
+          s.laserBeamEndY = beamOriginY + beamDirY * beamStopDistance;
         }
         if (s.laserBeamTimer <= 0) {
           s.laserBeamActive = false;
@@ -2923,8 +3130,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           const rawGainH = Math.max(1.4, sourceH * 0.24);
           const sizeGainW = Math.min(rawGainW, maxGrowthPerConsume);
           const sizeGainH = Math.min(rawGainH, maxGrowthPerConsume);
-          e.w = Math.min((e.w || e._baseW || 94) + sizeGainW, 180);
-          e.h = Math.min((e.h || e._baseH || 94) + sizeGainH, 180);
+          // Write to target rather than instant-set so the per-frame lerp below
+          // produces a smooth visual grow instead of a jarring size pop.
+          e._targetW = Math.min((e._targetW || e.w || e._baseW || 94) + sizeGainW, 180);
+          e._targetH = Math.min((e._targetH || e.h || e._baseH || 94) + sizeGainH, 180);
 
           const currentMax = e.maxHp || e.hp || 1;
           const cap = e._isHell ? 1050 : 900;
@@ -2957,13 +3166,20 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         const patrolSpeed = (e._isHell ? 4.35 : 3.75) + Math.min((e._segmentCount || 0) * 0.08, 0.75);
         const visualHalf = Math.max((e.w || e._baseW || 94) * 0.9, (e.h || e._baseH || 94) * 0.9, 36) + Math.min(e._absorbedUnits || 0, 36) * 1.4;
         const margin = Math.max(20, visualHalf + 6);
+        const hasConsumables = consumeCandidates.length > 0;
+        const foodMaxY = hasConsumables
+          ? consumeCandidates.reduce((best, candidate) => Math.max(best, candidate.y || 0), 0)
+          : H * 0.48;
+        const patrolBottomCap = hasConsumables
+          ? Math.min(H - margin, Math.max(margin + 70, foodMaxY + Math.max(80, margin * 0.45)))
+          : Math.min(H - margin, Math.max(margin + 60, H * 0.62));
         // Concentric inward spiral — starts at the perimeter, each completed lap tightens inward,
         // then resets to perimeter when the innermost ring is complete.
         const maxInset = Math.max(0, Math.min(W, H) * 0.5 - margin - 60);
         const insetStep = Math.max(30, Math.min(W, H) * 0.12);
         const buildLapRoute = (inset) => {
           const xl = inset, xr = W - inset;
-          const yt = inset, yb = Math.min(H - inset, H - margin);
+          const yt = inset, yb = Math.min(H - inset, patrolBottomCap);
           return [
             { x: xl, y: yt }, { x: W * 0.5, y: yt }, { x: xr, y: yt },
             { x: xr, y: (yt + yb) * 0.5 }, { x: xr, y: yb },
@@ -2973,6 +3189,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         if (!Number.isFinite(e._patrolVx) || !Number.isFinite(e._patrolVy)) { e._patrolVx = patrolSpeed; e._patrolVy = 0; }
         if (!Number.isInteger(e._patrolWaypointIndex)) e._patrolWaypointIndex = 0;
         if (e._patrolInset === undefined) e._patrolInset = 0;
+        if (!hasConsumables) {
+          // With nothing to eat, keep the route in upper/mid lanes instead of drifting to deep-bottom patrol.
+          e._patrolInset = 0;
+        }
 
         const isEnemyOnStageNow = e.x >= -80 && e.x <= W + 80 && e.y >= -80 && e.y <= H + 80;
         if (e._bitePauseFrames <= 0 && e._consumeCooldown <= 0 && isEnemyOnStageNow && consumeCandidates.length > 0) {
@@ -3068,6 +3288,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         if (Math.hypot(headingX, headingY) > 0.001) {
           e._angle = Math.atan2(headingY, headingX);
         }
+
+        // Smoothly lerp toward the target size set by applyGluttonGrowth.
+        if (e._targetW !== undefined) e.w = e.w + (e._targetW - e.w) * 0.04;
+        if (e._targetH !== undefined) e.h = e.h + (e._targetH - e.h) * 0.04;
 
         const segmentCount = e._segmentCount || 0;
         const gluttonBodySize = Math.max(e.w || 94, e.h || 94);
@@ -3359,6 +3583,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           b.vy *= -1;
           b.y = Math.max(1, b.y);
           bounced = true;
+        } else if (b.y >= H) {
+          b.vy *= -1;
+          b.y = Math.min(H - 1, b.y);
+          bounced = true;
         }
         if (bounced && !consumeBounceCharge(b)) {
           releaseBullet(s, b);
@@ -3571,7 +3799,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     // ── Tetris blocks ─────────────────────────────────────────
     s.blockSpawnTimer--;
     if (s.blockSpawnTimer <= 0) {
-      s.blocks.push(spawnBlock(W));
+      s.blocks.push(spawnBlock(W, s.wave));
       const blockSpeedMult = (difficultyConfigRef.current && difficultyConfigRef.current.blockSpeedMult) || 1;
       const blockSpawnMult = (difficultyConfigRef.current && difficultyConfigRef.current.blockSpawnMult) || (blockSpeedMult > 2 ? 2.2 : blockSpeedMult > 1 ? 1.6 : 1);
       s.blockSpawnTimer = Math.max(18, Math.round((160 - s.wave * 8) / (blockSpeedMult * blockSpawnMult)));
@@ -3703,6 +3931,21 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       return Math.abs(dx) < (enemy.w || 18) && Math.abs(dy) < (enemy.h || 18);
     };
 
+    const ricochetBounceFromEnemy = (bullet, enemy) => {
+      const dx = bullet.x - enemy.x;
+      const dy = bullet.y - enemy.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = dx / len;
+      const ny = dy / len;
+      const dot = bullet.vx * nx + bullet.vy * ny;
+      bullet.vx = bullet.vx - 2 * dot * nx;
+      bullet.vy = bullet.vy - 2 * dot * ny;
+      const pushOut = Math.max(enemy.w || 20, enemy.h || 20) + 8;
+      bullet.x = enemy.x + nx * pushOut;
+      bullet.y = enemy.y + ny * pushOut;
+      return consumeBounceCharge(bullet);
+    };
+
     s.bullets.forEach(b => {
       if (b.hit) return;
       s.enemies.forEach(e => {
@@ -3713,8 +3956,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           const shieldRadius = getBeholderShieldRadius(e);
           const distToBoss = Math.hypot(b.x - e.x, b.y - e.y);
           if (distToBoss < shieldRadius && distToBoss > Math.max(e.w, e.h)) {
-            b.hit = true;
-            spawnExplosion(s, b.x, b.y, '#ff6633', 5);
+            if (b.type === 'bounce' && (b.bouncesLeft || 0) > 0) {
+              const chargeLeft = ricochetBounceFromEnemy(b, e);
+              spawnExplosion(s, b.x, b.y, '#ff6633', 5);
+              if (!chargeLeft) b.hit = true;
+            } else {
+              b.hit = true;
+              spawnExplosion(s, b.x, b.y, '#ff6633', 5);
+            }
             return;
           }
         }
@@ -3722,7 +3971,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         // shield zone (~206px out), before they ever reach the boss body.
         if (e.type === 'boss' && (e.wave || 0) === 20 && e._armorBlocks?.length > 0) {
           if (consumePirateShieldPiece(s, e, b.x, b.y, getProjectileImpactColor(b.type))) {
-            b.hit = true;
+            if (b.type === 'bounce' && (b.bouncesLeft || 0) > 0) {
+              const chargeLeft = ricochetBounceFromEnemy(b, e);
+              spawnExplosion(s, b.x, b.y, getProjectileImpactColor(b.type), 4);
+              if (!chargeLeft) b.hit = true;
+            } else {
+              b.hit = true;
+            }
             return;
           }
         }
@@ -3736,7 +3991,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             b.piercedEnemies.push(e);
             if (!b.infinitePierce) b.pierceCount--;
             if (consumePirateShieldPiece(s, e, b.x, b.y, getProjectileImpactColor(b.type))) {
-              b.hit = true;
+              if (b.type === 'bounce' && (b.bouncesLeft || 0) > 0) {
+                const chargeLeft = ricochetBounceFromEnemy(b, e);
+                spawnExplosion(s, b.x, b.y, getProjectileImpactColor(b.type), 4);
+                if (!chargeLeft) b.hit = true;
+              } else {
+                b.hit = true;
+              }
               return;
             }
             const hitDamage = (e.type === 'eater' && (e._growthStage === 0 || e._mini)) ? eaterTuning.miniHitDamage : 1;
@@ -3777,7 +4038,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             return; // don't mark b.hit, allow continued travel
           }
           if (consumePirateShieldPiece(s, e, b.x, b.y, getProjectileImpactColor(b.type))) {
-            b.hit = true;
+            if (b.type === 'bounce' && (b.bouncesLeft || 0) > 0) {
+              const chargeLeft = ricochetBounceFromEnemy(b, e);
+              spawnExplosion(s, b.x, b.y, getProjectileImpactColor(b.type), 4);
+              if (!chargeLeft) b.hit = true;
+            } else {
+              b.hit = true;
+            }
             return;
           }
           const hitDamage = (e.type === 'eater' && (e._growthStage === 0 || e._mini)) ? eaterTuning.miniHitDamage : 1;
@@ -3793,10 +4060,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             spawnExplosion(s, b.x, b.y, getProjectileImpactColor(b.type), 3);
           }
           if (b.type === 'bounce' && (b.bouncesLeft || 0) > 0) {
-            b.vy *= -1;
-            b.vx += (Math.random() - 0.5) * 1.5; // slight angle variation
-            b.y += Math.sign(b.vy) * 4;
-            consumeBounceCharge(b);
+            const chargeLeft = ricochetBounceFromEnemy(b, e);
+            b.vx += (Math.random() - 0.5) * 0.8;
+            if (!chargeLeft) b.hit = true;
           } else if (b.type !== 'missile') {
             b.hit = true;
           }
@@ -3880,10 +4146,9 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           if (b.type === 'photon') {
             if (!consumePhotonPierce(b)) b.hit = true;
           } else if (b.type === 'bounce' && (b.bouncesLeft || 0) > 0) {
-            b.vy *= -1;
-            b.vx += (Math.random() - 0.5) * 1.5;
-            b.y += Math.sign(b.vy) * 4;
-            consumeBounceCharge(b);
+            const chargeLeft = ricochetBounceFromEnemy(b, e);
+            b.vx += (Math.random() - 0.5) * 0.8;
+            if (!chargeLeft) b.hit = true;
           } else if (b.type !== 'missile') {
             b.hit = true;
           } else {
@@ -4411,6 +4676,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     s.bullets.forEach(pb => {
       if (pb.hit) return;
       s.enemyBullets.forEach((eb, idx) => {
+        if (pb.hit) return;
         const dx = pb.x - eb.x, dy = pb.y - eb.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (pb.type === 'photon') {
@@ -4418,6 +4684,28 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
             spawnExplosion(s, eb.x, eb.y, getProjectileImpactColor(pb.type), 3);
             destroyedEnemyBullets.add(idx);
           }
+        } else if (pb.type === 'bounce' && dist < 8) {
+          const canBounce = pb.bouncesLeft === Infinity || (pb.bouncesLeft || 0) > 0;
+          if (canBounce) {
+            if (dist > 0.0001) {
+              // Reflect away from the enemy bullet so it visibly ricochets.
+              const nx = dx / dist;
+              const ny = dy / dist;
+              const dot = pb.vx * nx + pb.vy * ny;
+              pb.vx = pb.vx - 2 * dot * nx;
+              pb.vy = pb.vy - 2 * dot * ny;
+            } else {
+              pb.vx *= -1;
+              pb.vy *= -1;
+            }
+            pb.x += pb.vx * 0.08;
+            pb.y += pb.vy * 0.08;
+            consumeBounceCharge(pb);
+          } else {
+            pb.hit = true;
+          }
+          spawnExplosion(s, (pb.x + eb.x) / 2, (pb.y + eb.y) / 2, getProjectileImpactColor(pb.type), 3);
+          destroyedEnemyBullets.add(idx);
         } else if (dist < 8) {
           spawnExplosion(s, (pb.x + eb.x) / 2, (pb.y + eb.y) / 2, getProjectileImpactColor(pb.type), 3);
           pb.hit = true;
@@ -4664,6 +4952,18 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     
     s.bullets.forEach(b => drawBullet(ctx, b, false));
     s.enemyBullets.forEach(b => drawBullet(ctx, b, true));
+    // Aim-mode HUD indicator
+    if (aimModeRef.current) {
+      ctx.save();
+      ctx.font = 'bold 13px monospace';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = 'rgba(0,240,255,0.85)';
+      ctx.shadowColor = '#00f0ff';
+      ctx.shadowBlur = 8;
+      ctx.fillText('\u2295 AIM', 10, 10);
+      ctx.restore();
+    }
     const supportUpgrades = shopUpgradesRef.current || {};
     drawPlayer(
       ctx,
@@ -4680,7 +4980,8 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       supportUpgrades.drone || 0,
       supportUpgrades.harvester || 0,
       s._harvesterUnit,
-      s._droneUnit
+      s._droneUnit,
+      aimModeRef.current
     );
 
     // Laser charge indicator + continuous beam draw
@@ -4694,23 +4995,29 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const beamCenterRgb = isPiercingDraw ? '255,255,255' : '255,200,255';
 
       if (s.laserBeamActive) {
-        const beamEndY = (s.laserBeamBlockY || 0);
+        const laserAim = aimModeRef.current
+          ? getAimTransformFromRotation(p.x, p.y, Number.isFinite(p._aimRotation) ? p._aimRotation : 0)
+          : getAimTransform(p.x, p.y, s.enemies, false);
+        const beamStartX = laserAim.noseX;
+        const beamStartY = laserAim.noseY;
+        const beamEndX = Number.isFinite(s.laserBeamEndX) ? s.laserBeamEndX : beamStartX + laserAim.dirX * (Math.hypot(W, H) + 120);
+        const beamEndY = Number.isFinite(s.laserBeamEndY) ? s.laserBeamEndY : beamStartY + laserAim.dirY * (Math.hypot(W, H) + 120);
         const beamAlpha = 0.7 + Math.sin(Date.now() * 0.03) * 0.3;
         ctx.save();
         // Outer glow
         ctx.shadowColor = beamColor; ctx.shadowBlur = 30;
         ctx.strokeStyle = `rgba(${beamColorRgb},${beamAlpha * 0.4})`;
         ctx.lineWidth = beamW * 3;
-        ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, beamEndY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(beamStartX, beamStartY); ctx.lineTo(beamEndX, beamEndY); ctx.stroke();
         // Core beam
         ctx.shadowBlur = 20;
         ctx.strokeStyle = `rgba(${beamColorRgb},${beamAlpha})`;
         ctx.lineWidth = beamW;
-        ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, beamEndY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(beamStartX, beamStartY); ctx.lineTo(beamEndX, beamEndY); ctx.stroke();
         // Bright center
         ctx.strokeStyle = `rgba(${beamCenterRgb},${beamAlpha})`;
         ctx.lineWidth = beamW * 0.3;
-        ctx.beginPath(); ctx.moveTo(p.x, p.y - 18); ctx.lineTo(p.x, beamEndY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(beamStartX, beamStartY); ctx.lineTo(beamEndX, beamEndY); ctx.stroke();
 
         // Muzzle flare at beam origin
         if (s.laserFlareTimer > 0) {
@@ -4718,15 +5025,15 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           ctx.shadowColor = beamColor; ctx.shadowBlur = 40 * flarePct;
           ctx.fillStyle = `rgba(${beamColorRgb},${flarePct * 0.9})`;
           const flareR = beamW * 3 * flarePct;
-          ctx.beginPath(); ctx.arc(p.x, p.y - 18, flareR, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(beamStartX, beamStartY, flareR, 0, Math.PI * 2); ctx.fill();
           // Cross spokes
           ctx.strokeStyle = `rgba(${beamCenterRgb},${flarePct})`;
           ctx.lineWidth = 2;
           for (let fi = 0; fi < 4; fi++) {
             const fa = (fi / 4) * Math.PI * 2;
             ctx.beginPath();
-            ctx.moveTo(p.x + Math.cos(fa) * flareR * 0.4, p.y - 18 + Math.sin(fa) * flareR * 0.4);
-            ctx.lineTo(p.x + Math.cos(fa) * flareR * 1.6, p.y - 18 + Math.sin(fa) * flareR * 1.6);
+            ctx.moveTo(beamStartX + Math.cos(fa) * flareR * 0.4, beamStartY + Math.sin(fa) * flareR * 0.4);
+            ctx.lineTo(beamStartX + Math.cos(fa) * flareR * 1.6, beamStartY + Math.sin(fa) * flareR * 1.6);
             ctx.stroke();
           }
         }
@@ -4845,6 +5152,10 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       keysRef.current[e.key] = true;
       if (e.code) keysRef.current[e.code] = true;
       if (e.code === 'Space') e.preventDefault();
+      // Shift toggles aim-tracking mode for the player + super wingmen.
+      if ((e.key === 'Shift' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') && !e.repeat) {
+        aimModeRef.current = !aimModeRef.current;
+      }
     };
     const up = e => {
       keysRef.current[e.key] = false;

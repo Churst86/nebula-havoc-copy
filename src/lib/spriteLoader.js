@@ -94,7 +94,7 @@ const NEEDS_DARK_BG_REMOVAL = new Set([
 
 const SPRITE_NAME_ALIASES = {
   GluttonHead: ['GluttonChompingSpritesheet-table-162-240', 'GluttonChompingSpritesheet-table', 'GluttonHead'],
-  GluttonTail: ['GluttonTailSpritesheet-table-240-240', 'GluttonTailSpritesheet-table', 'GluttonTail'],
+  GluttonTail: ['GluttonTailv2SpriteSheet-table-240-240', 'GluttonTailSpritesheet-table-240-240', 'GluttonTailSpritesheet-table', 'GluttonTail'],
   GluttonBinder: ['GluttonBinderv2', 'GluttonBinder'],
   Eater: ['Eater', 'EaterEnemy'],
   EaterChomp: ['EaterChomp', 'Eater Chomp', 'EaterChomping', 'Eater_Chomp'],

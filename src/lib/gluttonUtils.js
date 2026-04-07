@@ -114,7 +114,7 @@ export function drawGlutton(ctx, e, t) {
     return Math.floor(((t / 95) + segmentIndex * 0.9) % gluttonFrameCount);
   };
   const tailFrame = tailFrameCount > 0
-    ? Math.floor((t / 90) % tailFrameCount)
+    ? Math.floor((t / 160) % tailFrameCount)
     : 0;
   const mainFacingAngle = (e._angle || 0) + headForwardOffset;
   const segmentPositions = Array.isArray(e._segmentPositions) ? e._segmentPositions : [];
@@ -129,17 +129,7 @@ export function drawGlutton(ctx, e, t) {
     ctx.restore();
   };
 
-  const drawConnectorTail = (x, y, angle, size, alpha = 0.9) => {
-    if (!gluttonTailSprite || tailFrameCount <= 0) return;
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(angle);
-    ctx.globalAlpha = alpha;
-    drawSpriteFrame(ctx, gluttonTailSprite, 240, 240, tailFrame, -size / 2, -size / 2, size, size);
-    ctx.restore();
-  };
-
-  const drawBinder = (ax, ay, bx, by) => {
+  const drawBinder = (ax, ay, bx, by, widthScale = 1) => {
     if (!gluttonBinderSprite) return;
     const dx = bx - ax;
     const dy = by - ay;
@@ -150,7 +140,7 @@ export function drawGlutton(ctx, e, t) {
     const mx = (ax + bx) / 2 - e.x;
     const my = (ay + by) / 2 - e.y;
     // Width matches the segment body; height stretches to fill the gap exactly.
-    const binderW = Math.max(28, spriteSize * 0.98);
+    const binderW = Math.max(28, spriteSize * 0.98) * widthScale;
     const binderH = dist * 1.45;
     ctx.save();
     ctx.translate(mx, my);
@@ -165,69 +155,44 @@ export function drawGlutton(ctx, e, t) {
     ctx.shadowColor = accentColor;
     ctx.shadowBlur = isMini ? 5 : 8;
 
-    const chainPoints = [{ x: e.x, y: e.y }];
-    for (let i = 0; i < segmentPositions.length; i += 1) {
-      const seg = segmentPositions[i];
-      if (!seg) continue;
-      chainPoints.push({ x: seg.x || e.x, y: seg.y || e.y });
-    }
-    if (tailPosition) {
-      chainPoints.push({ x: tailPosition.x || e.x, y: tailPosition.y || e.y });
-    }
-
-    // Draw tail sprite and old-style connectors beneath segments (background layer).
-    if (chainPoints.length > 1 && gluttonTailSprite && tailFrameCount > 0) {
-      for (let i = 0; i < chainPoints.length - 1; i += 1) {
-        const a = chainPoints[i];
-        const b = chainPoints[i + 1];
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const dist = Math.hypot(dx, dy);
-        const angle = Math.atan2(dy, dx);
-        const connectorStep = Math.max(18, spriteSize * 0.33);
-        const pieceCount = Math.max(1, Math.floor(dist / connectorStep));
-        const connectorSize = Math.max(20, spriteSize * 0.5);
-        for (let piece = 1; piece <= pieceCount; piece += 1) {
-          const mix = piece / (pieceCount + 1);
-          const cx = a.x + dx * mix - e.x;
-          const cy = a.y + dy * mix - e.y;
-          drawConnectorTail(cx, cy, angle + Math.PI / 2, connectorSize, 0.9);
-        }
-      }
-    }
-
     if (tailPosition && gluttonTailSprite && tailFrameCount > 0) {
-      const tailSize = spriteSize * 0.96;
+      const tailSize = spriteSize * 1.25;
       const lastSegment = segmentPositions.length > 0 ? segmentPositions[segmentPositions.length - 1] : null;
       const anchorX = lastSegment ? (lastSegment.x || e.x) : e.x;
       const anchorY = lastSegment ? (lastSegment.y || e.y) : e.y;
-      // Always aim the tail away from the last segment using actual chain geometry.
-      const tailDir = Math.atan2((tailPosition.y || e.y) - anchorY, (tailPosition.x || e.x) - anchorX);
-      // Push the tail farther out while preserving a connected base near the segment.
-      const tailPinDistance = Math.max(tailSize * 0.82, spriteSize * 0.62);
-      const tailX = anchorX + Math.cos(tailDir) * tailPinDistance;
-      const tailY = anchorY + Math.sin(tailDir) * tailPinDistance;
-      const tailBaseOffset = Math.max(tailSize * 0.38, spriteSize * 0.3);
-      const tailBaseX = tailX - Math.cos(tailDir) * tailBaseOffset;
-      const tailBaseY = tailY - Math.sin(tailDir) * tailBaseOffset;
-      const tailFacing = tailDir + Math.PI / 2 + Math.PI;
+      // tailPosition is the trail-sampled point one segment-gap behind the last segment —
+      // use it directly as the center of the tail sprite.
+      const tailX = tailPosition.x || e.x;
+      const tailY = tailPosition.y || e.y;
+
+      // Direction the tail points: away from the last segment.
+      const dxDir = tailX - anchorX;
+      const dyDir = tailY - anchorY;
+      const tailFacing = Math.atan2(dyDir, dxDir);
+
+      // Draw tail sprite beneath the binder.
       ctx.save();
       ctx.translate(tailX - e.x, tailY - e.y);
       ctx.rotate(tailFacing);
       ctx.globalAlpha = 1;
       ctx.shadowBlur = 10;
-      drawSpriteFrame(ctx, gluttonTailSprite, 240, 240, tailFrame, -tailSize / 2, -tailSize / 2, tailSize, tailSize);
+      drawSpriteFrame(
+        ctx,
+        gluttonTailSprite,
+        240,
+        240,
+        tailFrame,
+        -tailSize / 2,
+        -tailSize / 2,
+        tailSize,
+        tailSize
+      );
       ctx.restore();
 
-      // Tail binder sits above tail but below the last body segment.
-      const lastSegmentForTailBinder = segmentPositions.length > 0 ? segmentPositions[segmentPositions.length - 1] : null;
-      if (lastSegmentForTailBinder && gluttonBinderSprite) {
-        drawBinder(
-          lastSegmentForTailBinder.x || e.x,
-          lastSegmentForTailBinder.y || e.y,
-          tailBaseX,
-          tailBaseY
-        );
+      // Draw the single binder that bridges last segment → tail, on top of the tail.
+      // Narrower than body binders so the tail taper reads correctly.
+      if (lastSegment && gluttonBinderSprite) {
+        drawBinder(anchorX, anchorY, tailX, tailY, 0.75);
       }
     }
 

@@ -101,6 +101,7 @@ export default function Game() {
   const [showDocking, setShowDocking] = useState(false);
   const [dockingMode, setDockingMode] = useState('arriving');
   const [showShop, setShowShop] = useState(false);
+  const [pendingChallengerShop, setPendingChallengerShop] = useState(false);
   const [showBossMiniShop, setShowBossMiniShop] = useState(false);
   const [showLaunch, setShowLaunch] = useState(false);
   const [skipBossSignal, setSkipBossSignal] = useState(0);
@@ -285,6 +286,11 @@ export default function Game() {
 
   // Called by canvas when lives hit 0 or wave milestone reached
   const handleSetGameState = useCallback((state) => {
+    // Challenger mode shop routing (now handled after congratulations)
+    if (typeof state === 'object' && state.state === 'shop' && state.challengerMode) {
+      setShowShop(true);
+      return;
+    }
     if (state === 'continue') {
       const earned = Math.min(Math.floor(scoreRef.current / CONTINUE_SCORE_THRESHOLD), MAX_CONTINUES);
       setContinuesLeft(prev => {
@@ -311,6 +317,7 @@ export default function Game() {
             return updated;
           });
         }
+        setPendingChallengerShop(true);
         setGameState('congratulations');
       } else {
         setGameState('gameover');
@@ -383,7 +390,6 @@ export default function Game() {
       setIsPaused(false);
       setShowPauseOptions(false);
       setShowDocking(false);
-      setShowShop(false);
       setShowBossMiniShop(false);
       setSkipBossSignal(0);
       setLastDockingWave(-1);
@@ -399,8 +405,9 @@ export default function Game() {
       }, 'auto');
       lastAutoSaveWaveRef.current = nextWave;
 
-      setShowLaunch(true);
-      setLoadProgress(isSpritesLoaded() ? 1 : 0);
+      // Instead of launching directly, show Challenger shop first
+      setPendingChallengerShop(true);
+      setGameState('pendingChallengerShop');
     }
   }, [settings, handleSettingsChange, activePowerup, shopUpgrades, blockScore]);
 
@@ -754,6 +761,25 @@ export default function Game() {
         />
       )}
 
+      {/* Show Challenger shop after congratulations, before starting next wave */}
+      {pendingChallengerShop && (gameState === 'pendingChallengerShop' || gameState === 'congratulations') && (
+        <ShopScreen
+          blockScore={blockScore}
+          shopUpgrades={shopUpgrades}
+          onBuy={(upgradeId) => handleShopBuy(upgradeId, false)}
+          onReturn={() => {
+            setPendingChallengerShop(false);
+            setShowShop(false);
+            setShowDocking(false);
+            setShowPauseOptions(false);
+            setIsPaused(false);
+            setGameState('playing');
+          }}
+          nextWave={wave}
+          challengerMode={true}
+        />
+      )}
+
       {/* Docking scene → shop flow (after boss waves) */}
       {showDocking && !showShop && (
         <DockingScene
@@ -779,6 +805,7 @@ export default function Game() {
             setShowDocking(true);
           }}
           nextWave={wave}
+          challengerMode={typeof gameState === 'object' && gameState.challengerMode === true}
         />
       )}
 

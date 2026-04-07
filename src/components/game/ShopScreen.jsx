@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { UPGRADE_DEFS } from '../../lib/shopUpgrades';
 
 const OZMA_GREETING = "Hi, I'm Ozma. I can exchange your blocks for upgrades!";
+const OZMA_CHALLENGER = "Wow you're really something! The enemies will be much harder from here on out though. I've been working on something...";
 const SHOPKEEPER_URL = 'https://raw.githubusercontent.com/Churst86/Sprites/main/Shopkeeper.png';
 
 function UpgradeCard({ def, currentLevel, blockScore, onBuy }) {
@@ -94,7 +95,7 @@ function WeaponTierCard({ id, label, color, level, onChange }) {
   );
 }
 
-export default function ShopScreen({ blockScore, shopUpgrades, onBuy, onReturn, nextWave, showWeaponEditor = false, weaponLevels = {}, onWeaponLevelChange, coreUpgradeLevels = {}, onCoreUpgradeLevelChange, shopTitle = 'OZMA' }) {
+export default function ShopScreen({ blockScore, shopUpgrades, onBuy, onReturn, nextWave, showWeaponEditor = false, weaponLevels = {}, onWeaponLevelChange, coreUpgradeLevels = {}, onCoreUpgradeLevelChange, shopTitle = 'OZMA', challengerMode = false }) {
   const [showDialogue, setShowDialogue] = useState(true);
   const [displayedText, setDisplayedText] = useState('');
   const weaponDefs = [
@@ -106,26 +107,33 @@ export default function ShopScreen({ blockScore, shopUpgrades, onBuy, onReturn, 
     { id: 'reverse', label: 'Reverse', color: '#cc44ff' },
   ];
   const coreUpgradeDefs = [
+    { id: 'armor', label: 'Armor', color: '#4488ff' },
+    { id: 'repair', label: 'Auto Repair', color: '#44ffaa' },
     { id: 'speed', label: 'Speed', color: '#ff8800' },
     { id: 'rapidfire', label: 'Rapid Fire', color: '#ff4488' },
     { id: 'shield', label: 'Shield', color: '#00ccff' },
     { id: 'wingman', label: 'Wingman', color: '#44aaff' },
+    ...(challengerMode ? [
+      { id: 'atkDmg', label: 'Attack Damage', color: '#ff44cc' },
+      { id: 'atkSpd', label: 'Attack Speed', color: '#44e0ff' },
+    ] : [])
   ];
-  const classicShopDefs = UPGRADE_DEFS.filter(def => ['armor', 'repair', 'drone', 'harvester'].includes(def.id));
+  const classicShopDefs = UPGRADE_DEFS.filter(def => ['armor', 'repair', 'drone', 'harvester', 'atkDmg', 'atkSpd'].includes(def.id) ? challengerMode : ['armor', 'repair', 'drone', 'harvester'].includes(def.id));
 
   useEffect(() => {
     setDisplayedText('');
     let i = 0;
+    const msg = challengerMode ? OZMA_CHALLENGER : OZMA_GREETING;
     const t = setInterval(() => {
       i++;
-      setDisplayedText(OZMA_GREETING.slice(0, i));
-      if (i >= OZMA_GREETING.length) {
+      setDisplayedText(msg.slice(0, i));
+      if (i >= msg.length) {
         clearInterval(t);
         setTimeout(() => setShowDialogue(false), 2500);
       }
     }, 35);
     return () => clearInterval(t);
-  }, []);
+  }, [challengerMode]);
 
   return (
     <motion.div

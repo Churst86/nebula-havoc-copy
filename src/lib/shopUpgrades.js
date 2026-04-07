@@ -73,6 +73,24 @@ export const UPGRADE_DEFS = [
     maxLevel: 10,
     cost: (lvl) => (lvl + 1) * 380,
   },
+  {
+    id: 'atkDmg',
+    name: 'Attack Damage',
+    icon: '💥',
+    color: '#ff44cc',
+    description: (lvl) => `+${lvl}% to ALL weapon damage`,
+    maxLevel: 30,
+    cost: (lvl) => 400 + Math.floor(lvl * 1.18 * 120), // 400, 541, 682, ...
+  },
+  {
+    id: 'atkSpd',
+    name: 'Attack Speed',
+    icon: '⏩',
+    color: '#44e0ff',
+    description: (lvl) => `+${lvl}% to ALL fire rates`,
+    maxLevel: 30,
+    cost: (lvl) => 400 + Math.floor(lvl * 1.18 * 120),
+  },
 ];
 
 export function loadShopUpgrades() {
@@ -80,7 +98,7 @@ export function loadShopUpgrades() {
     const saved = localStorage.getItem('nebulaHavok_shopUpgrades');
     if (saved) return JSON.parse(saved);
   } catch {}
-  return { armor: 0, repair: 0, drone: 0, harvester: 0, speed: 0, rapidfire: 0, shield: 0, wingman: 0 };
+  return { armor: 0, repair: 0, drone: 0, harvester: 0, speed: 0, rapidfire: 0, shield: 0, wingman: 0, atkDmg: 0, atkSpd: 0 };
 }
 
 export function saveShopUpgrades(upgrades) {
