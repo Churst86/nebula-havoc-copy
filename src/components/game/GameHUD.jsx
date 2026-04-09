@@ -48,7 +48,7 @@ const SHOP_ICONS = {
   armor: '🛡', repair: '🔧', drone: '🤖', harvester: '⛏',
 };
 
-export default function GameHUD({ score, lives, maxLives, wave, liveFps = 0, activePowerup, continuesLeft, isPaused, onPauseToggle, onOpenOptions, blockScore, shopUpgrades, armorHp, autoFireEnabled = true, lastSaveAt, speedMultiplier = 1, speedControlsUnlocked = false, onSpeedMultiplierChange }) {
+export default function GameHUD({ score, lives, maxLives, wave, liveFps = 0, activePowerup, continuesLeft, isPaused, onPauseToggle, onOpenOptions, blockScore, shopUpgrades, armorHp, autoFireEnabled = true, lastSaveAt, speedMultiplier = 1, speedControlsUnlocked = false, onSpeedMultiplierChange, boss, targetEnemy, aimMode }) {
   const [showSaveFlash, setShowSaveFlash] = React.useState(false);
   const [saveFlashLabel, setSaveFlashLabel] = React.useState('AUTOSAVED');
   const powerups = activePowerup || {};
@@ -68,40 +68,112 @@ export default function GameHUD({ score, lives, maxLives, wave, liveFps = 0, act
     return () => window.clearTimeout(id);
   }, [lastSaveAt]);
 
+  // Stylized boss HP bar (always visible if boss exists)
+  const renderBossBar = () => {
+    if (!boss) return null;
+    const percent = boss.hp / boss.maxHp;
+    const color = '#ff0066';
+    return (
+      <div className="absolute left-1/2 top-4 -translate-x-1/2 z-30 flex flex-col items-center" style={{ minWidth: 260, maxWidth: 420 }}>
+        <div className="flex items-center gap-2 mb-1.5">
+          <span style={{ fontSize: 22, color, filter: 'drop-shadow(0 0 6px #000)' }}>☠️</span>
+          <span className="font-black tracking-widest text-lg md:text-2xl" style={{ color, textShadow: '0 2px 8px #000, 0 0 2px #fff' }}>
+            {boss.name ? boss.name.toUpperCase() : (boss.label || 'BOSS').toUpperCase()}
+          </span>
+          <span style={{ fontSize: 22, color, filter: 'drop-shadow(0 0 6px #000)' }}>☠️</span>
+        </div>
+        <div className="relative w-full h-6 rounded-lg overflow-hidden border-2 border-pink-700 bg-[#1a1a2e]" style={{ boxShadow: '0 0 16px #ff0066cc' }}>
+          <div className="absolute left-0 top-0 h-full rounded-lg transition-all duration-300" style={{ width: `${Math.max(0, Math.min(1, percent)) * 100}%`, background: 'linear-gradient(90deg, #ff0066 60%, #ff4400 100%)', boxShadow: '0 0 12px #ff0066' }} />
+          <div className="absolute left-0 top-0 w-full h-full flex items-center justify-center">
+            <span className="font-bold text-xs md:text-base text-white drop-shadow" style={{ letterSpacing: 2 }}>{Math.ceil(boss.hp)}/{Math.ceil(boss.maxHp)} HP</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Targeted enemy HP bar (face-target mode only, only if no boss)
+  const renderTargetEnemyBar = () => {
+    if (boss) return null;
+    if (!aimMode || !targetEnemy) return null;
+    const percent = targetEnemy.hp / targetEnemy.maxHp;
+    return (
+      <div className="absolute left-1/2 top-4 z-25 -translate-x-1/2 flex flex-col items-center" style={{ minWidth: 180, maxWidth: 320 }}>
+        <div className="font-bold text-xs md:text-base tracking-widest mb-1 text-yellow-900 drop-shadow" style={{ textShadow: '0 1px 4px #fff' }}>
+          {targetEnemy.name ? targetEnemy.name.toUpperCase() : (targetEnemy.label || 'ENEMY').toUpperCase()}
+        </div>
+        <div className="relative w-full h-5 rounded-md overflow-hidden border border-yellow-400 bg-[#fffbe6]" style={{ boxShadow: '0 0 8px #ffe06688' }}>
+          <div className="absolute left-0 top-0 h-full rounded-md transition-all duration-200" style={{ width: `${Math.max(0, Math.min(1, percent)) * 100}%`, background: 'linear-gradient(90deg, #ffe066 60%, #ffbb00 100%)', boxShadow: '0 0 6px #ffe066' }} />
+          <div className="absolute left-0 top-0 w-full h-full flex items-center justify-center">
+            <span className="font-bold text-[11px] md:text-sm text-yellow-900" style={{ letterSpacing: 1, textShadow: '0 1px 4px #fff' }}>{Math.ceil(targetEnemy.hp)}/{Math.ceil(targetEnemy.maxHp)} HP</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Only render one HP bar at the top: boss takes precedence
   return (
     <div className="absolute inset-0 z-20 pointer-events-none">
-      {/* Wave + Shield + Star — center top */}
-      <div className="flex flex-col items-center gap-1 pt-10 md:pt-12">
-        <div className="text-xs md:text-sm font-bold uppercase tracking-[0.3em] text-muted-foreground">
+      {boss ? renderBossBar() : renderTargetEnemyBar()}
+      {/* Stack: Boss bar (if any), enemy bar (if any), wave, then powerups/fps row */}
+      <div className="flex flex-col items-center gap-0 pt-24 md:pt-28">
+        {/* Wave counter right below enemy HP bar */}
+        <div className="text-xs md:text-sm font-bold uppercase tracking-[0.3em] text-muted-foreground mt-1 mb-1">
           Wave {wave}
         </div>
-        <div className="flex flex-wrap justify-center gap-1">
-          <div className="text-xs font-bold px-2 py-0.5 rounded-full"
-            style={{ color: '#8ad4ff', border: '1px solid #3a6fa3', background: '#11253b99' }}>
-            FPS {liveFps || 0}
-          </div>
-          <div className="text-xs font-bold px-2 py-0.5 rounded-full"
-            style={{
-              color: autoFireEnabled ? '#00f0ff' : '#ffc14d',
-              border: `1px solid ${autoFireEnabled ? '#00f0ff' : '#ffc14d'}`,
-              background: autoFireEnabled ? '#00f0ff22' : '#ffc14d22',
-            }}>
-            AUTO FIRE {autoFireEnabled ? 'ON' : 'OFF'}
-          </div>
-          {starInvincible && (
-            <div className="text-xs font-bold px-2 py-0.5 rounded-full animate-pulse"
-              style={{ color: '#fff', border: '1px solid #fff', background: 'rgba(255,255,255,0.15)' }}>
-              ★ INVINCIBLE
+        {/* Powerups/FPS/Status row, tightly stacked, deduplicated, no overlap */}
+        {(() => {
+          // Defensive: only render each status badge once
+          const statusBadges = [];
+          let rendered = { fps: false, autofire: false, invincible: false, shield: false };
+          if (!rendered.fps) {
+            statusBadges.push(
+              <div key="fps" className="text-xs font-bold px-2 py-0.5 rounded-full min-w-[70px] flex-shrink-0 text-center"
+                style={{ color: '#8ad4ff', border: '1px solid #3a6fa3', background: '#11253b99' }}>
+                FPS {liveFps || 0}
+              </div>
+            );
+            rendered.fps = true;
+          }
+          if (!rendered.autofire) {
+            statusBadges.push(
+              <div key="autofire" className="text-xs font-bold px-2 py-0.5 rounded-full min-w-[90px] flex-shrink-0 text-center"
+                style={{
+                  color: autoFireEnabled ? '#00f0ff' : '#ffc14d',
+                  border: `1px solid ${autoFireEnabled ? '#00f0ff' : '#ffc14d'}`,
+                  background: autoFireEnabled ? '#00f0ff22' : '#ffc14d22',
+                }}>
+                AUTO FIRE {autoFireEnabled ? 'ON' : 'OFF'}
+              </div>
+            );
+            rendered.autofire = true;
+          }
+          if (starInvincible && !rendered.invincible) {
+            statusBadges.push(
+              <div key="invincible" className="text-xs font-bold px-2 py-0.5 rounded-full min-w-[90px] flex-shrink-0 text-center animate-pulse"
+                style={{ color: '#fff', border: '1px solid #fff', background: 'rgba(255,255,255,0.15)' }}>
+                ★ INVINCIBLE
+              </div>
+            );
+            rendered.invincible = true;
+          }
+          if (shieldHp > 0 && !rendered.shield) {
+            statusBadges.push(
+              <div key="shield" className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full min-w-[70px] flex-shrink-0 text-center"
+                style={{ color: '#00ccff', border: '1px solid #00ccff', background: '#00ccff22' }}>
+                <Shield className="w-3 h-3" />
+                {shieldHp <= 5 ? '●'.repeat(shieldHp) : `×${shieldHp}`}
+              </div>
+            );
+            rendered.shield = true;
+          }
+          return (
+            <div className="flex flex-wrap justify-center gap-2 mb-0.5">
+              {statusBadges}
             </div>
-          )}
-          {shieldHp > 0 && (
-            <div className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full"
-              style={{ color: '#00ccff', border: '1px solid #00ccff', background: '#00ccff22' }}>
-              <Shield className="w-3 h-3" />
-              {shieldHp <= 5 ? '●'.repeat(shieldHp) : `×${shieldHp}`}
-            </div>
-          )}
-        </div>
+          );
+        })()}
       </div>
 
       {/* Score — bottom-left */}

@@ -169,7 +169,55 @@ function normalizePowerups(powerups = {}) {
   return normalized;
 }
 
-export default function GameCanvas({ gameState, setGameState, onScoreChange, onBlockScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, onBossWarning, onFpsChange, continuesLeft, onContinueUsed, isPaused, difficultyConfig, gameSpeed = 30, speedBoostMultiplier = 1, autoFireEnabled = true, carryOverPowerups = null, livePowerups = null, startWave = 1, shopUpgrades = {}, bossMode = false, skipBossSignal = 0 }) {
+export default function GameCanvas({ gameState, setGameState, onScoreChange, onBlockScoreChange, onLivesChange, onMaxLivesChange, onWaveChange, onPowerupChange, onBossWarning, onFpsChange, continuesLeft, onContinueUsed, isPaused, difficultyConfig, gameSpeed = 30, speedBoostMultiplier = 1, autoFireEnabled = true, carryOverPowerups = null, livePowerups = null, startWave = 1, shopUpgrades = {}, bossMode = false, skipBossSignal = 0, setBoss, setTargetEnemy, setAimMode }) {
+    // --- Super Eater Boss Mechanic ---
+    function tryTriggerSuperEater(s) {
+      if (s.superEaterSpawned) return;
+      // Find all fully grown eaters (growthStage >= 2, not dead, not mini)
+      const grownEaters = s.enemies.filter(e => e && e.type === 'eater' && !e.dead && !e._mini && e._growthStage >= 2);
+      if (grownEaters.length < 5) return;
+      // Check for a cluster of 5 within 180px of each other (centroid distance)
+      for (let i = 0; i <= grownEaters.length - 5; i++) {
+        const group = [grownEaters[i]];
+        for (let j = 0; j < grownEaters.length && group.length < 5; j++) {
+          if (i === j) continue;
+          const dist = Math.hypot(grownEaters[i].x - grownEaters[j].x, grownEaters[i].y - grownEaters[j].y);
+          if (dist < 180) group.push(grownEaters[j]);
+        }
+        if (group.length === 5) {
+          // Merge: remove all 5, compute centroid, sum HP
+          const centroid = group.reduce((acc, e) => ({ x: acc.x + e.x, y: acc.y + e.y }), { x: 0, y: 0 });
+          centroid.x /= 5; centroid.y /= 5;
+          const totalHp = group.reduce((acc, e) => acc + (e.hp || 0), 0);
+          const totalMaxHp = group.reduce((acc, e) => acc + (e.maxHp || 0), 0);
+          // Remove merged eaters
+          s.enemies = s.enemies.filter(e => !group.includes(e));
+          // Spawn Super Eater
+          s.enemies.push({
+            type: 'superEater',
+            x: centroid.x,
+            y: centroid.y,
+            w: 220,
+            h: 220,
+            hp: totalHp * 1.5,
+            maxHp: totalMaxHp * 1.5,
+            vx: (Math.random() - 0.5) * 3.2, // much faster than normal eater
+            vy: (Math.random() - 0.5) * 3.2,
+            boss: true,
+            _superEater: true,
+            _regenTimer: 0,
+            _fireTimer: 0,
+            _mergeAnim: 1,
+          });
+          s.superEaterSpawned = true;
+          // Trigger boss warning
+          if (onBossWarningRef.current) onBossWarningRef.current({ name: 'Super Eater', color: '#ff00ff' });
+          // Play boss music
+          if (sounds && sounds.startBossMusic) sounds.startBossMusic();
+          break;
+        }
+      }
+    }
   const canvasRef = useRef(null);
   const keysRef = useRef({});
   const stateRef = useRef(initState());
@@ -198,6 +246,23 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     // Load sprites from GitHub
     loadSprites();
   }, []);
+
+  // Track boss, targetEnemy, and aimMode for HUD
+  useEffect(() => {
+    // Find boss (enemy with type 'boss')
+    const s = stateRef.current;
+    const boss = (s.enemies || []).find(e => e && e.type === 'boss' && !e.dead);
+    if (setBoss) setBoss(boss || null);
+
+    // Find target enemy (nearest to player if aimMode)
+    let targetEnemy = null;
+    if (s.player && s.enemies && aimModeRef.current) {
+      targetEnemy = getNearestAimTarget(s.player.x, s.player.y, s.enemies);
+    }
+    if (setTargetEnemy) setTargetEnemy(targetEnemy || null);
+
+    if (setAimMode) setAimMode(!!aimModeRef.current);
+  });
 
   useEffect(() => { gameSpeedRef.current = gameSpeed; }, [gameSpeed]);
   useEffect(() => { speedBoostMultiplierRef.current = Math.max(1, Math.min(3, Number(speedBoostMultiplier) || 1)); }, [speedBoostMultiplier]);
@@ -365,52 +430,52 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const py = boss.y + randomBetween(44, 60);
       if (elite) {
         const ehp = Math.max(2, Math.round(3 * hpMult));
-        s.enemies.push({
-          type: 'elite',
-          x: px,
-          y: py,
-          w: 22, h: 22,
-          hp: ehp,
-          maxHp: ehp,
-          vx: randomBetween(-0.9, 0.9),
-          vy: randomBetween(0.7, 1.5),
-          fireTimer: randomBetween(50, 90),
-        });
-      } else {
-        const bhp = Math.max(1, Math.round(1 * hpMult));
-        s.enemies.push({
-          type: 'basic',
-          x: px,
-          y: py,
-          w: 18, h: 18,
-          hp: bhp,
-          maxHp: bhp,
-          vx: randomBetween(-0.8, 0.8),
-          vy: randomBetween(0.8, 1.7),
-          fireTimer: randomBetween(60, 110),
-        });
+        if (isBossWave) {
+          enemies.push(...createBossWaveEnemies(W, wave, hpMult));
+
+          sounds.startBossMusic();
+          s.dropperSpawnTimer = DROPPER_SPAWN_INTERVAL;
+          s.starDropperTimer = STAR_SPAWN_INTERVAL;
+          s.dropperRotateTimer = DROPPER_ROTATE_FRAMES;
+          s.enemies = enemies;
+          return;
+        }
+
+        sounds.startWaveMusic(wave);
+
+        const count = 5 + wave * 2;
+        for (let i = 0; i < count; i++) {
+          const isElite = wave > 3 && Math.random() < 0.25;
+          const baseHp = isElite ? 3 : 1;
+          const hp = Math.round(baseHp * hpMult);
+          enemies.push({
+            type: isElite ? 'elite' : 'basic',
+            x: randomBetween(40, W - 40),
+            y: -30 - i * 28,
+            w: isElite ? 22 : 18, h: isElite ? 22 : 18,
+            hp, maxHp: hp,
+            vx: randomBetween(-0.5, 0.5) * (1 + wave * 0.04),
+            vy: (0.35 + wave * 0.06) * (Math.random() * 0.4 + 0.7),
+            fireTimer: randomBetween(60, 120),
+          });
+        }
+
+        const isHell = cfg.maxWave === 100;
+        if (wave > 10 && wave % 2 === 0) {
+          spawnEater(enemies, W, wave, hpMult);
+          const shouldSpawnExtraEater =
+            (wave >= 18 && wave % 4 === 0)
+            || (isHell && wave >= 30 && Math.random() < 0.25);
+          if (shouldSpawnExtraEater) {
+            spawnEater(enemies, W, wave, hpMult);
+          }
+        }
+        if (wave > 18 && (wave % 3 === 0 || (isHell && wave > 35 && wave % 2 === 0))) {
+          spawnGlutton(enemies, W, wave, hpMult, isHell);
+        }
+
+        s.enemies = enemies;
       }
-    }
-  }
-
-  function spawnMiniEaters(W, s, parent) {
-    const totalEaters = s.enemies.filter((enemy) => enemy && !enemy.dead && enemy.type === 'eater').length;
-    const blockFoodCells = s.blocks.reduce((total, block) => {
-      if (!block || block.dead || block.invulnerable) return total;
-      return total + getBlockCells(block).length;
-    }, 0);
-    const availableFoodUnits = blockFoodCells + s.piledCells.length;
-    // Dynamic population gate: food on screen controls how many eaters can exist.
-    const remainingFoodSlots = Math.max(0, Math.floor(availableFoodUnits * 0.9) - totalEaters);
-    const spawnCount = Math.min(4, remainingFoodSlots);
-    if (spawnCount <= 0) return 0;
-
-    let created = 0;
-    for (let i = 0; i < spawnCount; i++) {
-      const miniHp = Math.max(6, Math.floor((parent.maxHp || parent.hp || 10) * 0.62));
-      const spreadBase = (Math.PI / 2) + ((i - (spawnCount - 1) / 2) * 2.2);
-      const scatterAngle = spreadBase + randomBetween(-0.3, 0.3);
-      const spawnRadius = 110 + i * 18;
       const scatterTimer = 58;
       const scatterDamp = 0.985;
       const targetTravel = Math.max(260, Math.min(W * 0.52, 680));
@@ -553,6 +618,7 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     if (spreadTier === 0) return;
     if (s.spreadReloadTimer > 0) return;
     if (s.spreadShotsLeft <= 0) return;
+    // For laser, always use the smoothly swept _aimRotation in face-target mode
     const aim = aimModeRef.current
       ? getAimTransformFromRotation(p.x, p.y, Number.isFinite(p._aimRotation) ? p._aimRotation : 0)
       : getAimTransform(p.x, p.y, s.enemies, false);
@@ -562,7 +628,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     const pelletCount = Math.min(11, 1 + spreadTier);
     const spreadDeg = Math.min(150, 16 + spreadTier * 10);
     let { atkDmgMult } = getGlobalAttackBonuses(shopUpgradesRef.current);
-    if (spreadTier >= 10) atkDmgMult *= 2;
+    // New scaling: +1 damage at odd levels (3,5,7,9), special effect at even
+    let bonusDmg = 0;
+    if (spreadTier >= 3) bonusDmg += 1;
+    if (spreadTier >= 5) bonusDmg += 1;
+    if (spreadTier >= 7) bonusDmg += 1;
+    if (spreadTier >= 9) bonusDmg += 1;
+    atkDmgMult *= (1 + bonusDmg);
+    if (spreadTier >= 10) atkDmgMult *= 2; // Keep tier 10 double damage
     for (let i = 0; i < pelletCount; i++) {
       const t = pelletCount === 1 ? 0.5 : i / (pelletCount - 1);
       const angle = baseAngle - (spreadDeg * Math.PI / 180) / 2 + (spreadDeg * Math.PI / 180) * t;
@@ -600,7 +673,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       const photonSpeed = isTier10Photon ? -12 : -11;
       const photonSize = isTier10Photon ? 18 : 10;
       let photonDmgMult = 1;
-      if (photonTier >= 10) photonDmgMult = 2;
+      // New scaling: +1 damage at odd levels (3,5,7,9)
+      let bonusDmg = 0;
+      if (photonTier >= 3) bonusDmg += 1;
+      if (photonTier >= 5) bonusDmg += 1;
+      if (photonTier >= 7) bonusDmg += 1;
+      if (photonTier >= 9) bonusDmg += 1;
+      photonDmgMult *= (1 + bonusDmg);
+      if (photonTier >= 10) photonDmgMult = 2 * (1 + bonusDmg); // Tier 10: double
       for (let i = 0; i < shotOffsets.length; i++) {
         const xOffset = shotOffsets[i];
         acquireBullet(s, {
@@ -626,7 +706,14 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       s.spiralAngle += 0.1;
       const bounceShotCount = bounceTier >= 10 ? 3 : bounceTier >= 6 ? 2 : 1;
       let bounceDmgMult = 1;
-      if (bounceTier >= 10) bounceDmgMult = 2;
+      // New scaling: +1 damage at odd levels (3,5,7,9)
+      let bonusDmg = 0;
+      if (bounceTier >= 3) bonusDmg += 1;
+      if (bounceTier >= 5) bonusDmg += 1;
+      if (bounceTier >= 7) bonusDmg += 1;
+      if (bounceTier >= 9) bonusDmg += 1;
+      bounceDmgMult *= (1 + bonusDmg);
+      if (bounceTier >= 10) bounceDmgMult = 2 * (1 + bonusDmg);
       for (let i = 0; i < bounceShotCount; i++) {
         const lane = i - (bounceShotCount - 1) / 2;
         const lateralOffset = side * 8 + lane * 9;
@@ -676,6 +763,13 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     const homingDelay = 12 + Math.floor(Math.abs(hardpoint) / 8) + row * 2;
 
     let { atkDmgMult } = getGlobalAttackBonuses(shopUpgradesRef.current);
+    // New scaling: +1 damage at odd levels (3,5,7,9)
+    let bonusDmg = 0;
+    if (missileTier >= 3) bonusDmg += 1;
+    if (missileTier >= 5) bonusDmg += 1;
+    if (missileTier >= 7) bonusDmg += 1;
+    if (missileTier >= 9) bonusDmg += 1;
+    atkDmgMult *= (1 + bonusDmg);
     if (missileTier >= 10) atkDmgMult *= 2;
     acquireBullet(s, {
       x: aim.noseX + aim.rightX * hardpoint - aim.dirX * yOffset,
@@ -1558,6 +1652,35 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(isCharging ? '!!!' : damaged ? '>_<' : '^_^', 0, 1);
       }
+    } else if (e.type === 'superEater') {
+      // Super Eater boss rendering
+      const t = Date.now();
+      const superEaterSprite = getSprite('SuperEater');
+      const useSpriteRender = isSpritesLoaded() && hasDrawableSprite(superEaterSprite);
+      ctx.save();
+      ctx.shadowColor = '#ff00ff';
+      ctx.shadowBlur = 48;
+      ctx.globalAlpha = 0.97 + Math.sin(t * 0.004) * 0.03;
+      ctx.scale(1.35, 1.35);
+      if (useSpriteRender) {
+        drawSprite(ctx, superEaterSprite, -135, -135, 270, 270);
+      } else {
+        // Fallback: magenta circle
+        ctx.fillStyle = '#ff00ff';
+        ctx.beginPath();
+        ctx.arc(0, 0, 120, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // Boss health bar
+      const bw = 180, bh = 16;
+      ctx.restore();
+      ctx.save();
+      ctx.translate(0, -160);
+      ctx.fillStyle = '#222'; ctx.fillRect(-bw / 2, 0, bw, bh);
+      ctx.fillStyle = e.hp / e.maxHp > 0.5 ? '#ff00ff' : e.hp / e.maxHp > 0.25 ? '#ffaa00' : '#ff2200';
+      ctx.fillRect(-bw / 2, 0, bw * (e.hp / e.maxHp), bh);
+      ctx.strokeStyle = '#ff00ff'; ctx.lineWidth = 2; ctx.strokeRect(-bw / 2, 0, bw, bh);
+      ctx.restore();
     } else if (e.type === 'eater') {
       const t = Date.now();
       const stage = e._growthStage === undefined ? (e._mini ? 0 : 1) : e._growthStage;
@@ -1600,6 +1723,16 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
           drawSprite(ctx, eaterChompSprite, -135, -135, 270, 270);
           ctx.restore();
         }
+        // Draw enemy name above health bar
+        ctx.save();
+        ctx.translate(0, -110);
+        ctx.font = 'bold 13px monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillStyle = eaterColor;
+        let name = e.name || (isMini ? 'Mini Eater' : stage >= 2 ? 'Eater' : 'Eater');
+        ctx.fillText(name, 0, 0);
+        ctx.restore();
       } else {
         const pulse = 0.7 + Math.sin(t * 0.012) * 0.3;
         ctx.scale(baseScale, baseScale);
@@ -1848,6 +1981,15 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     } else {
       const c = colors[type] || '#fff';
       ctx.shadowColor = c; ctx.shadowBlur = 16;
+          // Draw enemy name above health bar
+          ctx.save();
+          ctx.translate(0, -38);
+          ctx.font = 'bold 13px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillStyle = '#d9ffd6';
+          ctx.fillText('Mini Eater', 0, 0);
+          ctx.restore();
       // Plain glowing circle — no spikes (distinct from the spiky dropper enemy)
       ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2);
       ctx.fillStyle = c + '33'; ctx.fill();
@@ -1876,6 +2018,15 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
       ctx.fillStyle = pt.color;
       ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.r, 0, Math.PI * 2); ctx.fill();
     }
+          // Draw enemy name above health bar
+          ctx.save();
+          ctx.translate(0, -38);
+          ctx.font = 'bold 13px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillStyle = '#d9ffd6';
+          ctx.fillText('Mini Eater', 0, 0);
+          ctx.restore();
     ctx.restore();
   }
 
@@ -1939,6 +2090,67 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
 
   // ── Main loop ────────────────────────────────────────────────
   const loop = useCallback((timestamp, scheduleNext = true, ignoreThrottle = false, chainedStepsRemaining = 0) => {
+    // Super Eater trigger check (before enemy update)
+    tryTriggerSuperEater(stateRef.current);
+    // Super Eater eats other eaters for health gain
+    for (const enemy of stateRef.current.enemies) {
+      if (enemy && enemy.type === 'superEater') {
+        for (let j = stateRef.current.enemies.length - 1; j >= 0; j--) {
+          const e = stateRef.current.enemies[j];
+          if (e && e !== enemy && e.type === 'eater' && !e.dead) {
+            const dist = Math.hypot(enemy.x - e.x, enemy.y - e.y);
+            if (dist < 120) {
+              enemy.hp = Math.min(enemy.hp + (e.hp || 0), enemy.maxHp);
+              stateRef.current.enemies.splice(j, 1);
+            }
+          }
+        }
+        // Super Eater regenerates on eating a block
+        for (let k = stateRef.current.blocks.length - 1; k >= 0; k--) {
+          const block = stateRef.current.blocks[k];
+          if (!block.dead) {
+            const blockCells = getBlockCells(block);
+            for (let cell of blockCells) {
+              const dist = Math.hypot(enemy.x - (cell.x + 9), enemy.y - (cell.y + 9));
+              if (dist < 60) {
+                enemy.hp = Math.min(enemy.hp + Math.max(2, Math.round(block.maxHp * 0.5)), enemy.maxHp);
+                block.dead = true;
+                break;
+              }
+            }
+          }
+        }
+        // Super Eater fires every shot type (not rapid fire)
+        if (!enemy._fireTimer) enemy._fireTimer = 0;
+        enemy._fireTimer++;
+        if (enemy._fireTimer > 90) { // fire every 1.5s
+          const px = stateRef.current.player?.x || enemy.x;
+          const py = stateRef.current.player?.y || enemy.y;
+          const angleToPlayer = Math.atan2(py - enemy.y, px - enemy.x);
+          const fireTypes = [
+            { type: 'spreadPellet', color: '#ff9900', speed: 6.5 },
+            { type: 'laser', color: '#ff2200', speed: 8 },
+            { type: 'photon', color: '#44ffaa', speed: 7 },
+            { type: 'bounce', color: '#aaff00', speed: 6 },
+            { type: 'missile', color: '#ff00ff', speed: 5 },
+            { type: 'reverse', color: '#ffffff', speed: 7 },
+          ];
+          for (let i = 0; i < fireTypes.length; i++) {
+            const t = fireTypes[i];
+            stateRef.current.enemyBullets.push({
+              type: t.type,
+              x: enemy.x,
+              y: enemy.y,
+              vx: Math.cos(angleToPlayer + i * 0.18 - 0.45) * t.speed,
+              vy: Math.sin(angleToPlayer + i * 0.18 - 0.45) * t.speed,
+              color: t.color,
+              fromSuperEater: true,
+            });
+          }
+          enemy._fireTimer = 0;
+        }
+      }
+    }
     const fpsTracker = fpsTrackerRef.current;
     if (scheduleNext) {
       if (!fpsTracker.lastTs) fpsTracker.lastTs = timestamp;
@@ -5064,8 +5276,16 @@ export default function GameCanvas({ gameState, setGameState, onScoreChange, onB
     }
 
     // Boss HUD — HP bars and names for actual bosses only (not eaters/gluttons)
-    const activeBosses = s.enemies.filter(e => e && !e.dead && e.type === 'boss');
-    if (activeBosses.length > 0) drawBossHUD(ctx, W, activeBosses);
+    // Include Super Eater as a boss for HUD
+    const activeBosses = s.enemies.filter(e => e && !e.dead && (e.type === 'boss' || e.type === 'superEater'));
+    if (activeBosses.length > 0) {
+      // Patch in a display name for Super Eater
+      activeBosses.forEach(boss => {
+        if (boss.type === 'superEater') boss.tier = 99; // Use a unique tier to avoid default names
+        if (boss.type === 'superEater') boss._variantProfile = { label: 'Super Eater', hudColor: '#ff00ff' };
+      });
+      drawBossHUD(ctx, W, activeBosses);
+    }
 
     if (chainedStepsRemaining > 0) {
       loop(timestamp, false, true, chainedStepsRemaining - 1);

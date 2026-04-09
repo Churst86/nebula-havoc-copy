@@ -54,6 +54,7 @@ const SPRITE_NAMES = [
   'GluttonBinder',
   'Eater',
   'EaterChomp',
+  'SuperEater',
   'Mine',
   'MineExplosion',
   'Wingman',

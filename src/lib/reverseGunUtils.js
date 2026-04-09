@@ -24,7 +24,13 @@ export function fireReverseShot(s, aim) {
     const atkDmg = s.shopUpgradesRef.current.atkDmg || 0;
     atkDmgMult = 1 + atkDmg * 0.01;
   }
-  // Double damage for level 10 reverse
+  // New scaling: +1 damage at odd levels (3,5,7,9)
+  let bonusDmg = 0;
+  if (reverseTier >= 3) bonusDmg += 1;
+  if (reverseTier >= 5) bonusDmg += 1;
+  if (reverseTier >= 7) bonusDmg += 1;
+  if (reverseTier >= 9) bonusDmg += 1;
+  atkDmgMult *= (1 + bonusDmg);
   if (reverseTier >= 10) atkDmgMult *= 2;
   for (let i = 0; i < pelletCount; i++) {
     const t = pelletCount === 1 ? 0.5 : i / (pelletCount - 1);

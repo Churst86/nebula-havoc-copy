@@ -135,6 +135,32 @@ export default function OptionsScreen({ settings, onSettingsChange, onBack, game
       setCodeInput('');
       return;
     }
+    // Disable all cheats if NOCHEATING is entered
+    if (normalized === 'NOCHEATING') {
+      const next = {
+        ...settings,
+        hudSpeedBoostsUnlocked: false,
+        bossModeUnlocked: false,
+        // Add future cheat flags here, set to false
+      };
+      onSettingsChange(next);
+      saveSettings(next);
+      setCodeStatus('All cheats disabled. Back to fair play!');
+      setCodeInput('');
+      return;
+    }
+    // Toggle HUD with NOHUD code
+    if (normalized === 'NOHUD') {
+      const next = {
+        ...settings,
+        hudHidden: !settings.hudHidden,
+      };
+      onSettingsChange(next);
+      saveSettings(next);
+      setCodeStatus(next.hudHidden ? 'HUD is now hidden.' : 'HUD is now visible.');
+      setCodeInput('');
+      return;
+    }
     setCodeStatus('Code not recognized.');
   }
 

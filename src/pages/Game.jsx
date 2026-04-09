@@ -80,6 +80,10 @@ function normalizePowerups(powerups = {}) {
 }
 
 export default function Game() {
+  // Add state for boss, targetEnemy, aimMode
+  const [boss, setBoss] = useState(null);
+  const [targetEnemy, setTargetEnemy] = useState(null);
+  const [aimMode, setAimMode] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
   const [gameState, setGameState] = useState('start');
   const [score, setScore] = useState(0);
@@ -456,13 +460,31 @@ export default function Game() {
     setLastSaveAt(Date.now());
   }, [bossMode, settings.difficulty, activePowerup, shopUpgrades, blockScore]);
 
+  // Auto-save every 30 seconds and once on pause
   useEffect(() => {
     if (bossMode) return;
     if (gameState !== 'playing' && gameState !== 'resuming') return;
 
     const autoSaveId = window.setInterval(() => {
       writeAutoSave();
-    }, 12000);
+    }, 30000); // 30 seconds
+
+    let lastPauseState = isPaused;
+    let pauseSaved = false;
+
+    const checkPause = () => {
+      if (!lastPauseState && isPaused) {
+        // Just paused
+        writeAutoSave();
+        pauseSaved = true;
+      } else if (lastPauseState && !isPaused) {
+        // Just unpaused
+        pauseSaved = false;
+      }
+      lastPauseState = isPaused;
+    };
+
+    const pauseInterval = window.setInterval(checkPause, 250);
 
     const flushSave = () => {
       writeAutoSave();
@@ -478,11 +500,12 @@ export default function Game() {
 
     return () => {
       window.clearInterval(autoSaveId);
+      window.clearInterval(pauseInterval);
       window.removeEventListener('beforeunload', flushSave);
       window.removeEventListener('pagehide', flushSave);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [bossMode, gameState, writeAutoSave]);
+  }, [bossMode, gameState, writeAutoSave, isPaused]);
 
   const handleShopBuy = useCallback((upgradeId, useBossShop = false) => {
     const def = UPGRADE_DEFS.find((upgradeDef) => upgradeDef.id === upgradeId);
@@ -655,11 +678,14 @@ export default function Game() {
         motionInvertX={settings.motionInvertX ?? true}
         motionInvertY={settings.motionInvertY ?? false}
         motionAccelSpeed={settings.accelerometerSpeed ?? 5.0}
+        setBoss={setBoss}
+        setTargetEnemy={setTargetEnemy}
+        setAimMode={setAimMode}
       />
 
       <BossWarning warning={bossWarning} />
 
-      {(gameState === 'playing' || gameState === 'resuming') && (
+      {(gameState === 'playing' || gameState === 'resuming') && !settings.hudHidden && (
         <GameHUD
           score={score}
           lives={lives}
@@ -679,6 +705,9 @@ export default function Game() {
           onOpenOptions={() => setShowPauseOptions(true)}
           shopUpgrades={gameState === 'playing' ? (bossMode ? bossShopUpgrades : shopUpgrades) : {}}
           armorHp={armorHp}
+          boss={boss}
+          targetEnemy={targetEnemy}
+          aimMode={aimMode}
         />
       )}
 
